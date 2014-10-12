@@ -1,0 +1,1557 @@
+// Description: Performs cartometric analysis (i.e. detection of the cartographic projection)
+
+// Copyright (c) 2010 - 2011
+// Tomas Bayer
+// Charles University in Prague, Faculty of Science
+// bayertom@natur.cuni.cz
+
+// This library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+
+#ifndef CartAnalysis_HPP
+#define CartAnalysis_HPP
+
+#include <algorithm>
+#include <iomanip>
+#include <cmath>
+
+
+#include "libalgo/source/const/Const.h"
+
+#include "libalgo/source/structures/point/Node3DCartesianProjected.h"
+#include "libalgo/source/structures/projection/Sample.h"
+
+#include "libalgo/source/algorithms/cartdistortion/CartDistortion.h"
+#include "libalgo/source/algorithms/carttransformation/CartTransformation.h"
+#include "libalgo/source/algorithms/transformation/Transformation2D.h"
+#include "libalgo/source/algorithms/transformation/HomotheticTransformation2D.h"
+#include "libalgo/source/algorithms/transformation/HelmertTransformation2D.h"
+#include "libalgo/source/algorithms/angle3points/Angle3Points.h"
+#include "libalgo/source/algorithms/facearea/FaceArea.h"
+
+#include "libalgo/source/algorithms/tangentfunction/TangentFunction.h"
+#include "libalgo/source/algorithms/innerdistance/InnerDistance.h"
+#include "libalgo/source/algorithms/nndistance/NNDistance.h"
+#include "libalgo/source/algorithms/tarcriterion/TARCriterion.h"
+#include "libalgo/source/algorithms/voronoi2D/Voronoi2D.h"
+
+#include "libalgo/source/comparators/sortPointsByID.h"
+#include "libalgo/source/comparators/sortPointsByX.h"
+
+#include "libalgo/source/comparators/sortSamplesByCrossNearestNeighbourDistanceRatio.h"
+#include "libalgo/source/comparators/sortSamplesByAverageNearestNeighbourDistanceRatio.h"
+#include "libalgo/source/comparators/sortSamplesByHomotheticTransformationRatio.h"
+#include "libalgo/source/comparators/sortSamplesByHelmertTransformationRatio.h"
+#include "libalgo/source/comparators/sortSamplesByAngularDifferencesRatio.h"
+#include "libalgo/source/comparators/sortSamplesByTangentFunctionRatio.h"
+#include "libalgo/source/comparators/sortSamplesByNNNGraphRatio.h"
+#include "libalgo/source/comparators/sortSamplesBySphereOfInfluenceGraphRatio.h"
+#include "libalgo/source/comparators/sortSamplesByVoronoiCellAreaLengthRatio.h"
+#include "libalgo/source/comparators/sortSamplesByVoronoiCellTangentFunctionRatio.h"
+#include "libalgo/source/comparators/sortSamplesByVoronoiCellTARRatio.h"
+#include "libalgo/source/comparators/sortSamplesByVoronoiCellInnerDistanceRatio.h"
+#include "libalgo/source/comparators/sortSamplesByAllRatios.h"
+
+#include "libalgo/source/exceptions/ErrorMath.h"
+
+//Set namespace
+using namespace MatrixOperations;
+
+
+template <typename T>
+void CartAnalysis::computeAnalysisForAllSamples ( Container <Sample <T> > *sl, Container <Projection <T> *> *pl, Container <Node3DCartesian <T> *> *nl_test, Container <Point3DGeographic <T> *> *pl_reference,
+                typename TMeridiansList <T> ::Type * meridians, typename TParallelsList <T> ::Type * parallels, const Container <Face <T> *> *faces_test, const GraphM <T> &g_test_nnn_graph,
+                const GraphM <T> &g_test_sphere_of_influence_graph, TAnalysisParameters & analysis_parameters, unsigned int & total_created_samples, const bool print_exception, std::ostream * output )
+{
+        //Create list of cartographic samples for testing
+        unsigned int created_samples_projection = 0;
+
+        //Total samples ( successful and unsuccessful )
+        total_created_samples = 0;
+
+        //Create sample for analyzed projection and set flag for this sample
+        if ( analysis_parameters.analyzed_proj != NULL )
+        {
+                computeAnalysisForOneSample ( sl, pl, nl_test, pl_reference, meridians, parallels, faces_test, g_test_nnn_graph,
+                                              g_test_sphere_of_influence_graph, analysis_parameters.analyzed_proj, analysis_parameters.analyzed_proj->getLatPole(),
+                                              analysis_parameters.analyzed_proj->getLonPole(), analysis_parameters.analyzed_proj->getLat0(),
+                                              analysis_parameters, created_samples_projection, total_created_samples, print_exception );
+
+                if ( created_samples_projection > 0 ) ( *sl ) [0].setAnalyzedProjectionSample ( true );
+        }
+
+        //Sample with analyzed projection had been created or there is no analyzed projection
+        if ( ( analysis_parameters.analyzed_proj == NULL ) || ( analysis_parameters.analyzed_proj != NULL ) && ( created_samples_projection > 0 ) )
+        {
+                //Process  all projections
+                for ( typename TItemsList <Projection <T> *> ::Type ::const_iterator i_projections = pl->begin(); i_projections != pl->end(); ++ i_projections )
+                {
+                        //Get limits of the cartographic pole latitude and longitude: some projections are defined only in normal position
+                        created_samples_projection = 0;
+
+                        //Print projection name
+                        *output << ( *i_projections ) -> getProjectionName() << ": ";
+
+                        //Cast projection to projection limits: get projection limits
+                        const ProjectionLimits <T> *proj_limits = dynamic_cast <ProjectionLimits <T> *> ( *i_projections );
+
+                        //Process all meridians of the projection ( enable / disable analysis in oblique position )
+                        //T latp = -80;
+                        for ( T latp  = ( analysis_parameters.analyze_oblique_position ? ( proj_limits ) -> getLatPoleMin() : 90 );
+                                        latp <= ( analysis_parameters.analyze_oblique_position ? ( proj_limits ) -> getLatPoleMax() : 90 ); latp += analysis_parameters.latp_step )
+                        {
+                                //T lonp = -170;
+                                for ( T lonp = ( fabs ( latp ) == 90 ? 0 : ( proj_limits ) -> getLonPoleMin() ) ;
+                                                fabs ( latp ) == 90 ? lonp == 0 : lonp <= ( proj_limits ) -> getLonPoleMax();  lonp += analysis_parameters.lonp_step )
+                                {
+                                        //T lat0 = 50;
+                                        for ( T lat0 = ( proj_limits )-> getLat0Min(); lat0 <= ( proj_limits )-> getLat0Max(); lat0 += analysis_parameters.lat0_step )
+                                        {
+                                                //Create one sample
+                                                computeAnalysisForOneSample ( sl, pl, nl_test, pl_reference, meridians, parallels, faces_test, g_test_nnn_graph,
+                                                                              g_test_sphere_of_influence_graph, *i_projections, latp, lonp, lat0, analysis_parameters,
+                                                                              created_samples_projection, total_created_samples, print_exception );
+                                        }
+                                }
+                        }
+
+                        //Print samples count
+                        *output << " [" << created_samples_projection << " created]" << std::endl;
+                }
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::computeAnalysisForOneSample ( Container <Sample <T> > *sl, Container <Projection <T> *> *pl, Container <Node3DCartesian <T> *> *nl_test, Container <Point3DGeographic <T> *> *pl_reference, typename TMeridiansList <T> ::Type * meridians, typename TParallelsList <T> ::Type * parallels,
+                const Container <Face <T> *> *faces_test, const GraphM <T> &g_test_nnn_graph, const GraphM <T> &g_test_sphere_of_influence_graph, const Projection <T> *proj, const T latp, const T lonp, const T lat0, TAnalysisParameters & analysis_parameters, unsigned int & created_samples_projection,
+                unsigned int & total_created_samples, const bool print_exception )
+{
+        //Compute analysis for one sample
+        try
+        {
+                //Create empty list of projected points and transformed points
+                Container <Node3DCartesianProjected <T> *> nl_projected;
+                Container <Node3DCartesian <T> *> nl_transformed;
+                Container <Point3DGeographic <T> > pl_oblique;
+
+                //Compute coordinates of all geographic points points in sample's projection and add to the list
+                for ( unsigned int i = 0; i < pl_reference->size(); i++ )
+                {
+                        //Convert (lat, lon) to oblique position (lat_trans, lon_trans)
+                        const T lat_trans = CartTransformation::latToLatTrans ( ( *pl_reference ) [i]->getLat(), ( *pl_reference ) [i]->getLon(), latp, lonp );
+                        const T lon_trans = CartTransformation::lonToLonTrans ( ( *pl_reference ) [i]->getLat(), ( *pl_reference ) [i]->getLon(), lat_trans, latp, lonp );
+
+                        //Compute parameters of Tissot indikatrix
+                        /*
+                        TTissotIndikatrix <T> tiss;
+                        if ( ( analysis_parameters.analysis_type.a_helt || analysis_parameters.analysis_type.a_gn_ad ) && ( analysis_parameters.match_method == MatchTissotIndikatrix ) )
+                        {
+                        	tiss = CartDistortion::Tiss (0.01, proj->getXEquat(), proj->getYEquat(), latp, lonp, proj->getR(), proj->getA(), proj->getB(),
+                        			proj->getDx(), proj->getDy(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0() );
+                        }
+                        */
+                        //Create new point
+                        nl_projected.push_back ( new Node3DCartesianProjected <T>
+                                                 ( CartTransformation::latLonToX ( proj->getXEquat(), lat_trans, lon_trans, proj->getR(), proj->getA(), proj->getB(),
+                                                                 proj->getDx(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exception ),
+                                                   CartTransformation::latLonToY ( proj->getYEquat(), lat_trans, lon_trans, proj->getR(), proj->getA(),  proj->getB(),
+                                                                   proj->getDy(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exception ),
+                                                   0.0, 0.0, 0.0, 0.0, TTissotIndikatrix <T> (), 0.0 ) );
+
+                        /*
+                        nl_projected.push_back ( new Node3DCartesianProjected <T>
+                                                 ( CartTransformation::latLonToX ( proj->getXEquat(), lat_trans, lon_trans, proj->getR(), proj->getA(), proj->getB(),
+                                                                 proj->getDx(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exception ),
+                                                   CartTransformation::latLonToY ( proj->getYEquat(), lat_trans, lon_trans, proj->getR(), proj->getA(),  proj->getB(),
+                                                                   proj->getDy(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exception ),
+                        			   0.0, 0.0, 0.0, 0.0, tiss, 0.0 ) );
+                        */
+                }
+
+                //std::cout << latp << "  " << lonp << "  "<< lat0 <<'\n';
+
+                //Compare shape of equator, meridian and north / south pole using tangent function, similarity transformation: this is a heuristic throwing unperspective samples
+                if ( ( analysis_parameters.perform_heuristic ) && ( checkSample ( meridians, parallels, nl_test, &nl_projected, &nl_transformed, analysis_parameters.heuristic_sensitivity_ratio ) ) ||
+                                ( ! analysis_parameters.perform_heuristic ) )
+                {
+
+                        //Compute Tissot indikatrix parameters only for perspective samples( will be faster ) for homothetic and helmert transformation
+                        if ( ( analysis_parameters.analysis_type.a_helt || analysis_parameters.analysis_type.a_gn_ad ) && ( analysis_parameters.match_method == MatchTissotIndikatrix ) )
+                        {
+                                for ( unsigned int i = 0; i < pl_oblique.size(); i++ )
+                                {
+                                        //Compute parameters of Tissot indikatrix
+                                        TTissotIndikatrix <T> tiss = CartDistortion::Tiss ( 0.01, proj->getXEquat(), proj->getYEquat(), pl_oblique[i].getLat(), pl_oblique[i].getLon(), proj->getR(), proj->getA(), proj->getB(),
+                                                                     proj->getDx(), proj->getDy(), lat0, proj->getLat1(), proj->getLat2(), proj->getLon0(), analysis_parameters.print_exceptions );
+
+                                        //Set Tissot indikatrix parameters for the point
+                                        nl_projected[i]->setTiss ( tiss );
+                                }
+                        }
+
+                        //Set adjacent points for meridian/parallel in projected points using indices
+                        typename TMeridiansList <T> ::Type :: iterator i_meridians = meridians->begin();
+                        typename TParallelsList <T> ::Type :: iterator i_parallels = parallels->begin();
+
+                        //Process all found meridians and parallels
+                        for ( ; i_meridians != meridians->end(); ++ i_meridians )
+                        {
+                                ( * i_meridians ).setPointsIndicesInList ( & nl_projected );
+                        }
+
+                        //Process all found parallels
+                        for ( ; i_parallels != parallels->end(); ++ i_parallels )
+                        {
+                                ( * i_parallels ).setPointsIndicesInList ( & nl_projected );
+                        }
+
+                        //Remove duplicate elements from reference data set (projected points)
+                        nl_projected.removeDuplicateElements ( nl_projected.begin(), nl_projected.end(), sortPointsByX <Node3DCartesianProjected <T> *> (), isEqualPointByPlanarCoordinates <Node3DCartesianProjected <T> *> () );
+
+                        //Do both datasets contain the same number of points?
+                        if ( pl_reference->size() == nl_projected.size() )
+                        {
+
+                                //Create sample
+                                Sample <T> sample ( proj->getProjectionName(), latp, lonp, lat0 );
+
+                                //Compute all cartometric analysis
+                                if ( analysis_parameters.analysis_type.a_cnd )
+                                {
+                                        analyzeSampleAverageNearestNeighbourDistance ( &sample, nl_test, & nl_projected, &nl_transformed );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_and )
+                                {
+                                        analyzeSampleCrossNearestNeighbourDistance ( &sample, nl_test, &nl_projected, &nl_transformed );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_homt )
+                                {
+                                        analyzeSampleHomotheticTransformationDeviation ( &sample, nl_test, &nl_projected, &nl_transformed, analysis_parameters.match_method );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_helt )
+                                {
+                                        analyzeSampleHelmertTransformationDeviation ( &sample, nl_test, &nl_projected, &nl_transformed, analysis_parameters.match_method );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_gn_ad )
+                                {
+                                        analyzeSampleGeographicNetworkAngularDifference ( &sample, nl_test, &nl_projected, meridians, parallels );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_gn_tf )
+                                {
+                                        analyzeSampleGeographicNetworkTangentFunctionRatio ( &sample, nl_test, &nl_projected, meridians, parallels );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_sig )
+                                {
+                                        analyzeSampleSphereOfInfulenceGraphRatio ( &sample, nl_test, &nl_projected, g_test_sphere_of_influence_graph, analysis_parameters.analysis_type, print_exception );
+                                }
+
+                                if ( analysis_parameters.analysis_type.a_nnng || analysis_parameters.analysis_type.a_vd_al || analysis_parameters.analysis_type.a_vd_tf || analysis_parameters.analysis_type.a_vd_tar ||
+                                                analysis_parameters.analysis_type.a_vd_id )
+                                {
+                                        analyzeSampleUsingVoronoiDiagramRatio ( &sample, nl_test, &nl_projected, faces_test, g_test_nnn_graph, analysis_parameters.analysis_type, print_exception );
+                                }
+
+                                //Add sample to the samples list
+                                sl->push_back ( sample );
+
+                                //Increment created samples for projection
+                                created_samples_projection ++;
+                        }
+                }
+        }
+
+        //Math error, continue in processing of other samples
+        catch ( ErrorMath & error )
+        {
+
+        }
+
+        //Parse error, continue in processing of samples
+        catch ( ErrorParse & error )
+        {
+
+        }
+
+        //Print "." for every 1000-th sample
+        if ( total_created_samples % 1000 == 0 )
+        {
+                std::cout.flush();
+                std::cout << ".";
+        }
+
+        //Increment samples index
+        total_created_samples ++;
+}
+
+
+template <typename T>
+bool CartAnalysis::checkSample ( const typename TMeridiansList <T> ::Type * meridians, const typename TParallelsList <T> ::Type * parallels, const Container <Node3DCartesian <T> *> *nl_test, const Container <Node3DCartesianProjected <T> *> *nl_projected, Container <Node3DCartesian <T> *> *nl_transformed,
+                                 const T heuristic_sensitivity_ratio )
+{
+        //Small heuristic for sample: compare shape or the prime meridian, equator (central meridian, central parallel) north pole and south pole for test and reference points
+        T tangent_function_max_difference = 1.0;	//Ideal value 1.0
+        float matching_factor = 0.75;			//Ideal value 0.75
+        bool prime_meridian_found = false, equator_found = false;
+
+        //Analyze match ratio using Helmert transformation ( additional test if no meridian and parallel have been found )
+        HelmertTransformation2D::transformPoints ( nl_projected, nl_test, nl_transformed );
+
+        //Test match ratio: at least 50 percent of points matched
+        if ( Transformation2D::getMatchRatioCircle ( nl_projected, nl_transformed, matching_factor * heuristic_sensitivity_ratio )  < 50 )
+        {
+                return false;
+        }
+
+        //Process all meridians and find prime meridian
+        for ( typename TMeridiansList <T> ::Type::const_iterator i_meridians = meridians->begin(); i_meridians != meridians->end(); ++ i_meridians )
+        {
+                //Find prime meridian
+                if ( ( *i_meridians ).getLongitude() == 0 )
+                {
+                        //Convert test meridian to Points 2D list
+                        Container <Point3DCartesian <T> > pl_meridian_test ( nl_test, & ( ( * i_meridians ).getPointsIndices () ) );
+
+                        //Convert projected meridian to Points2D list
+                        Container <Point3DCartesian <T> > pl_meridian_projected ( nl_projected,  & ( ( * i_meridians ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each test and projected meridian
+                        T tangent_function_ratio_prime_meridian = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_meridian_test, &pl_meridian_projected, RotationDependent, ScaleDependent );
+
+                        //Both prime meridians are not similar
+                        if ( tangent_function_ratio_prime_meridian > tangent_function_max_difference * pl_meridian_projected.size() * heuristic_sensitivity_ratio )
+                        {
+                                return false;
+                        }
+
+                        //Set prime meridian as found
+                        prime_meridian_found = true;
+                }
+        }
+
+        //Process all parallels find equator, north pole, south pole
+        for ( typename TParallelsList <T> ::Type::const_iterator i_parallels = parallels->begin(); i_parallels != parallels->end(); ++ i_parallels )
+        {
+                //Find equator
+                if ( ( *i_parallels ).getLatitude() == 0 )
+                {
+                        //Convert test equator to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_test ( nl_test, & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Convert projected equator to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_projected ( nl_projected,  & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each parallel
+                        T tangent_function_ratio_equator = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_parallel_test, &pl_parallel_projected, RotationDependent, ScaleDependent );
+
+                        //Both equators are not similar
+                        if ( tangent_function_ratio_equator > tangent_function_max_difference * pl_parallel_projected.size() * heuristic_sensitivity_ratio )
+                        {
+                                return false;
+                        }
+
+                        //Set equator as found
+                        equator_found = true;
+                }
+
+                //Find and analyze north pole
+                if ( ( *i_parallels ).getLatitude() == 90 )
+                {
+                        //Convert test parallel to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_test ( nl_test, & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Convert projected parallel to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_projected ( nl_projected,  & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each parallel
+                        T tangent_function_ratio_north_pole = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_parallel_test, &pl_parallel_projected, RotationDependent, ScaleDependent );
+
+                        //Both north poles are not similar
+                        if ( tangent_function_ratio_north_pole > tangent_function_max_difference * pl_parallel_projected.size() * heuristic_sensitivity_ratio )
+                        {
+                                return false;
+                        }
+                }
+
+                //Find and analyze south pole
+                if ( ( *i_parallels ).getLatitude() == -90 )
+                {
+                        //Convert test parallel to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_test ( nl_test, & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Convert projected parallel to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_projected ( nl_projected,  & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each parallel
+                        T tangent_function_ratio_south_pole = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_parallel_test, &pl_parallel_projected, RotationDependent, ScaleDependent );
+
+                        //Both south poles are not similar
+                        if ( tangent_function_ratio_south_pole > tangent_function_max_difference * pl_parallel_projected.size() * heuristic_sensitivity_ratio )
+                        {
+                                return false;
+                        }
+                }
+        }
+
+        //If not prime meridian found, continue with the found central meridian of the analyzed area
+        if ( ( !prime_meridian_found ) && ( meridians->size() > 0 ) )
+        {
+                //Set central meridian of the dataset
+                typename TMeridiansList <T> ::Type::const_iterator i_meridians = meridians->begin();
+
+                for ( unsigned int i = 0; i < meridians->size() / 2; ++ i_meridians, ++ i ) {}
+
+                //Convert test meridian to Points 2D list
+                Container <Point3DCartesian <T> > pl_meridian_test ( nl_test, & ( ( *i_meridians ).getPointsIndices () ) );
+
+                //Convert projected meridian to Points2D list
+                Container <Point3DCartesian <T> > pl_meridian_projected ( nl_projected,  & ( ( *i_meridians ).getPointsIndices () ) );
+
+                //Compute tangent function difference for each test and projected meridian
+                T tangent_function_ratio_meridian = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_meridian_test, &pl_meridian_projected, RotationDependent, ScaleDependent );
+
+                //Both prime meridians are not similar
+                if ( tangent_function_ratio_meridian > tangent_function_max_difference * pl_meridian_projected.size() * heuristic_sensitivity_ratio )
+                {
+                        return false;
+                }
+        }
+
+        //If not equator found, continue with the found central parallel of the analyzed area
+        if ( ( !equator_found ) && ( parallels->size() > 0 ) )
+        {
+                //Set central parallel of the dataset
+                typename TParallelsList <T> ::Type::const_iterator i_parallels = parallels->begin();
+
+                for ( unsigned int i = 0; i < parallels->size() / 2; ++ i_parallels, ++ i ) {}
+
+                //Convert test parallel to Points2D list
+                Container <Point3DCartesian <T> > pl_parallel_test ( nl_test, & ( ( *i_parallels ).getPointsIndices () ) );
+
+                //Convert projected parallel to Points2D list
+                Container <Point3DCartesian <T> > pl_parallel_projected ( nl_projected,  & ( ( *i_parallels ).getPointsIndices () ) );
+
+                //Compute tangent function difference for each parallel
+                T tangent_function_ratio_parallel = TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_parallel_test, &pl_parallel_projected, RotationDependent, ScaleDependent );
+
+                //Both equators are not similar
+                if ( tangent_function_ratio_parallel >  tangent_function_max_difference * pl_parallel_projected.size() * heuristic_sensitivity_ratio )
+                {
+                        return false;
+                }
+        }
+
+        return true;
+}
+
+
+template <typename T>
+void CartAnalysis::sortSamplesByComputedRatios ( Container <Sample <T> > *sl, const TAnalysisParameters::TAnalysisType & analysis_type )
+{
+
+        //Sort results: Cross nearest distance
+        if ( analysis_type.a_cnd )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByCrossNearestNeighbourDistanceRatio () );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 1 );
+
+        //Sort results: Average nearest distance
+        if ( analysis_type.a_and )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByAverageNearestNeighbourDistanceRatio () );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 2 );
+
+        //Sort results: Homothetic transformation, standard deviation
+        if ( analysis_type.a_homt )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByHomotheticTransformationRatio () );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 3 );
+
+        //Sort results: Helmert transformation, standard deviation
+        if ( analysis_type.a_helt )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByHelmertTransformationRatio () );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 4 );
+
+        //Sort results: angular differences
+        if ( analysis_type.a_gn_ad )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByAngularDifferencesRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 5 );
+
+        //Sort results: tangent function difference ratio
+        if ( analysis_type.a_gn_tf )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByTangentFunctionRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 6 );
+
+        //Sort results: NNN graph ratio
+        if ( analysis_type.a_nnng )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByNNNGraphRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 7 );
+
+        //Sort results: Sphere of Influence graph ratio
+        if ( analysis_type.a_sig )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesBySphereOfInfluenceGraphRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 8 );
+
+        //Sort results: Voronoi cell Area/Length ratio
+        if ( analysis_type.a_vd_al )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByVoronoiCellAreaLengthRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 9 );
+
+        //Sort results: Voronoi cell Tangent Function Ratio
+        if ( analysis_type.a_vd_tf )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByVoronoiCellTangentFunctionRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 10 );
+
+        //Sort results: Voronoi cell TAR ratio
+        if ( analysis_type.a_vd_tar )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByVoronoiCellTARRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 11 );
+
+        //Sort results: Voronoi cell Inner Distance ratio
+        if ( analysis_type.a_vd_id )
+        {
+                std::sort ( sl->begin(), sl->end(), sortSamplesByVoronoiCellInnerDistanceRatio() );
+        }
+
+        //Set positions for sorted samples
+        setPositionForSortedSamples ( sl, 12 );
+
+        //Sort samples by all ratios
+        std::sort ( sl->begin(), sl->end(), sortSamplesByAllRatios ( analysis_type ) );
+}
+
+
+template <typename T>
+void CartAnalysis::setPositionForSortedSamples ( Container <Sample <T> > *sl, const unsigned short analysis_type )
+{
+        //Set position for each sample after its sorting
+        unsigned int n = sl->size();
+
+        for ( unsigned int i = 1; i < n; i++ )
+        {
+                //Cross nearest distance criterion
+                if ( analysis_type == 1 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getCrossNearestNeighbourDistanceRatio() -
+                                        ( *sl ) [i - 1].getCrossNearestNeighbourDistanceRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getCrossNearestNeighbourDistanceRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setCrossNearestNeighbourDistanceRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setCrossNearestNeighbourDistanceRatioPosition ( ( *sl ) [i - 1].getCrossNearestNeighbourDistanceRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setCrossNearestNeighbourDistanceRatioPosition ( ( *sl ) [i - 1].getCrossNearestNeighbourDistanceRatioPosition() );
+                        }
+                }
+
+                //Average nearest distance criterion
+                if ( analysis_type == 2 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getAverageNearestNeighbourDistanceRatio() -
+                                        ( *sl ) [i - 1].getAverageNearestNeighbourDistanceRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getAverageNearestNeighbourDistanceRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setAverageNearestNeighbourDistanceRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setAverageNearestNeighbourDistanceRatioPosition ( ( *sl ) [i - 1].getAverageNearestNeighbourDistanceRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setAverageNearestNeighbourDistanceRatioPosition ( ( *sl ) [i - 1].getAverageNearestNeighbourDistanceRatioPosition() );
+                        }
+                }
+
+                //Homothetic transformation, standard deviation criterion
+                if ( analysis_type == 3 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getHomotheticTransformationRatio() -
+                                        ( *sl ) [i - 1].getHomotheticTransformationRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getHomotheticTransformationRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setHomotheticTransformationRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setHomotheticTransformationRatioPosition ( ( *sl ) [i - 1].getHomotheticTransformationRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setHomotheticTransformationRatioPosition ( ( *sl ) [i - 1].getHomotheticTransformationRatioPosition() );
+                        }
+                }
+
+                //Helmert transformation, standard deviation criterion
+                if ( analysis_type == 4 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getHelmertTransformationRatio() -
+                                        ( *sl ) [i - 1].getHelmertTransformationRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getHelmertTransformationRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setHelmertTransformationRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setHelmertTransformationRatioPosition ( ( *sl ) [i - 1].getHelmertTransformationRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setHelmertTransformationRatioPosition ( ( *sl ) [i - 1].getHelmertTransformationRatioPosition() );
+                        }
+                }
+
+                //Angular difference criterion (meridians and parallels)
+                else if ( analysis_type == 5 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getAngularDifferenceRatio() -
+                                        ( *sl ) [i - 1].getAngularDifferenceRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getAngularDifferenceRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setAngularDifferenceRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setAngularDifferenceRatioPosition ( ( *sl ) [i - 1].getAngularDifferenceRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setAngularDifferenceRatioPosition ( ( *sl ) [i - 1].getAngularDifferenceRatioPosition() );
+                        }
+                }
+
+                //Tangent function criterion (meridians and parallels)
+                else if ( analysis_type == 6 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getTangentFunctionRatio() -
+                                        ( *sl ) [i - 1].getTangentFunctionRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getTangentFunctionRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setTangentFunctionRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setTangentFunctionRatioPosition ( ( *sl ) [i - 1].getTangentFunctionRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setTangentFunctionRatioPosition ( ( *sl ) [i - 1].getTangentFunctionRatioPosition() );
+                        }
+                }
+
+                //K-nn graph ratio
+                else if ( analysis_type == 7 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getNNNGraphRatio() -
+                                        ( *sl ) [i - 1].getNNNGraphRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getNNNGraphRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setNNNGraphRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setNNNGraphRatioPosition ( ( *sl ) [i - 1].getNNNGraphRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setNNNGraphRatioPosition ( ( *sl ) [i - 1].getNNNGraphRatioPosition() );
+                        }
+                }
+
+                else if ( analysis_type == 8 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getSphereOfInfluenceGraphRatio() -
+                                        ( *sl ) [i - 1].getSphereOfInfluenceGraphRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getSphereOfInfluenceGraphRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setSphereOfInfluenceGraphRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setSphereOfInfluenceGraphRatioPosition ( ( *sl ) [i - 1].getSphereOfInfluenceGraphRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setSphereOfInfluenceGraphRatioPosition ( ( *sl ) [i - 1].getSphereOfInfluenceGraphRatioPosition() );
+                        }
+                }
+
+                //Voronoi cell area/length criterion
+                else if ( analysis_type == 9 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getVoronoiCellAreaLengthRatio() -
+                                        ( *sl ) [i - 1].getVoronoiCellAreaLengthRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getVoronoiCellAreaLengthRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setVoronoiCellAreaLengthRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setVoronoiCellAreaLengthRatioPosition ( ( *sl ) [i - 1].getVoronoiCellAreaLengthRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setVoronoiCellAreaLengthRatioPosition ( ( *sl ) [i - 1].getVoronoiCellAreaLengthRatioPosition() );
+                        }
+                }
+
+                //CVoronoi cell tangent function criterion
+                else if ( analysis_type == 10 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getVoronoiCellTangentFunctionRatio() -
+                                        ( *sl ) [i - 1].getVoronoiCellTangentFunctionRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getVoronoiCellTangentFunctionRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setVoronoiCellTangentFunctionRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setVoronoiCellTangentFunctionRatioPosition ( ( *sl ) [i - 1].getVoronoiCellTangentFunctionRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setVoronoiCellTangentFunctionRatioPosition ( ( *sl ) [i - 1].getVoronoiCellTangentFunctionRatioPosition() );
+                        }
+                }
+
+                //Voronoi cell TAR criterion
+                else if ( analysis_type == 11 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getVoronoiCellTARRatio() -
+                                        ( *sl ) [i - 1].getVoronoiCellTARRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getVoronoiCellTARRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setVoronoiCellTARRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setVoronoiCellTARRatioPosition ( ( *sl ) [i - 1].getVoronoiCellTARRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setVoronoiCellTARRatioPosition ( ( *sl ) [i - 1].getVoronoiCellTARRatioPosition() );
+                        }
+                }
+
+                //Voronoi cell Inner Distance criterion
+                else if ( analysis_type == 12 )
+                {
+                        //Actual value differs from previous value
+                        if ( fabs ( ( *sl ) [i].getVoronoiCellInnerDistanceRatio() -
+                                        ( *sl ) [i - 1].getVoronoiCellInnerDistanceRatio() ) > ARGUMENT_ROUND_ERROR )
+                        {
+                                //Previous value negative: position = 1
+                                if ( ( *sl ) [i - 1].getVoronoiCellInnerDistanceRatio() < 0 )
+                                {
+                                        ( *sl ) [i].setVoronoiCellInnerDistanceRatioPosition ( 1 );
+                                }
+
+                                //Previous value positive: position = position + 1
+                                else
+                                {
+                                        ( *sl ) [i].setVoronoiCellInnerDistanceRatioPosition ( ( *sl ) [i - 1].getVoronoiCellInnerDistanceRatioPosition() + 1 );
+                                }
+                        }
+
+                        //Actual value same as the previous value
+                        else
+                        {
+                                ( *sl ) [i].setVoronoiCellInnerDistanceRatioPosition ( ( *sl ) [i - 1].getVoronoiCellInnerDistanceRatioPosition() );
+                        }
+                }
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::printResults ( const Container <Sample <T> > *sl, unsigned int items_printed, const TAnalysisParameters & analysis_parameters, std::ostream * output )
+{
+        //Print first n items sorted by the similarity match ratio
+        unsigned int n = sl->size();
+
+        //Correct number of printed items
+        if ( items_printed > n )
+        {
+                items_printed = n;
+        }
+
+        //Some points were loaded
+        if ( n > 0 )
+        {
+                //Table  1
+                *output << "Projections sorted by criterions values:" << std::endl << std::endl;
+
+                //Set properties
+                *output << std::showpoint << std::fixed << std::right;
+
+                //Create header 1 : results of analalysis
+                *output	<< std::setw ( 3 ) << "#"
+                << std::setw ( 6 ) << "Proj"
+                << std::setw ( 5 ) << "LatP"
+                << std::setw ( 5 ) << "LonP"
+                << std::setw ( 5 ) << "lat0"
+                << std::setw ( 5 ) << "CND"
+                << std::setw ( 5 ) << "AND"
+                << std::setw ( 5 ) << "HOMT";
+
+                //Print type of match
+                analysis_parameters.match_method == MatchCircle ? *output << std::setw ( 5 ) << "+ MC" : *output << std::setw ( 5 ) << "+ MT";
+
+                *output << std::setw ( 5 ) << "HELT";
+
+                //Print type of match
+                analysis_parameters.match_method == MatchCircle ? *output << std::setw ( 5 ) << "+ MC" : *output << std::setw ( 5 ) << "+ MT";
+
+                *output << std::setw ( 5 ) << "GNAD"
+                << std::setw ( 5 ) << "GNTF"
+                << std::setw ( 5 ) << "NNNG"
+                << std::setw ( 5 ) << "SIG"
+                << std::setw ( 5 ) << "VDAL"
+                << std::setw ( 5 ) << "VDTF"
+                << std::setw ( 5 ) << "VDTA"
+                << std::setw ( 5 ) << "VDID" << std::endl;
+
+                //Values of the criterion for each projection
+                for ( unsigned int i = 0;  i < ( analysis_parameters.analyzed_proj == NULL ? items_printed : n ); i++ )
+                {
+                        if ( analysis_parameters.analyzed_proj == NULL )
+                        {
+                                ( *sl ) [i].printSampleRatios ( output, i + 1, analysis_parameters.analysis_type );
+                        }
+
+                        else if ( ( * sl ) [i].getAnalyzedProjectionSample() )
+                        {
+                                ( *sl ) [i].printSampleRatios ( output, i + 1, analysis_parameters.analysis_type );
+                                break;
+                        }
+                }
+
+                //Table 2
+                *output << std::endl << "Projections sorted by criterions positions:" << std::endl << std::endl;
+
+                //Create header 2: positions
+                *output	<< std::setw ( 3 ) << "#"
+                << std::setw ( 6 ) << "Proj"
+                << std::setw ( 5 ) << "LatP"
+                << std::setw ( 5 ) << "LonP"
+                << std::setw ( 5 ) << "lat0"
+                << std::setw ( 5 ) << "CND"
+                << std::setw ( 5 ) << "AND"
+                << std::setw ( 5 ) << "HOMT"
+                << std::setw ( 5 ) << "HELT"
+                << std::setw ( 5 ) << "GNAD"
+                << std::setw ( 5 ) << "GNTF"
+                << std::setw ( 5 ) << "NNNG"
+                << std::setw ( 5 ) << "SIG"
+                << std::setw ( 5 ) << "VDAL"
+                << std::setw ( 5 ) << "VDTF"
+                << std::setw ( 5 ) << "VDTA"
+                << std::setw ( 5 ) << "VDID" << std::endl;
+
+                //Positions of the criterion for each projection
+                for ( unsigned int i = 0;  i < ( analysis_parameters.analyzed_proj == NULL ? items_printed : n ); i++ )
+                {
+                        if ( analysis_parameters.analyzed_proj == NULL )
+                        {
+                                ( *sl ) [i].printSamplePositions ( output, i + 1, analysis_parameters.analysis_type );
+                        }
+
+                        else if ( ( * sl ) [i].getAnalyzedProjectionSample() )
+                        {
+                                ( *sl ) [i].printSamplePositions ( output, i + 1, analysis_parameters.analysis_type );
+                                break;
+                        }
+                }
+
+                *output << std::endl;
+        }
+}
+
+
+//Each sample analysis
+template <typename T>
+void CartAnalysis::analyzeSampleCrossNearestNeighbourDistance ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                Container <Node3DCartesian <T> *> *nl_transformed )
+{
+        //Analyze all samples using cross nearest distance ratio
+        try
+        {
+                //Clear list
+                if ( nl_transformed->size() != 0 ) nl_transformed->clear();
+
+                //Compute homothetic transformation
+                if ( nl_transformed->size() == 0 )
+                {
+                        HomotheticTransformation2D::transformPoints ( nl_projected, nl_test, nl_transformed );
+                }
+
+                //Compute cross nearest distance ratio
+                T cross_nearest_neighbour_distance_ratio = NNDistance::getCrossNearestNeighbourDistance ( nl_projected, nl_transformed );
+
+                //Set ratio for the sample
+                s->setCrossNearestNeighbourDistanceRatio ( cross_nearest_neighbour_distance_ratio );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setCrossNearestNeighbourDistanceRatio ( -1 );
+                s->setCrossNearestNeighbourDistanceRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleAverageNearestNeighbourDistance ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test, const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                Container <Node3DCartesian <T> *> *nl_transformed )
+{
+        //Analyze all samples using average nearest neighbour distance ratio
+        try
+        {
+                //Clear list
+                if ( nl_transformed->size() != 0 ) nl_transformed->clear();
+
+                //Compute homothetic transformation
+                if ( nl_transformed->size() == 0 )
+                {
+                        HomotheticTransformation2D::transformPoints ( nl_projected, nl_test, nl_transformed );
+                }
+
+                //Compute average nearest distance ratio
+                T average_nearest_neighbour_distance_ratio = NNDistance::compare2DatasetsUsingAverageNearestNeighbourDistance ( nl_projected, nl_transformed );
+
+                //Set ratio for the sample
+                s->setAverageNearestNeighbourDistanceRatio ( average_nearest_neighbour_distance_ratio );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setAverageNearestNeighbourDistanceRatio ( -1 );
+                s->setAverageNearestNeighbourDistanceRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleHomotheticTransformationDeviation ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                Container <Node3DCartesian <T> *> *nl_transformed, TMatchPointsType & match_type )
+{
+        //Analyze sample using Homothetic transformation deviation
+        try
+        {
+                //Clear list
+                if ( nl_transformed->size() != 0 ) nl_transformed->clear();
+
+                //Compute homothetic transformation
+                if ( nl_transformed->size() == 0 )
+                {
+                        HomotheticTransformation2D::transformPoints ( nl_projected, nl_test, nl_transformed );
+                }
+
+                //Compute ratio and percentage match
+                T homothetic_transformation_ratio = Transformation2D::getStandardDeviation ( nl_projected, nl_transformed );
+                T homothetic_transformation_perc_match = ( match_type == MatchCircle ? Transformation2D::getMatchRatioCircle ( nl_projected, nl_transformed ) :
+                                Transformation2D::getMatchRatioTissotIndikatrix ( nl_projected, nl_transformed ) );
+
+                //Set ratio and percentage match for the sample
+                s->setHomotheticTransformationRatio ( homothetic_transformation_ratio );
+                s->setHomotheticTransformationPercMatch ( homothetic_transformation_perc_match );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setHomotheticTransformationRatio ( -1 );
+                s->setHomotheticTransformationPercMatch ( -1 );
+                s->setHomotheticTransformationRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleHelmertTransformationDeviation ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                Container <Node3DCartesian <T> *> *nl_transformed, TMatchPointsType & match_type )
+{
+        //Analyze sample using Helmert transformation deviation
+        try
+        {
+                //Clear list
+                if ( nl_transformed->size() != 0 ) nl_transformed->clear();
+
+                //Compute Helmert transformation
+                if ( nl_transformed->size() == 0 )
+                {
+                        HelmertTransformation2D::transformPoints ( nl_projected, nl_test, nl_transformed );
+                }
+
+                //Compute ratio and percentage match
+                T helmert_transformation_ratio = Transformation2D::getStandardDeviation ( nl_projected, nl_transformed );
+                T helmert_transformation_perc_match = ( match_type == MatchCircle  ? Transformation2D::getMatchRatioCircle ( nl_projected, nl_transformed ) :
+                                                        Transformation2D::getMatchRatioTissotIndikatrix ( nl_projected, nl_transformed ) );
+
+
+                //Set ratio and percentage match for the sample
+                s->setHelmertTransformationRatio ( helmert_transformation_ratio );
+                s->setHelmertTransformationPercMatch ( helmert_transformation_perc_match );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setHelmertTransformationRatio ( -1 );
+                s->setHelmertTransformationPercMatch ( -1 );
+                s->setHelmertTransformationRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleGeographicNetworkAngularDifference ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                const typename TMeridiansList <T> ::Type * meridians, const typename TParallelsList <T> ::Type * parallels )
+{
+        //Analyze sample using angular differences in geographic network
+        T angular_difference_meridians = 0, angular_difference_parallels = 0;
+
+        try
+        {
+                //Analyze meridians
+                typename TMeridiansList <T> ::Type::const_iterator i_meridians = meridians->begin();
+
+                //Process all meridians
+                for ( i_meridians = meridians->begin(); i_meridians != meridians->end(); ++i_meridians )
+                {
+                        //Process all points of the meridian
+                        for ( unsigned int i = 1; i < ( *i_meridians ).getPointsIndices ().size() - 1; i++ )
+                        {
+                                const unsigned int i1 = ( *i_meridians ).getPointsIndices () [i-1], i2 = ( *i_meridians ).getPointsIndices () [i], i3 = ( *i_meridians ).getPointsIndices () [i+1];
+
+                                //Compute angles
+                                const T angle_test = Angle3Points::getAngle3Points ( ( *nl_test ) [i1], ( *nl_test ) [i2], ( *nl_test ) [i3] );
+                                const T angle_projected = Angle3Points::getAngle3Points ( ( *nl_projected ) [i1], ( *nl_projected ) [i2], ( *nl_projected ) [i3] );
+
+                                //Compute differences
+                                if ( angle_test + angle_projected != 0 )
+                                {
+                                        angular_difference_meridians += ( angle_test - angle_projected ) * ( angle_test - angle_projected ) / ( angle_test + angle_projected );
+                                }
+                        }
+                }
+
+                //Analyze parallels
+                typename TParallelsList <T> ::Type::const_iterator i_parallels = parallels->begin();
+
+                //Process all parallels
+                for ( i_parallels = parallels->begin(); i_parallels != parallels->end(); ++i_parallels )
+                {
+                        //Process all points of the parallel
+                        for ( unsigned int i = 1; i < ( *i_parallels ).getPointsIndices ().size() - 1; i++ )
+                        {
+                                const unsigned int i1 = ( *i_parallels ).getPointsIndices () [i-1], i2 = ( *i_parallels ).getPointsIndices () [i], i3 = ( *i_parallels ).getPointsIndices () [i+1];
+
+                                //Compute angles
+                                const T angle_test = Angle3Points::getAngle3Points ( ( *nl_test ) [i1], ( *nl_test ) [i2], ( *nl_test ) [i3] );
+                                const T angle_projected = Angle3Points::getAngle3Points ( ( *nl_projected ) [i1], ( *nl_projected ) [i2], ( *nl_projected ) [i3] );
+
+                                //Compute angular differences
+                                if ( angle_test + angle_projected != 0 )
+                                {
+                                        angular_difference_parallels += ( angle_test - angle_projected ) * ( angle_test - angle_projected ) / ( angle_test + angle_projected );
+                                }
+                        }
+                }
+
+                //Set angular difference
+                s->setAngularDifferenceRatio ( 100 * ( angular_difference_meridians + angular_difference_parallels ) );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setAngularDifferenceRatio ( -1 );
+                s->setAngularDifferenceRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleGeographicNetworkTangentFunctionRatio ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                const typename TMeridiansList <T> ::Type * meridians, const typename TParallelsList <T> ::Type * parallels )
+{
+        //Analyze sample using angular tangent function differences in geographic network
+        T tangent_function_ratio_meridians = 0, tangent_function_ratio_parallels = 0;
+
+        try
+        {
+                typename TMeridiansList <T> ::Type::const_iterator i_meridians = meridians->begin();
+
+                //Process all meridians
+                for ( i_meridians = meridians->begin(); i_meridians != meridians->end(); ++i_meridians )
+                {
+                        //Convert test meridian to Points 2D list
+                        Container <Point3DCartesian <T> > pl_meridian_test ( nl_test, & ( ( * i_meridians ).getPointsIndices () ) );
+
+                        //Convert projected meridian to Points2D list
+                        Container <Point3DCartesian <T> > pl_meridian_projected ( nl_projected,  & ( ( * i_meridians ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each test and projected meridian
+                        tangent_function_ratio_meridians += TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_meridian_test, &pl_meridian_projected, RotationDependent, ScaleDependent );
+                }
+
+                typename TParallelsList <T> ::Type::const_iterator i_parallels = parallels->begin();
+
+                //Process all parallels
+                for ( i_parallels = parallels->begin(); i_parallels != parallels->end(); ++i_parallels )
+                {
+                        //Convert test meridian to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_test ( nl_test, & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Convert projected meridian to Points2D list
+                        Container <Point3DCartesian <T> > pl_parallel_projected ( nl_projected,  & ( ( * i_parallels ).getPointsIndices () ) );
+
+                        //Compute tangent function difference for each parallel
+                        tangent_function_ratio_parallels += TangentFunction::compare2PolyLinesUsingTangentFunction ( &pl_parallel_test, &pl_parallel_projected, RotationDependent, ScaleDependent );
+                }
+
+                //Set tangent function ratio
+                s->setTangentFunctionRatio ( tangent_function_ratio_meridians  +  tangent_function_ratio_parallels );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setTangentFunctionRatio ( -1 );
+                s->setTangentFunctionRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleKNNGraphRatio ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                const GraphM <T> &g_test, const unsigned int k, const bool print_exception )
+{
+        //Analyze sample using 8 nearest neighbours graph ratio (X quadrat)
+        try
+        {
+                //Create KNN graph for the second dataset
+                GraphM <T> g_projected ( nl_projected->size() );
+                GraphAlgorithms::createKNNGraph ( nl_projected, k, g_projected );
+
+                //Compute ratio
+                T knn_graph_ratio = 0;
+
+                for ( unsigned int i = 0; i < nl_test->size(); i++ )
+                {
+                        for ( unsigned int j = 0; j < nl_test->size(); j++ )
+                        {
+                                if ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) != 0 )
+                                {
+                                        knn_graph_ratio +=	( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) * ( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) /
+                                                                ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) ) ;
+                                }
+                        }
+                }
+
+                //Set ratio for the sample
+                s->setKNNGraphRatio ( knn_graph_ratio );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setKNNGraphRatio ( -1 );
+                s->setKNNGraphRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleNNNGraphRatio ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test,  const Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                const GraphM <T> &g_test, TAnalysisParameters::TAnalysisType & analysis_type, const bool print_exception )
+{
+        //Analyze sample using natural nearest neighbours graph ratio (X quadrat)
+        try
+        {
+                //Create NNN graph for the second dataset
+                GraphM <T> g_projected ( nl_projected->size() );
+                GraphAlgorithms::createNNNGraph ( nl_projected, g_projected );
+
+                //Compute NNN graph ratio
+                T nnn_graph_ratio = 0, sum_v_test = 0, sum_v_proj = 0;
+
+                for ( unsigned int i = 0; i < nl_test->size(); i++ )
+                {
+                        for ( unsigned int j = 0; j < nl_test->size(); j++ )
+                        {
+                                if ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) != 0 )
+                                {
+                                        nnn_graph_ratio +=	( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) * ( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) /
+                                                                ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) ) ;
+                                }
+
+                                //Compute sums
+                                sum_v_test += g_test.getV() ( i, j );
+                                sum_v_proj += g_projected.getV() ( i, j );
+                        }
+                }
+
+                //Throw exception
+                if ( ( sum_v_test == 0 ) || ( sum_v_proj == 0 ) )
+                {
+                        if ( sum_v_test == 0 ) analysis_type.a_nnng = false;
+
+                        throw ErrorBadData ( "ErrorBadData: can not compute NNN graph analysis_type, ", "not enough bounded cells." );
+                }
+
+                //Set ratio for the sample
+                s->setNNNGraphRatio ( nnn_graph_ratio );
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                //Do not compute analysis
+                s->setNNNGraphRatio ( -1 );
+                s->setNNNGraphRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleSphereOfInfulenceGraphRatio ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test, const  Container <Node3DCartesianProjected  <T> *> *nl_projected,
+                const GraphM <T> &g_test, TAnalysisParameters::TAnalysisType & analysis_type, const bool print_exception )
+{
+        //Analyze sample using four Sphere of Influence graph ratio (neighbour matrix difference)
+        try
+        {
+                //Create Sphere of Influence graph fot the second dataset
+                GraphM <T> g_projected ( nl_projected->size() );
+                GraphAlgorithms::createSphereOfInfulenceGraph ( nl_projected, g_projected );
+
+                //Compute ratio
+                T sphere_of_influence_graph_ratio = 0, sum_v_test = 0, sum_v_proj = 0;
+
+                for ( unsigned int i = 0; i < nl_test->size(); i++ )
+                {
+                        for ( unsigned int j = 0; j < nl_test->size(); j++ )
+                        {
+                                if ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) != 0 )
+                                {
+                                        sphere_of_influence_graph_ratio +=	( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) * ( g_test.getW() ( i, j ) - g_projected.getW() ( i, j ) ) /
+                                                                                ( g_test.getW() ( i, j ) + g_projected.getW() ( i, j ) ) ;
+                                }
+
+                                //Compute sums
+                                sum_v_test += g_test.getV() ( i, j );
+                                sum_v_proj += g_projected.getV() ( i, j );
+                        }
+                }
+
+                //Throw exception
+                if ( ( sum_v_test == 0 ) || ( sum_v_proj == 0 ) )
+                {
+                        if ( sum_v_test == 0 ) analysis_type.a_sig = false;
+
+                        throw ErrorBadData ( "ErrorBadData: can not compute Sphere of influence graph analysis_type, ", "not enough bounded cells." );
+                }
+
+                //Set ratio for the sample
+                s->setSphereOfInfluenceGraphRatio ( sphere_of_influence_graph_ratio );
+
+        }
+
+        //Throw exception
+        catch ( Error & error )
+        {
+                s->setSphereOfInfluenceGraphRatio ( -1 );
+                s->setSphereOfInfluenceGraphRatioPosition ( -1 );
+        }
+}
+
+
+template <typename T>
+void CartAnalysis::analyzeSampleUsingVoronoiDiagramRatio ( Sample <T> *s, const Container <Node3DCartesian <T> *> *nl_test, const Container <Node3DCartesianProjected  <T> *> *nl_projected, const Container <Face <T> *> *faces_test,
+                const GraphM <T> &g_test_nnn_graph, TAnalysisParameters::TAnalysisType & analysis_type, const bool print_exception, std::ostream * output )
+{
+        //Analyze sample using Voronoi diagram ratios
+        try
+        {
+                //Are there enough merged faces ?
+                if ( faces_test->size() < MIN_UNBOUNDED_VORONOI_CELLS )
+                {
+                        //Disable all Voronoi diagram analysis
+                        analysis_type.a_nnng = analysis_type.a_vd_al = analysis_type.a_vd_tf = analysis_type.a_vd_tar = analysis_type.a_vd_id = false;
+
+                        //Stop analysis
+                        return;
+                }
+
+                //Voronoi diagram, data structures
+                Container <HalfEdge <T> *> hl_dt_reference, hl_vor_reference, hl_merge_reference;
+                Container <Node3DCartesian <T> *> nl_vor_reference, intersections_reference;
+                Container <VoronoiCell <T> *> vor_cells_list_reference;
+
+                //Create Voronoi diagram for the reference dataset
+                Voronoi2D::VD ( ( Container <Node3DCartesian <T> *> * ) nl_projected, &nl_vor_reference, &hl_dt_reference, &hl_vor_reference, &vor_cells_list_reference, AppropriateBoundedCells, TopologicApproach, 0, print_exception, output );
+                //DXFExport::exportVDToDXF ( "D:\\Tomas\\Cpp\\detectproj\\detectproj\\out\\vor_error_ref.dxf", &vor_cells_list_reference, 1 );
+
+                //Create NNN-graph analysis
+                if ( analysis_type.a_nnng )
+                {
+                        analyzeSampleNNNGraphRatio ( s, nl_test, nl_projected, g_test_nnn_graph, analysis_type, print_exception );
+                }
+
+                //Get total unbounded cells for the test dataset
+                unsigned int unbounded_pairs_total = 0;
+
+                //Process all Voronoi cells
+                T area_length_difference = 0, tangent_function_difference = 0, tar_difference = 0, inner_distance_difference = 0;
+
+                typename TItemsList <Node3DCartesian <T> *>::Type ::const_iterator i_points_test = nl_test->begin();
+                typename TItemsList <Node3DCartesianProjected <T> *>::Type ::const_iterator i_points_reference = nl_projected->begin();
+
+                for ( unsigned int index_merged_faces = 0; ( i_points_test != nl_test->end() ) && ( i_points_reference != nl_projected->end() ); i_points_test ++, i_points_reference ++ )
+                {
+                        //Get Voronoi faces
+                        VoronoiCell <T> *vor_cell_test = dynamic_cast < VoronoiCell <T> * > ( ( *i_points_test ) -> getFace() );
+                        VoronoiCell <T> *vor_cell_reference = dynamic_cast < VoronoiCell <T> * > ( ( *i_points_reference ) -> getFace() );
+
+                        //Merged test face exists, reference Voronoi cell exists and is bounded
+                        if ( ( vor_cell_test != NULL ) && ( vor_cell_test->getBounded() ) )
+                        {
+                                if ( ( vor_cell_reference != NULL ) && ( vor_cell_reference->getBounded() ) )
+                                {
+                                        //Merge Voronoi face
+                                        Face <T> * face_reference = NULL;
+
+                                        //Merge reference cell with adjacent cells
+                                        Voronoi2D::mergeVoronoiCellAndAdjacentCells ( vor_cell_reference, &face_reference, &intersections_reference, &hl_merge_reference );
+
+                                        //Increment counter
+                                        unbounded_pairs_total ++;
+
+                                        //Compute area/length ratio using X quadrat
+                                        if ( analysis_type.a_vd_al )
+                                        {
+                                                T face_perimeter_test = FacePerimeter::getFacePerimeter ( ( * faces_test ) [index_merged_faces] ), face_perimeter_reference = FacePerimeter::getFacePerimeter ( face_reference );
+                                                T face_area_test_norm = FaceArea::getFaceArea ( ( * faces_test ) [index_merged_faces] ) / ( face_perimeter_test * face_perimeter_test ), face_area_reference_norm = FaceArea::getFaceArea ( face_reference ) /
+                                                                        ( face_perimeter_reference * face_perimeter_reference );
+
+                                                area_length_difference += 100 * ( face_area_test_norm - face_area_reference_norm ) * ( face_area_test_norm - face_area_reference_norm ) / ( face_area_test_norm + face_area_reference_norm );
+                                        }
+
+                                        //Compute tangent function difference
+                                        if ( analysis_type.a_vd_tf ) tangent_function_difference +=  TangentFunction::compare2FacesUsingTangentFunction ( ( * faces_test ) [index_merged_faces] , face_reference, RotationDependent, ScaleDependent );
+
+                                        //Compute tar difference
+                                        if ( analysis_type.a_vd_tar ) tar_difference +=  TARCriterion::compare2FacesUsingTARCriterion ( ( * faces_test ) [index_merged_faces] , face_reference );
+
+                                        //Compute inner distance difference
+                                        if ( analysis_type.a_vd_id ) inner_distance_difference +=  InnerDistance::compare2FacesUsingInnerDistances ( ( * faces_test ) [index_merged_faces] , face_reference );
+
+                                        //Delete merged face
+                                        if ( face_reference != NULL ) delete face_reference;
+                                }
+
+                                index_merged_faces ++;
+                        }
+                }
+
+                //No corresponding pair of Voronoi cells
+                if ( unbounded_pairs_total < MIN_UNBOUNDED_VORONOI_CELLS )
+                {
+                        throw ErrorBadData ( "ErrorBadData: not enough unbounded pairs, ", "set values" );
+                }
+
+                //Set results for cell by cell ratia
+                if ( analysis_type.a_vd_al ) s->setVoronoiCellAreaLengthRatio ( sqrt ( area_length_difference / unbounded_pairs_total ) );
+
+                if ( analysis_type.a_vd_tf ) s->setVoronoiCellTangentFunctionRatio ( sqrt ( tangent_function_difference / unbounded_pairs_total ) );
+
+                if ( analysis_type.a_vd_tar ) s->setVoronoiCellTARRatio ( sqrt ( tar_difference / unbounded_pairs_total ) );
+
+                if ( analysis_type.a_vd_id ) s->setVoronoiCellInnerDistanceRatio ( sqrt ( inner_distance_difference / unbounded_pairs_total ) );
+        }
+
+        //Error while sample processed or invalid configuration for cell by cell ratia
+        catch ( Error & error )
+        {
+                //Do not compute other analysis
+                if ( analysis_type.a_vd_al )
+                {       s->setVoronoiCellAreaLengthRatio ( -1 );
+                        s->setVoronoiCellAreaLengthRatioPosition ( -1 );
+                }
+
+                if ( analysis_type.a_vd_tf )
+                {
+                        s->setVoronoiCellTangentFunctionRatio ( -1 );
+                        s->setVoronoiCellTangentFunctionRatioPosition ( -1 );
+                }
+
+                if ( analysis_type.a_vd_tar )
+                {
+                        s->setVoronoiCellTARRatio ( -1 );
+                        s->setVoronoiCellTARRatioPosition ( -1 );
+                }
+
+                if ( analysis_type.a_vd_id )
+                {
+                        s->setVoronoiCellInnerDistanceRatio ( -1 );
+                        s->setVoronoiCellInnerDistanceRatioPosition ( -1 );
+                }
+        }
+}
+
+
+
+#endif
