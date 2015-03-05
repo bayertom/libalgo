@@ -21,15 +21,16 @@
 #ifndef ProjectionToProj4_HPP
 #define ProjectionToProj4_HPP
 
+#include <typeinfo>
 
 #include "libalgo/source/structures/projection/Projection.h"
 
 
 template <typename T>
-string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
+std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
 {
 	//Convert projection definition to Proj.4 string
-	string proj4_string = "";
+	std::string proj4_string = "";
 	TProjNamesMap proj_names_list;
 
 	//A projection was given
@@ -48,13 +49,13 @@ string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
 		if (i_proj_names_list != proj_names_list.end())
 		{
 			//Get its Proj.4 definition
-			string proj4_name = i_proj_names_list->second;
+			std::string proj4_name = i_proj_names_list->second;
 
 			//Add commnand to the string
 			proj4_string += "proj";
 
 			//Is the projection supported by Proj.4
-			const string not_supported = "not_supported";
+			const std::string not_supported = "not_supported";
 			if (proj4_name.compare(not_supported) != 0)
 			{
 				//Get projection properties
@@ -144,5 +145,6 @@ string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
 
 	return proj4_string;
 }
+
 
 #endif

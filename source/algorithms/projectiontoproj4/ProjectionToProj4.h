@@ -23,8 +23,9 @@
 
 #include <map>
 #include <cstring>
+#include <string>
+#include <sstream> 
 
-using namespace std;
 
 //Extern declarations
 extern const char * proj4Names[];
@@ -149,7 +150,7 @@ struct compProjNamesMap
 
 
 //Map of projection names <detectproj, proj.4>
-typedef map <string, string, compProjNamesMap> TProjNamesMap;
+typedef std::map <std::string, std::string, compProjNamesMap> TProjNamesMap;
 
 
 //Connvert Projection <T> to Proj.4 output string
@@ -158,11 +159,22 @@ class ProjectionToProj4
 
 	public:
 		template <typename T>
-		static string ProjectionToProj4String (const Projection <T> *proj);
+		static std::string ProjectionToProj4String (const Projection <T> *proj);
 
 	private:
 		static void init( TProjNamesMap &proj_names_list );
 };
+
+
+template <typename T>
+std::string to_string(T const & val) 
+{
+    //Convert number to string, supported in C++ 2011
+    stringstream s_string;
+    s_string << val;
+    return s_string.str();
+}
+
 
 #include "ProjectionToProj4.hpp"
 
