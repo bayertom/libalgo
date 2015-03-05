@@ -230,15 +230,15 @@ const char * detectprojNames[] =
 
 void ProjectionToProj4::init( TProjNamesMap &proj_names_list )
 {
-	//Initialize map of projections <detectproj, proj4>
-	
+	//Initialize map of corresponding projections <detectproj, proj4>
 	const unsigned int n1 = (sizeof(detectprojNames) / sizeof(*detectprojNames));
 	const unsigned int n2 = (sizeof(proj4Names) / sizeof(*proj4Names));
 
 	//Bad detectproj->Proj.4 conversion rules definition
 	if (n1 != n2)
-		throw ErrorBadData("ErrorBadData: amount of projections.for the conversion between detectproj and Proj.4 is different.", "Conversion to Proj.4 cancelled...");
+		throw ErrorBadData("ErrorBadData: different amount of projections for the conversion between detectproj and Proj.4. ", "Conversion to Proj.4 cancelled...");
 
+	//Assign corresponding projections
 	proj_names_list[detectprojNames[p_aea]] = proj4Names[p_aea];
 	proj_names_list[detectprojNames[p_aeqd]] = proj4Names[p_aeqd];
 	proj_names_list[detectprojNames[p_aitoff]] = proj4Names[p_aitoff];

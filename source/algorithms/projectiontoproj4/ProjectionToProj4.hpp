@@ -30,7 +30,8 @@ template <typename T>
 std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
 {
 	//Convert projection definition to Proj.4 string
-	std::string proj4_string = "";
+	//Return empty string, if projection is not supported by Proj.4
+	std::string proj4_string = ""; 
 	TProjNamesMap proj_names_list;
 
 	//A projection was given

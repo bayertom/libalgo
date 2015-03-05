@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this library. If not, see <http://www.gnu.org/licenses/>.
 
+
 #ifndef ProjectionToProj4_H
 #define ProjectionToProj4_H
 
@@ -30,6 +31,7 @@
 //Extern declarations
 extern const char * proj4Names[];
 extern const char * detectprojNames[];
+
 
 //Forward declarations
 template <typename T>
@@ -169,7 +171,7 @@ class ProjectionToProj4
 template <typename T>
 std::string to_string(T const & val) 
 {
-    //Convert number to string, supported in C++ 2011
+    //Convert number to string (full support to_string() in C++ X11)
     stringstream s_string;
     s_string << val;
     return s_string.str();
