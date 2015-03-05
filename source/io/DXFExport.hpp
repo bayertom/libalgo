@@ -213,7 +213,7 @@ void DXFExport::exportFacesToDXF ( const char * file_name, const Container <Face
 
 
 template <typename Point, TDestructable destructable>
-void DXFExport::exportPointsToDXF ( const char * file_name, const Container <Point *, destructable> &points )
+void DXFExport::exportPointsToDXF(const char * file_name, const Container <Point *, destructable> &points, const typename Point::Type font_height)
 {
         //Export points to DXF
         FILE * file = NULL;
@@ -232,7 +232,7 @@ void DXFExport::exportPointsToDXF ( const char * file_name, const Container <Poi
                         createLayerSection ( file, "Points", 3 );
 
                         //Create layer for point labels
-                        createLayerSection ( file, "Point labels", 3 );
+                        createLayerSection ( file, "Point_labels", 3 );
 
                         //End table header
                         endTableSection ( file );
@@ -241,25 +241,24 @@ void DXFExport::exportPointsToDXF ( const char * file_name, const Container <Poi
                         createEntitySection ( file );
 
                         //Process all points
-                        for ( unsigned int i = 0; i < points->size(); i++ )
+                        for ( unsigned int i = 0; i < points.size(); i++ )
                         {
                                 //Create point
-                                createPoint ( file, "Points", points [i]->getX(), ( *points ) [i]->getY(), points [i]->getZ() );
+                                createPoint ( file, "Points", points [i]->getX(), points [i]->getY(), points [i]->getZ() );
 
                                 //Create text label for each point
-                                if ( ( * points ) [i]->getPointLabel() != NULL )
+                                if ( points [i]->getPointLabel() != NULL )
                                 {
-                                        createText ( file, "Point labels", points [i]->getPointLabel(), points [i]->getX() + 2, points [i]->getY() - 2, points [i]->getZ(), ( typename Point::Type ) 0, ( typename Point::Type ) 2 );
+					createText(file, "Point_labels", points[i]->getPointLabel(), points[i]->getX() + 0.5 * font_height, points[i]->getY() - 0.5 * font_height, points[i]->getZ(), (typename Point::Type) 0, (typename Point::Type) font_height);
                                 }
 
                                 else
                                 {
                                         char point_id_text [255];
-                                        sprintf ( point_id_text, "%d", ( * points ) [i]->getPointID() );
-                                        createText ( file, "Point labels", point_id_text, points [i]->getX() + 2, points [i]->getY() - 2, points [i]->getZ(), ( typename Point::Type ) 0, ( typename Point::Type ) 2 );
+                                        sprintf ( point_id_text, "%d", points [i]->getPointID() );
+					createText(file, "Point_labels", point_id_text, points[i]->getX() + 0.5 * font_height, points[i]->getY() - 0.5 * font_height, points[i]->getZ(), (typename Point::Type) 0, (typename Point::Type) font_height);
                                 }
                         }
-
 
                         //End header section
                         endHeaderSection ( file );

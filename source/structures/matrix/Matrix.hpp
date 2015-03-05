@@ -113,6 +113,18 @@ Matrix <T> Matrix <T> :: operator + ( const Matrix <U> &M ) const
 
 }
 
+//Matrix operators + : Matrix + scalar
+template <typename T>
+template <typename U>
+Matrix <T> Matrix <T> :: operator + (const U val) const
+{
+	const unsigned int m = this->rows_count, n = this->columns_count;
+	const Matrix <T> A(m, n, 1, 1);
+
+	return Matrix <T>(*this).operator += (A * val);
+
+}
+
 
 //Matrix operators - : Matrix - Matrix
 template <typename T>
@@ -120,6 +132,18 @@ template <typename U>
 Matrix<T> Matrix <T> :: operator - ( const Matrix < U > &M ) const
 {
         return Matrix < T > ( *this ).operator -= ( M );
+}
+
+
+//Matrix operators - : Matrix - scalar
+template <typename T>
+template <typename U>
+Matrix <T> Matrix <T> :: operator - (const U val) const
+{
+	const unsigned int m = this->rows_count, n = this->columns_count;
+	const Matrix <T> A(m, n, 1, 1);
+
+	return Matrix <T>(*this).operator -= (A * val);
 }
 
 
@@ -316,6 +340,7 @@ Matrix <T> Matrix <T> ::operator % ( const Matrix <U> &M ) const
 
         return C;
 }
+
 
 
 //Get row / col

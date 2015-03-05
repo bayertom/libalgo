@@ -72,15 +72,15 @@ class FAnalyzeProjV
                                 //Correct R, lat0, lon0
                                 if ( X ( 0, 0 ) < 0.0 ) X ( 0, 0 ) = fabs ( X ( 0, 0 ) );
 
-                                //Subtract period
-                                if ( fabs ( X ( 3, 0 ) ) > MAX_LAT ) X ( 3, 0 ) = fmod ( X ( 3, 0 ), 90 );
+				//Set lat0 inside the interval
+				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
+				//Set lon0
                                 if ( fabs ( X ( 4, 0 ) ) > MAX_LON ) X ( 4, 0 ) = fmod ( X ( 4, 0 ), 180 );
 
                                 //Set to interval
-                                if ( X ( 3, 0 ) < lat0_min ) X ( 3, 0 ) = lat0_min;
-
-                                if ( X ( 3, 0 ) > lat0_max ) X ( 3, 0 ) = lat0_max;
+                                //if ( X ( 3, 0 ) < lat0_min ) X ( 3, 0 ) = lat0_min;
+                                //if ( X ( 3, 0 ) > lat0_max ) X ( 3, 0 ) = lat0_max;
                         }
 
                         //Transverse aspect: lonp, lat0
@@ -91,13 +91,15 @@ class FAnalyzeProjV
                                 if ( X ( 0, 0 ) < 0.0 ) X ( 0, 0 ) = fabs ( X ( 0, 0 ) );
 
                                 //Subtract period
-                                if ( fabs ( X ( 2, 0 ) ) > MAX_LON ) X ( 2, 0 ) = fmod ( X ( 2, 0 ), 180 );
+				if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
+				else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
 
-                                if ( fabs ( X ( 3, 0 ) ) > MAX_LAT ) X ( 3, 0 ) = fmod ( X ( 3, 0 ), 90 );
+				//Set lat0 inside the interval
+				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
-                                //Set to interval
-                                if ( X ( 3, 0 ) < lat0_min || X ( 3, 0 ) > lat0_max ) X ( 3, 0 ) = 0.5 * ( lat0_min + lat0_max );
-                        }
+				//Set lon0
+				X(4, 0) = 0;
+			}
 
                         //Oblique aspect: latp, lonp, lat0
                         else if ( aspect == ObliqueAspect )
@@ -106,46 +108,26 @@ class FAnalyzeProjV
 				if (X(0, 0) < 0.0) X(0, 0) = fabs(X(0, 0));
 
 				//Subtract period
-				if (fabs(X(1, 0)) > MAX_LAT)  X(1, 0) = fmod(X(1, 0), 90);
+				if (X(1, 0) < MIN_LAT)  X(1, 0) = MIN_LAT - fmod(X(1, 0), MIN_LAT);
+				else if (X(1, 0) > MAX_LAT)  X(1, 0) = MAX_LAT - fmod(X(1, 0), MAX_LAT);
 
-				if (fabs(X(2, 0)) > MAX_LON)  X(2, 0) = fmod(X(2, 0), 180);
-
-				if (fabs(X(3, 0)) > MAX_LAT)  X(3, 0) = fmod(X(3, 0), 90);
+				if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
+				else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
 
 				//Set lat0 inside the interval
 				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
 				//Set lonp to zero, if latp = 90
-				if (fabs(X(1, 0) - MAX_LAT) < 1.0)  X(2, 0) = 0.0;
-
-				/*
-                                //Correct R, latp, lonp, lat0
-                                if ( X ( 0, 0 ) < 0.0 ) X ( 0, 0 ) = fabs ( X ( 0, 0 ) );
-
-                                //Subtract period
-				//Reflect to the search space
-				if (X(1, 0) > MAX_LAT)  X(1, 0) = 2 * MAX_LAT - X(1, 0);
-				if (X(2, 0) > MAX_LON)  X(2, 0) = 2 * MAX_LON - X(2, 0);
-				if (X(1, 0) < -1.0 *  MAX_LAT)  X(1, 0) = -2 * MAX_LAT - X(1, 0);
-				if (X(2, 0) < -1.0 * MAX_LON)   X(2, 0) = -2 * MAX_LON - X(2, 0);
-
-                                //Set lat0 inside the interval
-                                //if ( X ( 3, 0 ) < lat0_min || X ( 3, 0 ) > lat0_max ) X ( 3, 0 ) = 0.5 * ( lat0_min + lat0_max );
-				if (X(3, 0) > lat0_max)  X(3, 0) = 2 * lat0_max - X(3, 0);
-				if (X(3, 0) < lat0_min)  X(3, 0) = 2 * lat0_min - X(3, 0);
-				
-				//Set lon0
-				if (fabs(X(4, 0)) > MAX_LON)  X(4, 0) = fmod(X(1, 0), 180);
-				X(4, 0) = 0;
-
-				//Set lonp to zero, if latp = 90
-				if (fabs(X(1, 0) - MAX_LAT) < 1.0)
+				if (fabs(X(1, 0) - MAX_LAT) < 3.0)
 				{
-					X(1, 0) = 90.0;
-					X(2, 0) = 0.0;
+					//X(1, 0) = 90.0
+					//X(2, 0) = 0.0;
 				}
 
-				*/
+				//Set lon0
+				X(4, 0) = 0;
+
+				
                         }
 
                         //Set properties to the projection: ommit estimated radius, additional constants dx, dy
@@ -217,30 +199,68 @@ class FAnalyzeProjV
                         //Compute new coordinates
                         for ( unsigned int i = 0; i < m; i++ )
                         {
-                                T x_new, y_new;
+                                T x_new = 0.0, y_new = 0.0;
 
-                                try
-                                {
-                                        //Get type of the direction
-                                        TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+				//Get type of the direction
+				TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
 
-                                        //Reduce lon
-                                        const T lon_red = CartTransformation::redLon0 ( pl_reference [i]->getLon(), X ( 4, 0 ) );
+				//Reduce lon
+				const T lon_red = CartTransformation::redLon0(pl_reference[i]->getLon(), X(4, 0));
 
-                                        //Convert geographic point to oblique position: use a normal direction of converted longitude
-                                        const T lat_trans = CartTransformation::latToLatTrans ( pl_reference [i]->getLat(), lon_red, X ( 1, 0 ),  X ( 2, 0 ) );
-                                        const T lon_trans = CartTransformation::lonToLonTrans ( pl_reference [i]->getLat(), lon_red, lat_trans, X ( 1, 0 ),  X ( 2, 0 ), trans_lon_dir ) ;
+				try
+				{
+					//Convert geographic point to oblique aspect
+					const T lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0));
+					const T lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0), trans_lon_dir);
 
-                                        //Compute new coordinates: add shifts
-                                        Y ( i, 0 ) = ArithmeticParser::parseEq ( proj->getXEquat(), lat_trans, lon_trans, X ( 0, 0 ), proj->getA(), proj->getB(), X ( 7, 0 ), X ( 3, 0 ), proj->getLat1(), proj->getLat2(), false )  + X(5, 0);
-                                        Y ( i + m, 0 ) = ArithmeticParser::parseEq ( proj->getYEquat(), lat_trans, lon_trans, X ( 0, 0 ), proj->getA(), proj->getB(), X ( 7, 0 ), X ( 3, 0 ), proj->getLat1(), proj->getLat2(), false ) + X(6, 0);
-                                }
+					for (unsigned int j = 0; j < 3; j++)
+					{
+						try
+						{
+							//Compute new coordinates: add shifts
+
+							Y(i, 0) = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+							Y(i + m, 0) = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(6, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+
+							//Y(i, 0) = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(5, 0);
+							//Y(i + m, 0) = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(6, 0);
+						}
+
+						//2 attempt to avoid the singularity
+						catch (Error &error)
+						{
+							//Move in latitude direction
+							if (j == 0)
+							{
+								if (lat_trans == MAX_LAT) 
+									lat_trans -= GRATICULE_ANGLE_SHIFT;
+								else 
+									lat_trans += GRATICULE_ANGLE_SHIFT;
+							}
+
+							//Move in longitude direction
+							else if (j == 1)
+							{
+								if (lon_trans == MAX_LON) 
+									lon_trans -= GRATICULE_ANGLE_SHIFT;
+								else 
+									lon_trans += GRATICULE_ANGLE_SHIFT;
+							}
+
+							//Neither first nor the second shhifts do not bring improvement
+							else if (j == 2)
+							{
+								throw;
+							}
+						}
+					}
+				}
 
                                 //Throw exception: bad conversion, a singular point
                                 catch ( Error & error )
                                 {
-                                        x_new = 1.0;
-                                        y_new = 0.0;
+					//Disable point from analysis: set weight to zero
+					W(i, i) = 0; W(i + m, i + m) = 0;
                                 }
 
                                 //Compute coordinate differences (residuals): estimated - input

@@ -38,6 +38,8 @@ class FProjEquationDerivative6Var
         private:
                 //Map projection parameters
                 const char * equation;
+		const char * ftheta_equat;
+		const char * theta0_equat;
                 const T lat;
                 const T lon;
                 const T a;
@@ -49,8 +51,8 @@ class FProjEquationDerivative6Var
 
         public:
 
-                FProjEquationDerivative6Var ( const char * equation_, const T lat_, const T lon_, const T a_, const T b_, const T lat1_, const T lat2_ , const TTransformedLongtitudeDirection trans_lon_dir_ ) :
-			equation ( equation_ ), lat ( lat_ ), lon ( lon_ ), a ( a_ ), b ( b_ ), lat1 ( lat1_ ), lat2 ( lat2_ ), trans_lon_dir ( trans_lon_dir_ ) {}
+		FProjEquationDerivative6Var(const char * equation_, const char * ftheta_equat_, const char * theta0_equat_, const T lat_, const T lon_, const T a_, const T b_, const T lat1_, const T lat2_, const TTransformedLongtitudeDirection trans_lon_dir_) :
+			equation(equation_), ftheta_equat(ftheta_equat_), theta0_equat(theta0_equat_), lat(lat_), lon(lon_), a(a_), b(b_), lat1(lat1_), lat2(lat2_), trans_lon_dir(trans_lon_dir_) {}
 
                 T operator () ( const Matrix <T> &arg )
                 {
@@ -59,11 +61,13 @@ class FProjEquationDerivative6Var
 
                         //Convert ( lat, lon ) -> ( lat, lon)_trans
                         const T lat_trans = CartTransformation::latToLatTrans ( lat, lon_red, arg ( 0, 1 ), arg ( 0, 2 ) );
-                        const T lon_trans = CartTransformation::lonToLonTrans ( lat, lon_red, lat_trans, arg ( 0, 1 ), arg ( 0, 2 ), trans_lon_dir );
+                        const T lon_trans = CartTransformation::lonToLonTrans ( lat, lon_red, arg ( 0, 1 ), arg ( 0, 2 ), trans_lon_dir );
 
                         //Compute partial derivative of the map projection equation
-                        T res =  ArithmeticParser::parseEq ( equation, lat_trans, lon_trans, arg ( 0, 0 ), a, b, arg ( 0, 5 ), arg ( 0, 3 ), lat1, lat2, false );
-                        return res;
+			T res = CartTransformation::latLonToCartesian(equation, ftheta_equat, theta0_equat, lat_trans, lon_trans, arg(0, 0), a, b, 0.0, arg(0, 5), arg(0, 3), arg(0, 3), arg(0, 5), false);
+                        //T res =  ArithmeticParser::parseEq ( equation, lat_trans, lon_trans, arg ( 0, 0 ), a, b, arg ( 0, 5 ), arg ( 0, 3 ), lat1, lat2, false );
+                        
+			return res;
                 }
 
 };

@@ -26,7 +26,27 @@
 
 #include "libalgo/source/algorithms/transformation/Transformation2D.h"
 
-//Forward declarations
+//Scheme for M-estimators
+typedef enum
+{
+	ShiftsScheme = 0, 
+	ScaleScheme,
+	ScaleShiftsScheme, 
+	SimilarityScheme,
+} TMEstimatorsScheme;
+
+
+//Weight function for M-estimators
+typedef enum
+{
+	HuberFunction = 0,
+	AndrewFunction,
+	TukeyFunction,
+	YangFunction,
+	DanishFunction,
+	DanishFunction2,
+} TMEstimatorsWeightFunction;
+
 
 //Several equations related to 2D transformation
 class Outliers
@@ -36,13 +56,16 @@ class Outliers
                 static void findOutliersLTS ( const Container <Point1 *> &global_points_source, const Container <Point2 *> &local_points_source, Container <Point1 *> &global_points_dest,
                                 Container <Point2 *> &local_points_dest, TKey & min_key,  typename TDevIndexPairs <typename Point1::Type>::Type & min_pairs, const typename Point1::Type perc_ratio = 0.8 );
 
+		template <typename T>
+		static void findOutliersME(const Matrix <T> &P, const Matrix <T> &Q, const T k, const T tol, const TMEstimatorsScheme me_scheme, TMEstimatorsWeightFunction me_weight_function, const unsigned int max_iter, Matrix <T> &W, Matrix <unsigned int> &I, Matrix <T> &Eps, T &f_init, T &f, unsigned int &iter);
+
                 template <typename Point1, typename Point2, typename TKey>
                 static void findOutliersIRLS ( const Container <Point1 *> &global_points_source, const Container <Point2 *> &local_points_source,
                                 Container <Point1 *> &global_points_dest, Container <Point2 *> &local_points_dest,  TKey & min_key, typename TDevIndexPairs <typename Point1::Type>::Type & min_pairs );
 
-		template <typename Point1, typename Point2, typename FunctionJ>
-                static void findOutliersME ( const Container <Point1 *> &global_points_source, const Container <Point2 *> &local_points_source,
-                                Container <Point1 *> &global_points_dest, Container <Point2 *> &local_points_dest, Matrix <typename Point1::Type> &X, FunctionJ function_j, typename TDevIndexPairs <typename Point1::Type>::Type & min_pairs, const unsigned int MAX_ITER );
+		template <typename Point1, typename Point2>
+		static void findOutliersME(const Container <Point1 *> &global_points_source, const Container <Point2 *> &local_points_source, Container <Point1 *> &global_points_dest, Container <Point2 *> &local_points_dest, const typename Point1::Type k, const typename Point1::Type tol,
+			const TMEstimatorsScheme me_scheme, TMEstimatorsWeightFunction me_weight_function, const unsigned int max_iter, typename TDevIndexPairs <typename Point1::Type>::Type & min_pairs, typename Point1::Type &f_init, typename Point1::Type &f, unsigned int &iter);
 
 
 	private:

@@ -29,36 +29,45 @@
 template <typename T>
 class ProjectionMiscellaneous : virtual public Projection <T>
 {
+	protected:
+		Point3DGeographic <T> cart_pole;
+		TTransformedLongtitudeDirection lon_dir;
 
         public:
-                ProjectionMiscellaneous() : Projection <T> () {}
-                ProjectionMiscellaneous ( const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_,  const char * projection_name_ ) :
-                        Projection <T> ( R_, lon0_, dx_, dy_, c ( c_ ), x_equat_, y_equat_,  projection_name_ ) {}
+		ProjectionMiscellaneous() : Projection <T>(), cart_pole(MAX_LAT, 0.0), lon_dir(NormalDirection2) {}
+		ProjectionMiscellaneous(const T R_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_family_, const char * projection_name_) :
+			Projection <T>(R_, lon0_, dx_, dy_, c(c_), x_equat_, y_equat_, projection_family_, projection_name_), cart_pole(latp_, lonp_), lon_dir(lon_dir_)  {}
                 virtual ~ProjectionMiscellaneous() {}
 
         public:
 
-                virtual Point3DGeographic <T> getCartPole() const {return Point3DGeographic <T> ( MAX_LAT, 0.0 );}
+		virtual Point3DGeographic <T> getCartPole() const { return cart_pole; }
                 virtual T getLat0() const {return 0.0;}
                 virtual T getLat1() const {return 0.0;}
                 virtual T getLat2() const {return 0.0;}
                 virtual T getA() const {return this->R;}
                 virtual T getB() const {return this->R;}
 
-                virtual TMinMax <T> getLatPInterval () const {return TMinMax <T> ( MAX_LAT, MAX_LAT );}
-                virtual TMinMax <T> getLonPInterval () const {return TMinMax <T> ( 0.0, 0.0 );}
+                //virtual TMinMax <T> getLatPInterval () const {return TMinMax <T> ( MAX_LAT, MAX_LAT );}
+                //virtual TMinMax <T> getLonPInterval () const {return TMinMax <T> ( 0.0, 0.0 );}
+		virtual TMinMax <T> getLatPInterval() const { return TMinMax <T>(MIN_LAT, MAX_LAT); }
+		virtual TMinMax <T> getLonPInterval() const { return TMinMax <T>(MIN_LON, MAX_LON); }
                 virtual TMinMax <T> getLat0Interval () const {return TMinMax <T> ( 0.0, MAX_LAT0 );}
                 virtual TMinMax <T> getLatPIntervalH ( const TMinMax <T> &lat ) const {return getLatPInterval();}
                 virtual TMinMax <T> getLonPIntervalH ( const TMinMax <T> &lon ) const {return getLonPInterval();}
-                virtual TTransformedLongtitudeDirection getLonDir () const { return ( TTransformedLongtitudeDirection ) 4;}
+		virtual TTransformedLongtitudeDirection getLonDir() const { return lon_dir; }
+		virtual const char * getFThetaEquat() const { return NULL; }
+		virtual const char * getTheta0Equat() const { return NULL; }
 
-                virtual void setCartPole ( const Point3DGeographic <T> & pole ) {}
+		virtual void setCartPole(const Point3DGeographic <T> & cart_pole_) { cart_pole = cart_pole_; }
                 virtual void setLat0 ( const T lat0 ) {}
                 virtual void setLat1 ( const T lat1 ) {}
                 virtual void setLat2 ( const T lat2 ) {}
                 virtual void setA ( const T a ) {}
                 virtual void setB ( const T b ) {}
-                virtual void setLonDir ( const TTransformedLongtitudeDirection lon_dir_ ) {}
+		virtual void setLonDir(const TTransformedLongtitudeDirection lon_dir_) { lon_dir = lon_dir_; }
+		virtual void setFThetaEquat(const char * ftheta_equat_) {};
+		virtual void setTheta0Equat(const char * theta0_equat_) {};
 
                 virtual void getShortCut ( char * shortcut ) const { strcpy ( shortcut, "Misc" ); }
                 virtual ProjectionMiscellaneous <T> *clone() const {return new ProjectionMiscellaneous <T> ( *this );}

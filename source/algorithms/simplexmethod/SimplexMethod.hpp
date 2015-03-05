@@ -29,7 +29,7 @@ using namespace MatrixOperations;
 
 
 template <typename T, typename Function>
-T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, unsigned short &iterations, const T max_error, const unsigned short max_iterations, std::ostream * output )
+T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, unsigned int &iterations, const T max_error, const unsigned int max_iterations, std::ostream * output )
 {
         //Compute Nelder-Mead method for a function
         //Algorithm based on Lagarias, Reeds, Wright, 1998, SIAM
@@ -43,8 +43,9 @@ T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const M
 
         //Create matrices for the simplex operations
         Matrix <unsigned int> IX ( m, 1 );
-        Matrix <T> VV ( m, 1 ), VR ( 1, 1 ), VS ( 1, 1 ), VE ( 1, 1 ), VCO ( 1, 1 ), VCI ( 1, 1 ), YR ( 1, 1 ), YS ( 1, 1 ),
-               YE ( 1, 1 ), YCO ( 1, 1 ), YCI ( 1, 1 ), WR ( m1, m1 ), WS ( m1, m1 ), WE ( m1, m1 ), WCO ( m1, m1 ), WCI ( m1, m1 );
+        Matrix <T> VV ( m, 1 ), VR ( 1, 1 ), VS ( 1, 1 ), VE ( 1, 1 ), VCO ( 1, 1 ), VCI ( 1, 1 ), YR ( m1, 1 ), YS ( m1, 1 ),
+		YE(m1, 1), YCO(m1, 1), YCI(m1, 1), WR(m1, m1), WS(m1, m1), WE(m1, m1), WCO(m1, m1), WCI(m1, m1);
+	Matrix <T> YBEST(m1, 1), VBEST(1, 1), WBEST(m1, m1);
 
         //Set iterations to 0
         iterations = 0;
@@ -178,7 +179,6 @@ T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const M
                 //Perform perturbation
                 //perturbation ( A, B, m, XX );
 
-
                 //Sort residuals in ascending order
                 sort ( VV, IX );
 
@@ -193,15 +193,20 @@ T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const M
                 iterations ++;
 
                 //std::cout << iterations << " ";
-                XX.print();
+                //XX.print();
 
 		//VV.print();
                 //std::cout << iterations << " ";
+
+		Matrix <T> XBEST = XX(0, 0, 0, n - 1);
+		//function(XBEST, YBEST, VBEST, W, false);  //OK, EQDC
+		function(XX, YR, VV, W, false);  //OK, MERC
 
                 if ( iterations % 100 == 0 )
                 {
                         std::cout.flush();
                         std::cout << ".";
+			//XX.print();
                 }
         }
         while ( ( iterations < max_iterations ) && ( fabs ( VV ( 0, 0 ) - VV ( n, 0 ) ) > max_error ) );
@@ -223,7 +228,7 @@ T SimplexMethod::NelderMead ( Function function, const Matrix <T> &XMIN, const M
         //*output << "Iterations: " << iterations << '\n';
 
         //Return squares of residuals
-        return norm ( trans ( V ) * W * V ) ;
+        return (T) norm ( trans ( V ) * W * V ) ;
 }
 
 
@@ -247,7 +252,9 @@ Matrix <T> SimplexMethod::createRandSimplex ( const Matrix <T> &XMIN, const Matr
         {
                 for ( unsigned int j = 0; j < dim; j++ )
                 {
-                        const T rand_num = XMIN ( 0, j ) +  DX ( 0, j ) * rand() / ( RAND_MAX + 1.0 );
+                        const T rand_num = XMIN ( 0, j ) + DX ( 0, j ) * rand() / ( RAND_MAX + 1.0 );
+			if (rand_num < -1000)
+				double ccc = -6;
                         XX ( i, j ) = rand_num;
                 }
         }
@@ -264,7 +271,7 @@ void SimplexMethod::shrink ( Function function, Matrix <T> &W, Matrix <T> &XX, c
         const unsigned int m = XX.rows(), n = XX.cols(), m1 = W.rows();
 
         //Create matrices
-        Matrix <T> V1 ( 1, 1 ), VSH ( 1, 1 ), Y1 ( 1, 1 ), YSH ( 1, 1 ), W1 ( m1, m1 ), WSH ( m1, m1 );
+        Matrix <T> V1 ( 1, 1 ), VSH ( 1, 1 ), Y1 ( m1, 1 ), YSH ( m1, 1 ), W1 ( m1, m1 ), WSH ( m1, m1 );
 
         //Get first point of the simplex (best)
         Matrix <T> X1 = XX ( 0, 0, 0, n - 1 );
@@ -296,21 +303,32 @@ void SimplexMethod::shrink ( Function function, Matrix <T> &W, Matrix <T> &XX, c
 template <typename T>
 void SimplexMethod::reflection ( const Matrix <T> &XMIN, const Matrix <T> &XMAX, const unsigned int dim, Matrix <T> &X )
 {
-
         //Set elements of the simplex into the search space represented by the n-dimensional cuboid
         for ( unsigned int j = 0; j < dim; j++ )
         {
 		while ((X(0, j) < XMIN(0, j)) || (X(0, j) > XMAX(0, j)))
                 {
-			if (XMIN(0, j) == XMAX(0, j))
+			//XMIN == XMAX
+			if (XMAX(0, j) - XMIN(0, j) < MAX_FLOAT_OPER_ERROR )
+			{
 				X(0, j) = XMIN(0, j);
+				break;
+			}
+
+			//Left form the lower bound
 			else if (X(0, j) > XMAX(0, j))
+			{
 				X(0, j) = 2 * XMAX(0, j) - X(0, j);
+			}
+
+			//Right to the upper bound
 			else if (X(0, j) < XMIN(0, j))
+			{
 				X(0, j) = 2 * XMIN(0, j) - X(0, j);
+			}
                 }
         }
-
+	
 }
 
 #endif

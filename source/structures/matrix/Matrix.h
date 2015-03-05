@@ -57,7 +57,9 @@ class Matrix
                 ~Matrix();
 
         public:
-                //Get rows and columns count
+                
+	
+		//Get rows and columns count
                 unsigned int rows() const {return rows_count;}
                 unsigned int cols() const {return columns_count;}
 
@@ -92,9 +94,17 @@ class Matrix
                 template <typename U>
                 Matrix <T> operator + ( const Matrix <U> &M ) const;
 
+		//Matrix operators + : Matrix + scalar
+		template <typename U>
+		Matrix <T> operator + (const U val) const;
+
                 //Matrix operators - : Matrix - Matrix
                 template <typename U>
                 Matrix <T> operator - ( const Matrix <U> &M ) const;
+
+		//Matrix operators + : Matrix - scalar
+		template <typename U>
+		Matrix <T> operator - (const U val) const;
 
                 //Matrix operators += : Matrix += Matrix
                 template <typename U>
@@ -144,12 +154,13 @@ class Matrix
                 friend void operator << ( std::ostream & output, const Matrix <T> &m ) { m.print ( &output ); }
 };
 
-//Multiply matrix with a sclar, non-member function
-template <typename T, typename U>
-Matrix<T> operator * (const T &val, const Matrix <U> & M) 
+//Multiply matrix with a scalar, non-member function
+template <typename T>
+Matrix<T> operator * (const T &val, const Matrix <T> & M) 
 {
-	return M * val;
+    return M * val;
 }
+
 
 #include "Matrix.hpp"
 

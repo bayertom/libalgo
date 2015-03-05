@@ -69,8 +69,16 @@ class HelmertTransformation2D
                                               TTransformationKeyHelmert2D <typename Point1::Type> &key_helmert );
 
                 template <typename Point1, typename Point2, typename Point3, TDestructable destructable, TDestructable destructable2, TDestructable destructable3>
-                void static transform ( const Container <Point1 *, destructable> &global_points, const Container <Point2 *, destructable2> &local_points, Container <Point3 *, destructable3> &transformed_points,
+                static void transform ( const Container <Point1 *, destructable> &global_points, const Container <Point2 *, destructable2> &local_points, Container <Point3 *, destructable3> &transformed_points,
                                         const TTransformationKeyHelmert2D <typename Point1::Type> & key_helmert );
+
+		template <typename T>
+		static Matrix <T> getTransformKey(const Matrix <T> &P, const Matrix <T> &Q, const Matrix <T> &W);
+
+		template <typename T>
+		static void getTransformKey2(const Matrix <T> &P, const Matrix <T> &Q, const Matrix <T> &W, Matrix <T> &A, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &C);
+		
+
 
 };
 

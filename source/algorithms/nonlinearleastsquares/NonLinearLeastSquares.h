@@ -100,7 +100,7 @@ class NonLinearLeastSquares
 		static void trStep62(const Matrix <T> &R, const Matrix <T> &s, const Matrix <T> &G, Matrix<T> &v, const T lambda_min, const T lambda_max, T &lambda, const T delta, const T mju_min);
 
 		template <typename T>
-		static void reflection(Matrix <T> &X, const Matrix <T> &A, const Matrix <T> &B);
+		static void reflection(Matrix <T> &X, const Matrix <T> &XMIN, const Matrix <T> &XMAX);
 
 		template <typename T>
 		static bool checkIntervals(Matrix <T> &X, const Matrix <T> &A, const Matrix <T> &B);

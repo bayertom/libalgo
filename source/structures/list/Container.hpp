@@ -536,6 +536,8 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
         bool set_name = false;
         bool set_x_equation = false;
         bool set_y_equation = false;
+	bool set_ftheta_equation = false;
+	bool set_theta0_equation = false;
         bool set_lat_pole = false;
         bool set_lon_pole = false;
         bool set_lat0 = false;
@@ -568,13 +570,12 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
 
                         //Process line with terminator
                         if ( strcmp ( line_text, "<projection>" ) == 0 || strcmp ( line_text, "<Projection>" )  == 0 || strcmp ( line_text, "<name>" ) == 0 || strcmp ( line_text, "<Name>" ) == 0 ||
-                                        strcmp ( line_text, "<x>" ) == 0 || strcmp ( line_text, "<X>" ) == 0 || strcmp ( line_text, "<y>" ) == 0 || strcmp ( line_text, "<Y>" ) == 0 ||
-                                        strcmp ( line_text, "<lat_pole>" ) == 0 || strcmp ( line_text, "<Lat_pole>" ) == 0 || strcmp ( line_text, "<lon_pole>" ) == 0 ||
-                                        strcmp ( line_text, "<Lon_pole>" ) == 0 || strcmp ( line_text, "<lat0>" ) == 0 || strcmp ( line_text, "<Lat0>" ) == 0 || strcmp ( line_text, "<lat1>" ) == 0 ||
-                                        strcmp ( line_text, "<Lat1>" ) == 0 || strcmp ( line_text, "<lat2>" ) == 0 || strcmp ( line_text, "<Lat2>" ) == 0 || strcmp ( line_text, "<lon0>" ) == 0 ||
-                                        strcmp ( line_text, "<Lon0>" )  == 0 || strcmp ( line_text, "<lon_dir>" ) == 0 || strcmp ( line_text, "<Lon_dir>" )  == 0 || strcmp ( line_text, "<dx>" ) == 0 ||
-                                        strcmp ( line_text, "<Dx>" ) == 0 || strcmp ( line_text, "<dy>" )  == 0 || strcmp ( line_text, "<Dy>" ) == 0 || strcmp ( line_text, "<r>" ) == 0 ||
-                                        strcmp ( line_text, "<R>" ) == 0 || strcmp ( line_text, "<a>" ) == 0 || strcmp ( line_text, "<A>" ) == 0 || strcmp ( line_text, "<b>" ) == 0 || strcmp ( line_text, "<B>" ) == 0 )
+				strcmp(line_text, "<x>") == 0 || strcmp(line_text, "<X>") == 0 || strcmp(line_text, "<y>") == 0 || strcmp(line_text, "<Y>") == 0 || strcmp(line_text, "<ftheta>") == 0 || strcmp(line_text, "<Ftheta>") == 0 ||
+				strcmp(line_text, "<theta0>") == 0 || strcmp(line_text, "<Theta0>") == 0 || strcmp(line_text, "<Lon_pole>") == 0 || strcmp(line_text, "<lat_pole>") == 0 || strcmp(line_text, "<Lat_pole>") == 0 || strcmp(line_text, "<lon_pole>") == 0 ||
+				strcmp(line_text, "<lat0>") == 0 || strcmp(line_text, "<Lat0>") == 0 || strcmp(line_text, "<lat1>") == 0 || strcmp ( line_text, "<Lat1>" ) == 0 || strcmp ( line_text, "<lat2>" ) == 0 || 
+				strcmp ( line_text, "<Lat2>" ) == 0 || strcmp ( line_text, "<lon0>" ) == 0 || strcmp ( line_text, "<Lon0>" )  == 0 || strcmp ( line_text, "<lon_dir>" ) == 0 || strcmp ( line_text, "<Lon_dir>" )  == 0 || 
+				strcmp ( line_text, "<dx>" ) == 0 || strcmp ( line_text, "<Dx>" ) == 0 || strcmp ( line_text, "<dy>" )  == 0 || strcmp ( line_text, "<Dy>" ) == 0 || strcmp ( line_text, "<r>" ) == 0 ||
+                                strcmp ( line_text, "<R>" ) == 0 || strcmp ( line_text, "<a>" ) == 0 || strcmp ( line_text, "<A>" ) == 0 || strcmp ( line_text, "<b>" ) == 0 || strcmp ( line_text, "<B>" ) == 0 )
                         {
 
                                 //Next non empty line after terminator
@@ -681,6 +682,10 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                                         //Throw exception
                                                         throw ErrorBadData ( "ErrorBadData: error in projection file, bad projection type, line ", line_number );
                                                 }
+
+						//Set projection family
+						if (proj != NULL)
+							proj->setProjectionFamily(file_content[i].c_str());
                                         }
                                 }
 
@@ -743,6 +748,46 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                                 proj->setYEquat ( line_text );
                                         }
                                 }
+
+				//Test Fp equation
+				else if (strcmp(terminator, "<ftheta>") * strcmp(terminator, "<Ftheta>") == 0)
+				{
+					//F(p) has already been defined
+					if (set_ftheta_equation)
+					{
+						//Get line number
+						sprintf(line_number, "%d", i + 1);
+
+						//Throw exception
+						throw ErrorBadData("ErrorBadData: error in projection file, fp equation has already been defined, line ", line_number);
+					}
+
+					else
+					{
+						set_ftheta_equation = true;
+						proj->setFThetaEquat(line_text);
+					}
+				}
+
+				//Test Fp equation
+				else if (strcmp(terminator, "<theta0>") * strcmp(terminator, "<Theta0>") == 0)
+				{
+					//theta0 has already been defined
+					if (set_theta0_equation)
+					{
+						//Get line number
+						sprintf(line_number, "%d", i + 1);
+
+						//Throw exception
+						throw ErrorBadData("ErrorBadData: error in projection file, theta0 equation has already been defined, line ", line_number);
+					}
+
+					else
+					{
+						set_theta0_equation = true;
+						proj->setTheta0Equat(line_text);
+					}
+				}
 
                                 //Test Lat pole
                                 else if ( strcmp ( terminator, "<lat_pole>" ) * strcmp ( terminator, "<Lat_pole>" ) == 0 )
@@ -884,6 +929,7 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                         else
                                         {
                                                 set_lon_dir = true;
+						TTransformedLongtitudeDirection dir = (TTransformedLongtitudeDirection)atoi(line_text);
                                                 proj->setLonDir ( ( TTransformedLongtitudeDirection ) atoi ( line_text ) );
                                         }
                                 }
@@ -1026,6 +1072,8 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                 set_name = false;
                                 set_x_equation = false;
                                 set_y_equation = false;
+				set_ftheta_equation = false;
+				set_theta0_equation = false;
                                 set_lat_pole = false;
                                 set_lon_pole = false;
                                 set_lat0 = false;

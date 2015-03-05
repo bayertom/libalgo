@@ -21,7 +21,6 @@
 #ifndef CartAnalysis_H
 #define CartAnalysis_H
 
-
 #include <list>
 
 #include "libalgo/source/structures/point/Point3DGeographic.h"
@@ -73,13 +72,16 @@ template <typename T>
 class FAnalyzeProjJ3;
 
 template <typename T>
-class FAnalyzeProjJ3R;
-
-template <typename T>
 class FAnalyzeProjJ4;
 
 template <typename T>
 class FAnalyzeProjV;
+
+template <typename T>
+class FAnalyzeProjVS;
+
+template <typename T>
+class FAnalyzeProjVDE;
 
 template <typename T>
 class FAnalyzeProjV2;
@@ -97,13 +99,16 @@ template <typename T>
 class FAnalyzeProjV3S;
 
 template <typename T>
-class FAnalyzeProjV3R;
-
-template <typename T>
 class FAnalyzeProjV3DE;
 
 template <typename T>
 class FAnalyzeProjV4;
+
+template <typename T>
+class FAnalyzeProjV4S;
+
+template <typename T>
+class FAnalyzeProjV4DE;
 
 template <typename T>
 class FAnalyzeProjC;
@@ -123,7 +128,7 @@ struct TProjectionPolePosition
         T lat0;
         T complex_crit;
 
-        TProjectionPolePosition () :  cart_pole ( MAX_LAT, 0.0 ), lat0 ( 45.0 ), complex_crit ( 0.0 ) {}
+        TProjectionPolePosition () :  cart_pole ( MAX_LAT, 0.0 ), lat0 ( ), complex_crit ( 0.0 ) {}
         TProjectionPolePosition ( const T latp_, const T lonp_, const T lat0_, const T complex_crit_ ) :  cart_pole ( latp_, lonp_ ), lat0 ( lat0_ ),  complex_crit ( complex_crit_ ) {}
 };
 
@@ -291,6 +296,10 @@ class CartAnalysis
                 static void printResults ( const Container <Sample <T> > &sl, const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference,
                                            const TAnalysisParameters <T> & analysis_parameters, std::ostream * output = &std::cout );
 
+		template <typename T>
+		static void printResults2(const Container <Sample <T> > &sl, const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference,
+			const TAnalysisParameters <T> & analysis_parameters, std::ostream * output = &std::cout);
+
                 template <typename T>
                 static void sortSamplesByComputedRatios ( Container <Sample <T> > &sl, const typename TAnalysisParameters <T>::TAnalysisType & analysis_type );
 
@@ -365,19 +374,32 @@ class CartAnalysis
 
 		template <typename T>
 		static void batchTestNLSP( Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,  Container <Node3DCartesianProjected <T> *> &nl_projected, Projection <T> *proj, TProjectionAspect aspect,  typename TMeridiansList <T> ::Type &meridians,  typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test,
-			const T R_init, const T latp_init, const T lonp_init, const T lat0_init, unsigned short  &iterations, const T alpha_mult, const T nu, const T eps, unsigned short max_iter, const T max_diff, T &x_mass_reference, T &y_mass_reference, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
+			const T R0, const T latp_init, const T lonp_init, const T lat0_init, unsigned short  &iterations, const T alpha_mult, const T nu, const T eps, unsigned short max_iter, const T max_diff, T &x_mass_reference, T &y_mass_reference, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
+
 
 		template <typename T>
-		static void batchTestSimplex(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,  Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R_init, const T latp_init, 
+		static void batchTestSimplex(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,  Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R0, const T latp_init, 
 			const T lonp_init, const T lat0_init, unsigned short &iterations, const T eps, unsigned short max_iter, const T max_diff, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
 
 		template <typename T>
-		static void batchTestDiffEvolutionSchema(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R_init, const T latp_init,
+		static void batchTestDiffEvolutionSchema(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R0, const T latp_init,
 			const T lonp_init, const T lat0_init, unsigned int &iterations, const T eps, unsigned short max_iter, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
 
 		template <typename T>
-		static void batchTestDiffEvolutionAdaptiveControl(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R_init, const T latp_init,
+		static void batchTestDiffEvolutionAdaptiveControl(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R0, const T latp_init,
 			const T lonp_init, const T lat0_init, unsigned int &iterations, const T eps, unsigned short max_iter, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, const TMutationStrategy strategy, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
+		
+		template <typename T>
+		static void batchTestDiffEvolutionOutliers(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test, const T R0, const T latp_init,
+			const T lonp_init, const T lat0_init, unsigned int  &iterations, const T eps, unsigned short max_iter, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, const TMutationStrategy strategy, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output);
+
+		template <typename T>
+		static void batchTestNLSPOutliers(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Container <Node3DCartesianProjected <T> *> &nl_projected, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test,
+			const T R0, const T latp_init, const T lonp_init, const T lat0_init, unsigned short  &iterations, const T alpha_mult, const T nu, const T eps, unsigned short max_iter, const T max_diff, T &x_mass_reference, T &y_mass_reference, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
+
+		template <typename T>
+		static void batchTestNelderMeadOutliers(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Container <Node3DCartesianProjected <T> *> &nl_projected, Projection <T> *proj, TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test,
+			const T R0, const T latp_init, const T lonp_init, const T lat0_init, unsigned int  &iterations, const T eps, unsigned short max_iter, const T max_diff, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output = &std::cout);
 
 		template <typename T>
 		static void batchTestG(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Container <Node3DCartesianProjected <T> *> &nl_projected, Projection <T> *proj, const TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test,

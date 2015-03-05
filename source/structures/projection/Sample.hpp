@@ -70,8 +70,7 @@ void Sample <T> ::printSampleRatios ( const int position, const typename TAnalys
         const char DASH[7] = "------";
 
         //Get category
-        char category[7];
-        proj->getShortCut ( category );
+	const char *category = (proj != NULL ? proj->getProjectionFamily() : "Unknown");
 
         //Print line
         *output << std::setw ( 5 ) << std::fixed << std::right;
@@ -81,7 +80,7 @@ void Sample <T> ::printSampleRatios ( const int position, const typename TAnalys
         if ( rotated_sample ) *output << std::setw ( 1 ) << "*";
         else *output << std::setw ( 1 ) << " ";
 
-        *output << std::setw ( 7 ) << proj->getProjectionName();
+	*output << std::setw(7) << (proj != NULL ? proj->getProjectionName(): "xxx");
         *output << std::setw ( 7 ) << category;
         *output << std::setw ( 6 ) << std::setprecision ( 1 ) << latp;
         *output << std::setw ( 7 ) << std::setprecision ( 1 ) << lonp;
@@ -179,14 +178,54 @@ void Sample <T> ::printSampleRatios ( const int position, const typename TAnalys
 
 
 template <typename T>
+void Sample <T> ::printSampleRatios2 ( const int position, const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, const unsigned int n, std::ostream * output ) const
+{
+        //Print results of the cartometric analysis (ratios) in line
+        const char DASH[7] = "------";
+
+        //Get category
+	const char *category = (proj != NULL ? proj->getProjectionFamily() : "Unknown");
+
+        //Print line
+        *output << std::setw ( 5 ) << std::fixed << std::right;
+        *output << std::setw ( 4 ) << position;
+	*output << std::setw( 20) << category;
+	*output << std::setw ( 8 ) << (proj != NULL ? proj->getProjectionName(): "xxx");
+	*output << std::setw ( 10 ) << std::setprecision( 1 ) << R;
+        *output << std::setw ( 6 ) << std::setprecision ( 1 ) << latp;
+        *output << std::setw ( 7 ) << std::setprecision ( 1 ) << lonp;
+        *output << std::setw ( 6 ) << std::setprecision ( 1 ) << lat0;
+        *output << std::setw ( 7 ) << std::setprecision ( 1 ) << lon0;
+
+        char constant_text [255];
+        Format::modScientific ( c, constant_text );
+        *output << std::setw ( 9 ) << std::setprecision ( 2 ) << constant_text;
+
+	*output << std::setw(10) << std::setprecision(1) << alpha;
+	*output << std::setw(13) << std::setprecision(1) << scale_homt;
+
+	char homothetic_transformation_ratio_text[255];
+	Format::modScientific(homothetic_transformation_ratio, homothetic_transformation_ratio_text);
+	*output << std::setw(9) << homothetic_transformation_ratio_text;
+
+	*output << std::setw(10) << std::setprecision(0) << iterations;
+	*output << std::setw(10) << std::setprecision(0) << residual_eval;
+
+
+        //Print end of line
+        *output << std::endl;
+}
+
+
+
+template <typename T>
 void Sample <T> ::printSamplePositions ( const int position, const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, std::ostream * output ) const
 {
         //Print results of the cartometric analysis (positions) in line
         const char DASH[5] = "----";
 
         //Get category
-        char category[7];
-        proj->getShortCut ( category );
+	char *category = (proj != NULL ? proj->getProjectionFamily() : "Unknown");
 
         *output << std::showpoint << std::fixed << std::right;
 
@@ -197,7 +236,7 @@ void Sample <T> ::printSamplePositions ( const int position, const typename TAna
         if ( rotated_sample ) *output << std::setw ( 1 ) << "*";
         else *output << std::setw ( 1 ) << " ";
 
-        *output << std::setw ( 7 ) << proj->getProjectionName();
+	*output << std::setw(7) << (proj != NULL ? proj->getProjectionName() : "xxx");
         *output << std::setw ( 7 ) << category ;
         *output << std::setw ( 6 ) << std::setprecision ( 1 ) << latp;
         *output << std::setw ( 7 ) << std::setprecision ( 1 ) << lonp;
@@ -240,7 +279,7 @@ void Sample <T> ::printSampleMatchedPoints ( const Container < Node3DCartesian <
         if ( rotated_sample ) *output << std::setw ( 1 ) << "*";
         else *output << std::setw ( 1 ) << " ";
 
-        *output << std::setw ( 6 ) << proj->getProjectionName();
+	*output << std::setw(6) << (proj != NULL ? proj->getProjectionName() : "xxx");
         *output << std::setw ( 6 ) << std::setprecision ( 1 ) << latp;
         *output << std::setw ( 7 ) << std::setprecision ( 1 ) << lonp;
         *output << std::setw ( 6 ) << std::setprecision ( 1 ) << lat0;

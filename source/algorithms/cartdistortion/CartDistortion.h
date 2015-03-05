@@ -32,6 +32,8 @@ class Projection;
 template <typename T>
 class FProjEquationDerivative6Var;
 
+template <typename T>
+class FProjEquationDerivative2Var;
 
 //Structure storing parameters of the Tissot Indicatrix
 template <typename T>
@@ -75,34 +77,34 @@ class CartDistortion
 
         public:
                 template <typename T>
-                static T H ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T H(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T K ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T K(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T Theta ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T Theta(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T S ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T S(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T P ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T P(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T BM ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T BM(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T BP ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T BP(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static TTissotIndicatrix <T> Tiss ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static TTissotIndicatrix <T> Tiss(const T step, const char * equation_x, const char * equat_ftheta, const char * equat_theta0,const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T W ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a_, const T b_, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T W(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0,  const T lat, const T lon, const T R, const T a_, const T b_, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
                 template <typename T>
-                static T Airy ( const T step, const char * equation_x, const char * equation_y, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false );
+		static T Airy(const T step, const char * equation_x, const char * equation_y, const char * equat_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions = false);
 
         private:
 

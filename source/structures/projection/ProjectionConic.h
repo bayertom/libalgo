@@ -33,17 +33,19 @@ template <typename T>
 class ProjectionConic : virtual public Projection <T>
 {
         protected:
-                Point3DGeographic <T> cart_pole;
-                TTransformedLongtitudeDirection lon_dir;
 
                 T lat0;
                 T lat1;
                 T lat2;
 
+		Point3DGeographic <T> cart_pole;
+		TTransformedLongtitudeDirection lon_dir;
+
+
         public:
-                ProjectionConic() : Projection <T> (), cart_pole ( MAX_LAT, 0.0 ), lat0 ( 45.0 ), lat1 ( 45.0 ), lat2 ( 45.0 ) {}
-                ProjectionConic ( const T R_, const T lat0_, const T lat1_, const T lat2_, const T latp_, const T lonp_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_,  const char * projection_name_ ) :
-                        Projection <T> ( R_, lon0_, dx_, dy_, c_, x_equat_, y_equat_, projection_name_ ), cart_pole ( latp_, lonp_ ), lat0 ( lat0_ ), lat1 ( lat1_ ), lat2 ( lat2_ ) {}
+                ProjectionConic() : Projection <T> (), cart_pole ( MAX_LAT, 0.0 ), lon_dir(NormalDirection), lat0 ( 45.0 ), lat1 ( 45 ), lat2 ( 45 ) {}
+		ProjectionConic(const T R_, const T lat0_, const T lat1_, const T lat2_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_family_, const char * projection_name_) :
+			Projection <T>(R_, lon0_, dx_, dy_, c_, x_equat_, y_equat_, projection_family_, projection_name_), lat0(lat0_), lat1(lat1_), lat2(lat2_), cart_pole(latp_, lonp_), lon_dir(lon_dir_) {}
                 virtual ~ProjectionConic() {}
 
         public:
@@ -72,6 +74,8 @@ class ProjectionConic : virtual public Projection <T>
                 }
 
                 virtual TTransformedLongtitudeDirection getLonDir () const { return lon_dir;}
+		virtual const char * getFThetaEquat() const { return NULL; }
+		virtual const char * getTheta0Equat() const { return NULL; }
 
                 virtual void setCartPole ( const Point3DGeographic <T> & cart_pole_ ) { cart_pole = cart_pole_;}
                 virtual void setLat0 ( const T lat0_ ) {lat0 = lat0_;}
@@ -80,6 +84,8 @@ class ProjectionConic : virtual public Projection <T>
                 virtual void setA ( const T a ) {}
                 virtual void setB ( const T b ) {}
                 virtual void setLonDir ( const TTransformedLongtitudeDirection lon_dir_ ) { lon_dir = lon_dir_; }
+		virtual void setFThetaEquat(const char * ftheta_equat_) {};
+		virtual void setTheta0Equat(const char * theta0_equat_) {};
 
                 virtual void getShortCut ( char * shortcut ) const { strcpy ( shortcut, "Coni" ); }
                 virtual ProjectionConic * clone() const {return new ProjectionConic ( *this );}

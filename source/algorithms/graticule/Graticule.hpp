@@ -34,6 +34,7 @@ void Graticule::computeGraticule ( const Projection <T> *proj, const TMinMax<T> 
 
         //Cartographic pole
         const T latp = proj->getCartPole().getLat(), lonp = proj->getCartPole().getLon();
+	const T lon0 = proj->getLon0();
 
         //Get size of the interval
         const T lat_interval_width = lat_interval.max_val - lat_interval.min_val;
@@ -45,7 +46,14 @@ void Graticule::computeGraticule ( const Projection <T> *proj, const TMinMax<T> 
                 //Create lat and lon intervals to avoid basic singular points
                 typename TIntervals <T>::Type lat_intervals, lon_intervals;
                 createLatIntervals ( lat_interval, latp, lat_intervals );
-                createLonIntervals ( lon_interval, lonp, lon_intervals );
+		
+		//Normal aspect
+		if ( (fabs(latp - MAX_LAT) < MIN_FLOAT) && (fabs(lonp) < MIN_FLOAT) )
+			createLonIntervals ( lon_interval, lon0, lon_intervals );
+
+		//Transverse or oblique aspect
+		else
+			createLonIntervals(lon_interval, lonp, lon_intervals);
 
                 //Process all meridians and parallels: automatic detection of additional singular points
                 unsigned int split_amount = 0;
@@ -79,26 +87,70 @@ void Graticule::computeGraticule ( const Projection <T> *proj, const TMinMax<T> 
                                 catch ( ErrorMath <T> &error )
                                 {
                                         //Too many splits, projection is suspected, stop computations
-                                        if ( split_amount > 10 )
+                                        if ( split_amount > 100 )
                                         {
                                                 meridians.clear(); parallels.clear();
                                                 return;
                                         }
 
-                                        //Lat value inside interval: split intervals
-                                        if ( ( ( *i_lat_intervals ).min_val < lat_error ) && ( ( *i_lat_intervals ).max_val > lat_error ) )
-                                        {
-                                                splitIntervals ( lat_intervals, i_lat_intervals, lat_error );
-                                        }
+					//Empty lat interval, delete
+					if (fabs((*i_lat_intervals).max_val - (*i_lat_intervals).min_val) < 10 * GRATICULE_ANGLE_SHIFT)
+					{
+						i_lat_intervals = lat_intervals.erase(i_lat_intervals);
+						++i_lat_intervals;
+					}
+
+					//Lat value is lower bound: shift lower bound
+					else if ((fabs((*i_lat_intervals).min_val - lat_error) <  2 * GRATICULE_ANGLE_SHIFT) && (fabs((*i_lat_intervals).max_val - (*i_lat_intervals).min_val) > 10 * GRATICULE_ANGLE_SHIFT))
+					{
+						(*i_lat_intervals).min_val += 2 *GRATICULE_ANGLE_SHIFT;
+					}
+
+					//Lat value is upper bound: shift upper bound
+					else if ((fabs((*i_lat_intervals).max_val - lat_error) <  2 * GRATICULE_ANGLE_SHIFT) && (fabs((*i_lat_intervals).max_val - (*i_lat_intervals).min_val) > 10 * GRATICULE_ANGLE_SHIFT))
+					{
+						(*i_lat_intervals).max_val -= 2 * GRATICULE_ANGLE_SHIFT;
+					}
+
+					//Lat value inside interval: split intervals
+					else if (((*i_lat_intervals).min_val < lat_error) && ((*i_lat_intervals).max_val > lat_error))
+					{
+						splitIntervals(lat_intervals, i_lat_intervals, lat_error);
+
+						//Increment split amount
+						split_amount++;
+					}
+
+					//Empty lon interval, delete
+					if (fabs((*i_lon_intervals).max_val - (*i_lon_intervals).min_val) < 10 * GRATICULE_ANGLE_SHIFT)
+					{
+						i_lon_intervals = lon_intervals.erase(i_lon_intervals);
+						++i_lon_intervals;
+					}
+
+					//Lon value is lower bound : shift lower bound
+					else if ((fabs((*i_lon_intervals).min_val - lon_error) <  2 *GRATICULE_ANGLE_SHIFT) && (fabs((*i_lon_intervals).max_val - (*i_lon_intervals).min_val) > 10 * GRATICULE_ANGLE_SHIFT))
+					{
+						(*i_lon_intervals).min_val += 2 * GRATICULE_ANGLE_SHIFT;
+					}
+					
+					//Lon value is upper bound: shift upper bound
+					else if ((fabs((*i_lon_intervals).max_val - lon_error) <  2 * GRATICULE_ANGLE_SHIFT) && (fabs((*i_lon_intervals).max_val - (*i_lon_intervals).min_val) > 10 * GRATICULE_ANGLE_SHIFT))
+					{
+						(*i_lon_intervals).max_val -= 2 * GRATICULE_ANGLE_SHIFT;
+					}
 
                                         //Lon value inside interval: split intervals
-                                        if ( ( ( *i_lon_intervals ).min_val < lon_error ) && ( ( *i_lon_intervals ).max_val > lon_error ) )
+                                        else if ( ( ( *i_lon_intervals ).min_val < lon_error ) && ( ( *i_lon_intervals ).max_val > lon_error ) )
                                         {
                                                 splitIntervals ( lon_intervals, i_lon_intervals, lon_error );
+
+						//Increment split amount
+						split_amount++;
                                         }
 
-                                        //Increment split amount
-                                        split_amount ++;
+					//std::cout << (*i_lat_intervals).min_val << "   " << (*i_lat_intervals).max_val << '\n';
+					//std::cout << (*i_lon_intervals).min_val << "   " << (*i_lon_intervals).max_val << '\n';
                                 }
 
                                 //Other than math error: error in equation or in parser
@@ -306,7 +358,7 @@ void Graticule::computeMeridians ( const Projection <T> *proj, const TMinMax<T> 
                 {
                         //Get posible error values
                         lat_error = error.getArg();
-                        lon_error = lon;
+                        lon_error = m.getLon();
 
                         //Throw exception
                         throw;
@@ -389,7 +441,7 @@ void Graticule::computeParallels ( const Projection <T> *proj, const TMinMax<T> 
                 catch ( ErrorMath <T> &error )
                 {
                         //Get posible error values
-                        lat_error = lat;
+                        lat_error = p.getLat();
                         lon_error = error.getArg();
 
                         //Throw exception
@@ -459,61 +511,55 @@ void Graticule::computeMeridian ( const Projection <T> *proj, const TMinMax<T> &
                 //Reduce longitude
                 T lon_red = ( proj->getLon0() != 0 ? CartTransformation::redLon0 ( meridian.getLon (), proj->getLon0() ) :  meridian.getLon () );
 
-                //Graticule in transverse/oblique aspect: convert the point
-                if ( grat_type == TransformedGraticule )
-                {
-                        //Get type of the direction
-                        TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+		//Graticule in transverse/oblique aspect: convert the point
+		if (grat_type == TransformedGraticule)
+		{
+			//Get type of the direction
+			TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
 
-                        //Convert geographic point to oblique position: use a normal direction of converted longitude
-                        const T lat_trans = CartTransformation::latToLatTrans ( point_geo_temp.getLat(), lon_red, proj->getCartPole().getLat(),  proj->getCartPole().getLon() );
-                        const T lon_trans = CartTransformation::lonToLonTrans ( point_geo_temp.getLat(), lon_red, lat_trans, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir );
+			//Convert geographic point to oblique position
+			const T lat_trans = CartTransformation::latToLatTrans(point_geo_temp.getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon());
+			const T lon_trans = CartTransformation::lonToLonTrans(point_geo_temp.getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir);
 
-                        //std::cout << point_geo_temp.getLat() << "  "  << lon_red <<  '\n';
-                        //std::cout << lat_trans << "  " << lon_trans << '\n';
+			//Change coordinates of the point
+			point_geo_temp.setLat(lat_trans);
+			point_geo_temp.setLon(lon_trans);
+		}
 
-                        //Change coordinates of the point
-                        point_geo_temp.setLat ( lat_trans );
-                        point_geo_temp.setLon ( lon_trans );
-                }
+		//Compute coordinates x, y
+		T x = 0, y = 0;
 
-                //Compute coordinates x, y
-                T x = 0, y = 0;
-
-                try
-                {
+		try
+		{
 			//Compute equations
-			T x_temp = CartTransformation::latLonToX ( & point_geo_temp, proj, false );
-			T y_temp = CartTransformation::latLonToY ( & point_geo_temp, proj, false );
+			T x_temp = CartTransformation::latLonToX(&point_geo_temp, proj, false);
+			T y_temp = CartTransformation::latLonToY(&point_geo_temp, proj, false);
 
 			//Get shifts: need to be additionally subtracted
 			const T dx = proj->getDx();
 			const T dy = proj->getDy();
 
 			//Non-rotated projection
-			if ( alpha == 0.0 )
+			if (alpha == 0.0)
 			{
 				x = x_temp;
 				y = y_temp;
 			}
-			
+
 			//Rotated projection
 			else
 			{
-				x = ( x_temp - dx )* cos ( alpha * M_PI / 180 ) - ( y_temp - dy ) * sin ( alpha * M_PI / 180 ) + dx;
-				y = ( x_temp - dx )* sin ( alpha * M_PI / 180 ) + ( y_temp - dy ) * cos ( alpha * M_PI / 180 ) + dy;
+				x = (x_temp - dx)* cos(alpha * M_PI / 180) - (y_temp - dy) * sin(alpha * M_PI / 180) + dx;
+				y = (x_temp - dx)* sin(alpha * M_PI / 180) + (y_temp - dy)* cos(alpha * M_PI / 180) + dy;
 			}
-			
-                }
+		}
 
-                //Get error argument
-                catch ( ErrorMath <T> &error )
-                {
-                        //Throw new math error
-                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: error in coordinate functions (lat/lon).", "Can not compute meridian points.", lat );
-                }
-
-                //std::cout << point_geo_temp.getLat() << "  " << point_geo_temp.getLon() << "   " << x << "  " << y << '\n';
+		//Get error argument
+		catch (ErrorMath <T> &error)
+		{
+			//Throw new math error
+			throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: error in coordinate functions (lat/lon).", "Can not compute meridian points.", point_geo_temp.getLat());
+		}
 
                 //Create new cartographic point
                 Node3DCartesianProjected <T> *point_proj_temp  = new Node3DCartesianProjected <T> ( x, y );
@@ -582,63 +628,59 @@ void Graticule::computeParallel ( const Projection <T> *proj, const TMinMax<T> &
                 }
 
                 //Reduce longitude
-                T lon_red = ( proj->getLon0() != 0 ? CartTransformation::redLon0 ( point_geo_temp.getLon(), proj->getLon0() ) :  point_geo_temp.getLon() );
+		const T lon_point = point_geo_temp.getLon();
+		T lon_red = (proj->getLon0() != 0 ? CartTransformation::redLon0(lon_point, proj->getLon0()) : lon_point);
+		
+		//Graticule in transverse/oblique aspect: convert the point
+		if (grat_type == TransformedGraticule)
+		{
+			//Get type of the direction
+			TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
 
-                //Graticule in transverse/oblique aspect: convert the point
-                if ( grat_type == TransformedGraticule )
-                {
-                        //Get type of the direction
-                        TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+			//Convert geographic point to oblique position
+			const T lat_trans = CartTransformation::latToLatTrans(parallel.getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon());
+			const T lon_trans = CartTransformation::lonToLonTrans(parallel.getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir);
 
-                        //Convert geographic point to oblique position: use a normal direction of converted longitude
-                        const T lat_trans = CartTransformation::latToLatTrans ( parallel.getLat(), lon_red, proj->getCartPole().getLat(),  proj->getCartPole().getLon() );
-                        const T lon_trans = CartTransformation::lonToLonTrans ( parallel.getLat(), lon_red, lat_trans, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir );
+			//Change coordinates of the temporary point
+			point_geo_temp.setLat(lat_trans);
+			point_geo_temp.setLon(lon_trans);
+		}
 
-                        //Change coordinates of the temporary point
-                        point_geo_temp.setLat ( lat_trans );
-                        point_geo_temp.setLon ( lon_trans ) ;
+		//Compute coordinates x, y
+		T x = 0, y = 0;
 
-                        //std::cout << parallel.getLat() << "  "  << lon_red <<  '\n';
-                        // std::cout << lat_trans << "  " << lon_trans << '\n';
-                }
-
-                //Compute coordinates x, y
-                T x = 0, y = 0;
-
-                try
-                {
+		try
+		{
 			//Compute equations
-			T x_temp = CartTransformation::latLonToX ( & point_geo_temp, proj, false );
-			T y_temp = CartTransformation::latLonToY ( & point_geo_temp, proj, false );
+			T x_temp = CartTransformation::latLonToX(&point_geo_temp, proj, false);
+			T y_temp = CartTransformation::latLonToY(&point_geo_temp, proj, false);
 
 			//Get shifts: need to be additionally subtracted
 			const T dx = proj->getDx();
 			const T dy = proj->getDy();
 
 			//Non-rotated projection
-			if ( alpha == 0.0 )
+			if (alpha == 0.0)
 			{
 				x = x_temp;
 				y = y_temp;
 			}
-			
+
 			//Rotated projection
 			else
 			{
-				x = ( x_temp - dx )* cos ( alpha * M_PI / 180 ) - ( y_temp - dy ) * sin ( alpha * M_PI / 180 ) + dx;
-				y = ( x_temp - dx )* sin ( alpha * M_PI / 180 ) + ( y_temp - dy ) * cos ( alpha * M_PI / 180 ) + dy;
+				x = (x_temp - dx)* cos(alpha * M_PI / 180) - (y_temp - dy) * sin(alpha * M_PI / 180) + dx;
+				y = (x_temp - dx)* sin(alpha * M_PI / 180) + (y_temp - dy) * cos(alpha * M_PI / 180) + dy;
 			}
-			
-                }
+		}
 
-                //Get error argument
-                catch ( ErrorMath <T> &error )
-                {
-                        //Throw new math error
-                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: error in coordinate functions (lat/lon).", "Can not compute meridian points.", lon );
-                }
+		//Get error argument
+		catch (ErrorMath <T> &error)
+		{
+			//Throw new math error
+			throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: error in coordinate functions (lat/lon).", "Can not compute parallel points.", lon_point);
+		}
 
-                //std::cout << point_geo_temp.getLat() << "  " << point_geo_temp.getLon() << "   " << x << "  " << y << '\n';
 
                 //Create new cartographic point
                 Node3DCartesianProjected <T> *point_proj_temp  = new Node3DCartesianProjected <T> ( x, y );

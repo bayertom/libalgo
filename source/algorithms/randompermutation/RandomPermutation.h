@@ -1,6 +1,6 @@
-// Description: Limits in cartographic pole coordinates (lat_pole, lon_pole) and lat of the undistorted parallel
+// Description: Create random permutation of n-elements od vector
 
-// Copyright (c) 2010 - 2011
+// Copyright (c) 2010 - 2014
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -18,11 +18,21 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this library. If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef RandomPermutation_H
+#define RandomPermutation_H
 
-#ifndef ProjectionLimits_HPP
-#define ProjectionLimits_HPP
 
-template <typename T>
-ProjectionLimits<T>::~ProjectionLimits () {}
+#include "libalgo/source/structures/matrix/Matrix.h"
+
+
+class RandomPermutation
+{
+        public:
+		static Matrix <unsigned int> randperm(const unsigned int n, const unsigned int k);
+
+};
+
+#include "RandomPermutation.hpp"
 
 #endif
+

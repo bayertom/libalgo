@@ -54,7 +54,7 @@ class DXFExport
                 static void exportFacesToDXF ( const char * file_name, const Container <Face <T> *, destructable> &faces );
 
                 template <typename Point, TDestructable destructable>
-                static void exportPointsToDXF ( const char * file_name, const Container <Point *, destructable> &points );
+		static void exportPointsToDXF(const char * file_name, const Container <Point *, destructable> &points, const typename Point::Type font_height );
 
                 template <typename Point>
                 static void exportGraticuleToDXF ( const char * file_name, const typename TMeridiansListF <typename Point::Type> ::Type & meridians, const typename TParallelsListF <typename Point::Type> ::Type & parallels,

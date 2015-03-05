@@ -1,5 +1,5 @@
-// Description: Functor, compute matrix V of squares of residuals for cartometric analysis
-// Method: Differential evolution
+﻿// Description: Functor, compute matrix V of squares of residuals for cartometric analysis
+// Method: Differential evolution, hybrid method, rotation determioned from similarity transformation
 
 // Copyright (c) 2010 - 2013
 // Tomas Bayer
@@ -27,6 +27,7 @@
 #include "libalgo/source/structures/list/Container.h"
 
 #include "libalgo/source/algorithms/cartanalysis/CartAnalysis.h"
+#include "libalgo/source/algorithms/outliers/Outliers.h"
 
 
 template <typename T>
@@ -36,294 +37,299 @@ class Projection;
 template <typename T>
 class FAnalyzeProjV4DE
 {
-private:
+	private:
 
-	Container <Node3DCartesian <T> *> &nl_test;
-	Container <Point3DGeographic <T> *> &pl_reference;
-	typename TMeridiansList <T> ::Type &meridians;
-	typename TParallelsList <T> ::Type &parallels;
-	const Container <Face <T> *> &faces_test;
-	Projection <T> *proj;
-	T &R_def;
-	T &q1;
-	T &q2;
-	const TAnalysisParameters <T> &analysis_parameters;
-	const TProjectionAspect aspect;
-	Sample <T> &sample_res;
-	unsigned int & created_samples;
-	std::ostream * output;
-
-	unsigned int &iter;
-
-public:
-
-	FAnalyzeProjV4DE(Container <Node3DCartesian <T> *> &nl_test_, Container <Point3DGeographic <T> *> &pl_reference_, typename TMeridiansList <T> ::Type &meridians_, typename TParallelsList <T> ::Type &parallels_,
-		const Container <Face <T> *> &faces_test_, Projection <T> *proj_, T &R_def_, T &q1_, T &q2_, const TAnalysisParameters <T> & analysis_parameters_, const TProjectionAspect aspect_, Sample <T> &sample_res_, unsigned int & created_samples_, unsigned int &iter_, std::ostream * output_)
-		: nl_test(nl_test_), pl_reference(pl_reference_), meridians(meridians_), parallels(parallels_), faces_test(faces_test_), proj(proj_), R_def(R_def_), q1(q1_), q2(q2_), analysis_parameters(analysis_parameters_), aspect(aspect_), sample_res(sample_res_),
-		created_samples(created_samples_), iter(iter_), output(output_) {}
+		Container <Node3DCartesian <T> *> &nl_test;
+		Container <Point3DGeographic <T> *> &pl_reference;
+		typename TMeridiansList <T> ::Type &meridians;
+		typename TParallelsList <T> ::Type &parallels;
+		const Container <Face <T> *> &faces_test;
+		Projection <T> *proj;
+		T &R;
+		T &q1;
+		T &q2;
+		const TAnalysisParameters <T> &analysis_parameters;
+		const TProjectionAspect aspect;
+		Sample <T> &sample_res;
+		unsigned int & created_samples;
+		unsigned int &res_evaluations;
+		TMEstimatorsWeightFunction me_function;
+		T k;
+		Matrix <unsigned int> &I;
+		std::ostream * output;
 
 
-	void operator () (Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, Matrix <T> &W, const bool compute_analysis = true)
-	{
+	public:
 
-		//Compute parameters of the V matrix: residuals
-		const unsigned int m = nl_test.size();
+		FAnalyzeProjV4DE(Container <Node3DCartesian <T> *> &nl_test_, Container <Point3DGeographic <T> *> &pl_reference_, typename TMeridiansList <T> ::Type &meridians_, typename TParallelsList <T> ::Type &parallels_,
+			const Container <Face <T> *> &faces_test_, Projection <T> *proj_, T &R_est_, T &q1_, T &q2_, const TAnalysisParameters <T> & analysis_parameters_, const TProjectionAspect aspect_, Sample <T> &sample_res_, unsigned int & created_samples_, unsigned int &res_evaluations_, const TMEstimatorsWeightFunction &me_function_, const T k_, Matrix <unsigned int> &I_, std::ostream * output_)
+			: nl_test(nl_test_), pl_reference(pl_reference_), meridians(meridians_), parallels(parallels_), faces_test(faces_test_), proj(proj_), R(R_est_), q1(q1_), q2(q2_), analysis_parameters(analysis_parameters_), aspect(aspect_), sample_res(sample_res_),
+			created_samples(created_samples_), res_evaluations(res_evaluations_), me_function(me_function_), k( k_ ), I(I_), output(output_) {}
 
-		//Get lat0 min and lat0 max
-		const T lat0_min = proj->getLat0Interval().min_val;
-		const T lat0_max = proj->getLat0Interval().max_val;
 
-		//Normal aspect: lat0, lon0
-		if (aspect == NormalAspect)
+		void operator () (Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, Matrix <T> &W, const bool compute_analysis = true)
 		{
-			//Subtract period
-			if (fabs(X(0, 2)) > MAX_LAT) X(0, 2) = fmod(X(0, 2), 90);
 
-			if (fabs(X(0, 3)) > MAX_LON)
-				X(0, 3) = fmod(X(0, 3), 180);
+			//Compute parameters of the V matrix: residuals
+			const unsigned int m = nl_test.size();
 
-			//Set to interval
-			if (X(0, 2) < lat0_min) X(0, 2) = lat0_min;
+			//Get lat0 min and lat0 max
+			const T lat0_min = proj->getLat0Interval().min_val;
+			const T lat0_max = proj->getLat0Interval().max_val;
 
-			if (X(0, 2) > lat0_max) X(0, 2) = lat0_max;
-		}
-
-		//Transverse aspect: lonp, lat0
-		else  if (aspect == TransverseAspect)
-
-		{
-			//Subtract period
-			if (fabs(X(0, 1)) > MAX_LON) X(0, 1) = fmod(X(0, 1), 180);
-
-			if (fabs(X(0, 2)) > MAX_LAT) X(0, 2) = fmod(X(0, 2), 90);
-
-			//Set to interval
-			if (X(0, 2) < lat0_min) X(0, 2) = lat0_min;
-
-			if (X(0, 2) > lat0_max) X(0, 2) = lat0_max;
-
-
-			//Set lon0
-			if (fabs(X(0, 3)) > MAX_LON)  X(0, 3) = fmod(X(0, 1), 180);
-		}
-
-		//Oblique aspect: latp, lonp, lat0
-		else if (aspect == ObliqueAspect)
-		{
-			//Subtract period
-			if (fabs(X(0, 0)) > MAX_LAT)  X(0, 0) = fmod(X(0, 0), 90);
-
-			if (fabs(X(0, 1)) > MAX_LON)  X(0, 1) = fmod(X(0, 1), 180);
-
-			if (fabs(X(0, 2)) > MAX_LAT)  X(0, 2) = fmod(X(0, 2), 90);
-
-			//Set lat0 inside the interval
-			if (X(0, 2) < lat0_min || X(0, 2) > lat0_max) X(0, 2) = 0.5 * (lat0_min + lat0_max);
-
-			//Set lonp to zero, if latp = 90
-			if (fabs(X(0, 0) - MAX_LAT) < 1.0)  X(0, 1) = 0.0;
-
-			//Set lonp to zero, if latp = 90
-			if (fabs(X(0, 0) - MAX_LAT) < 1)
+			//Normal aspect: lat0, lon0
+			if (aspect == NormalAspect)
 			{
-				X(0, 0) = 90.0;
-				X(0, 1) = 0.0;
+				//Set lat0 inside the interval
+				if (X(0, 2) < lat0_min || X(0, 2) > lat0_max) X(0, 2) = 0.5 * (lat0_min + lat0_max);
+
+				//Set lon0
+				if (fabs(X(0, 3)) > MAX_LON) X(0, 3) = fmod(X(0, 3), 180);
+
+				if (X(0, 3) < MIN_LON) X(0, 3) = X(0, 3) + 360;
+				else if (X(0, 3) > MAX_LON) X(0, 3) = X(0, 3) - 360;
 			}
 
-			//Set lon0
-			X(0, 3) = 0;
-		}
+			//Transverse aspect: lonp, lat0
+			else  if (aspect == TransverseAspect)
 
-		//Set properties to the projection: ommit estimated radius, additional constants dx, dy
-		// They will be estimated again using the transformation
-		Point3DGeographic <T> cart_pole(X(0, 0), X(0, 1));
-		proj->setR(R_def);
-		proj->setCartPole(cart_pole);
-		proj->setLat0(X(0, 2));
-		proj->setLon0(X(0, 3));
-		proj->setDx(0.0);
-		proj->setDy(0.0);
-		proj->setC(X(0, 4));
-
-
-		//Compute analysis for one sample
-		if (compute_analysis)
-		{
-			try
 			{
-				//Compute analysis
+				//Subtract period
+				if (X(0, 1) < MIN_LON)  X(0, 1) = MIN_LON - fmod(X(0, 1), MIN_LON);
+				else if (X(0, 1) > MAX_LON)  X(0, 1) = MAX_LON - fmod(X(0, 1), MAX_LON);
+
+				//Set lat0 inside the interval
+				if (X(0, 2) < lat0_min || X(0, 2) > lat0_max) X(0, 2) = 0.5 * (lat0_min + lat0_max);
+
+				//Set lon0
+				X(0, 3) = 0;
+			}
+
+			//Oblique aspect: latp, lonp, lat0
+			else if (aspect == ObliqueAspect)
+			{
+				//Subtract period
+				if (X(0, 0) < MIN_LAT)  X(0, 0) = MIN_LAT - fmod(X(0, 0), MIN_LAT);
+				else if (X(0, 0) > MAX_LAT)  X(0, 0) = MAX_LAT - fmod(X(0, 0), MAX_LAT);
+
+				if (X(0, 1) < MIN_LON)  X(0, 1) = MIN_LON - fmod(X(0, 1), MIN_LON);
+				else if (X(0, 1) > MAX_LON)  X(0, 1) = MAX_LON - fmod(X(0, 1), MAX_LON);
+
+				//Set lat0 inside the interval
+				if (X(0, 2) < lat0_min || X(0, 2) > lat0_max) X(0, 2) = 0.5 * (lat0_min + lat0_max);
+
+				//Set lonp to zero, if latp = 90
+				if (fabs(X(0, 0) - MAX_LAT) < 5)
+				{
+					//X(0, 0) = 90.0;
+					//X(0, 1) = 0.0;
+				}
+
+				//Set lon0
+				X(0, 3) = 0;
+			}
+
+			//Set properties to the projection: ommit estimated radius, additional constants dx, dy
+			// They will be estimated again using the transformation
+			Point3DGeographic <T> cart_pole(X(0, 0), X(0, 1));
+			proj->setR(R);
+			proj->setCartPole(cart_pole);
+			proj->setLat0(X(0, 2));
+			proj->setLat1(X(0, 2));
+			proj->setLat2(X(0, 4));
+			proj->setLon0(X(0, 3));
+			proj->setDx(0.0);
+			proj->setDy(0.0);
+			proj->setC(X(0, 4));
+
+			//Compute residuals
+			evaluateResiduals(X, Y, V, W, nl_test, pl_reference, meridians, parallels, faces_test, proj, R, q1, q2, analysis_parameters, aspect, sample_res, created_samples, res_evaluations, me_function, k, I, output);
+		}
+};
+
+
+template <typename T>
+inline void evaluateResiduals(const Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, Matrix <T> &W, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels,
+	const Container <Face <T> *> &faces_test, Projection <T> *proj, T &R, T &q1, T &q2, const TAnalysisParameters <T> & analysis_parameters, const TProjectionAspect aspect, Sample <T> &sample_res, unsigned int & created_samples, unsigned int &res_evaluations, const TMEstimatorsWeightFunction &me_function, const T k, Matrix <unsigned int> &I, std::ostream * output)
+{
+	//Evaluate residuals
+	const unsigned int m = nl_test.size();
+
+	W = eye(2 * m, 2 * m, 1.0);
+
+	//Compute coordinate differences (residuals): items of V matrix
+	Container <Node3DCartesianProjected <T> *> nl_projected_temp;
+
+	for (unsigned int i = 0; i < m; i++)
+	{
+		//Get type of the direction
+		TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+
+		//Reduce lon
+		const T lon_red = CartTransformation::redLon0(pl_reference[i]->getLon(), X(0, 3));
+
+		T lat_trans = 0.0, lon_trans = 0.0, x = 0.0, y = 0.0;
+
+		try
+		{
+			//Convert geographic point to oblique aspect
+			lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(0, 0), X(0, 1));
+			lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, X(0, 0), X(0, 1), trans_lon_dir);
+
+			for (unsigned int j = 0; j < 3; j++)
+			{
 				try
 				{
-					CartAnalysis::computeAnalysisForOneSample(nl_test, pl_reference, meridians, parallels, faces_test, proj, analysis_parameters, sample_res, false, created_samples, output);
+					//Compute x, y coordinates
+					x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(0, 4), X(0, 2), X(0, 2), X(0, 4), false);
+					y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(0, 4), X(0, 2), X(0, 2), X(0, 4), false);
+
+					//x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(0, 4), X(0, 2), proj->getLat1(), proj->getLat2(), false);
+					//y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(0, 4), X(0, 2), proj->getLat1(), proj->getLat2(), false);
 				}
 
-				//Throw exception
-				catch (Error & error)
+				//2 attempt to avoid the singularity
+				catch (Error &error)
 				{
-					if (analysis_parameters.print_exceptions)
+					//Move in longitude direction
+					if (j == 0)
 					{
-						//Print error and info about projection properties
-						error.printException(output);
-						*output << "proj = " << proj->getProjectionName() << "  latp = " << proj->getCartPole().getLat() << "  lonp = " << proj->getCartPole().getLon() << "  lat0 = " << proj->getLat0() << "  c = " << proj->getC() << '\n';
-					}
-				}
-
-				//Get index list of the sample
-				TIndexList non_singular_points_indices = sample_res.getNonSingularPointsIndices();
-				TIndexList k_best_points_indices = sample_res.getKBestPointsIndices();
-
-				//Change weights in W matrix: weights of singular points or outliers are 0, otherwise they are 1
-				unsigned int index_k_best_points = 0, n_k_best = k_best_points_indices.size(), n_points = pl_reference.size();
-				int index_point = (n_k_best > 0 ? non_singular_points_indices[k_best_points_indices[index_k_best_points++]] : -1);
-
-				for (int i = 0; (i < n_points) && (n_k_best > 0); i++)
-				{
-					//Set weight of point to 1 (it is not an outlier nor singular)
-					if (i == index_point)
-					{
-						W(index_point, index_point) = 1.0; W(index_point + n_points, index_point + n_points) = 1.0;
-
-						if (index_k_best_points < n_k_best) index_point = non_singular_points_indices[k_best_points_indices[index_k_best_points++]];
+						if (lat_trans == MAX_LAT) 
+							lat_trans -= GRATICULE_ANGLE_SHIFT;
+						else 
+							lat_trans += GRATICULE_ANGLE_SHIFT;
 					}
 
-					//Set weight of point to zero (it is an outlier or singular)
-					else
+					//Move in longitude direction
+					else if (j == 1)
 					{
-						W(i, i) = 0.0; W(i + n_points, i + n_points) = 0.0;
+						if (lon_trans == MAX_LON) 
+							
+							lon_trans -= GRATICULE_ANGLE_SHIFT;
+						else 
+							lon_trans += GRATICULE_ANGLE_SHIFT;
+					}
+
+					//Neither first nor the second shhifts do not bring improvement
+					else if (j == 2)
+					{
+						throw;
 					}
 				}
 			}
-
-			//Throw error
-			catch (Error & error)
-			{
-				if (analysis_parameters.print_exceptions) error.printException();
-			}
 		}
 
-		//Compute coordinate differences (residuals): items of V matrix
-		Container <Node3DCartesianProjected <T> *> nl_projected_temp;
-
-		for (unsigned int i = 0; i < m; i++)
+		catch (Error &error)
 		{
-			//Get type of the direction
-			TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
-
-			//Reduce lon
-			const T lon_red = CartTransformation::redLon0(pl_reference[i]->getLon(), X(0, 3));
-
-			T lat_trans = 0.0, lon_trans = 0.0, x = 0.0, y = 0.0;
-
-			try
-			{
-				//Convert geographic point to oblique position: use a normal direction of converted longitude
-				lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(0, 0), X(0, 1));
-				lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, lat_trans, X(0, 0), X(0, 1), trans_lon_dir);
-
-				//Compute x, y coordinates
-				x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), X(0, 4), X(0, 2), proj->getLat1(), proj->getLat2(), false);
-				y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), X(0, 4), X(0, 2), proj->getLat1(), proj->getLat2(), false);
-			}
-
-			catch (Error &error)
-			{
-				//Disable point from analysis: set weight to zero
-				W(i, i) = 0; W(i + m, i + m) = 0;
-			}
-
-			//Create new cartographic point
-			Node3DCartesianProjected <T> *n_projected = new Node3DCartesianProjected <T>(x, y);
-
-			//Add point to the list
-			nl_projected_temp.push_back(n_projected);
+			//Disable point from analysis: set weight to zero
+			W(i, i) = 0; W(i + m, i + m) = 0;
 		}
 
-		//Apply transformation
-		TTransformationKeyHelmert2D <T> key_helmert;
-		HelmertTransformation2D::getTransformKey(nl_test, nl_projected_temp, key_helmert);
+		//Create new cartographic point
+		Node3DCartesianProjected <T> *n_projected = new Node3DCartesianProjected <T>(x, y);
 
-		//std::cout << key_helmert.c1 << "   " << key_helmert.c2 << "   " << atan2(key_helmert.c2, key_helmert.c1) * 57.3;
-
-
-		//Computer centers of mass for both systems P, P'
-		unsigned int n_points = 0;
-		T x_mass_test = 0.0, y_mass_test = 0.0, x_mass_reference = 0.0, y_mass_reference = 0.0;
-
-		for (unsigned int i = 0; i < m; i++)
-		{
-			//Use only non singular points
-			if (W(i, i) != 0.0)
-			{
-				x_mass_test += nl_test[i]->getX();
-				y_mass_test += nl_test[i]->getY();
-
-				x_mass_reference += nl_projected_temp[i]->getX();
-				y_mass_reference += nl_projected_temp[i]->getY();
-
-				n_points++;
-			}
-		}
-
-		//Centers of mass
-		x_mass_test = x_mass_test / n_points;
-		y_mass_test = y_mass_test / n_points;
-		x_mass_reference = x_mass_reference / n_points;
-		y_mass_reference = y_mass_reference / n_points;
-
-		//Compute scale using the least squares adjustment: h = inv (A'WA)A'WL, weighted Helmert transformation
-		T sum_xy_1 = 0, sum_xy_2 = 0, sum_xx_yy = 0;
-		for (unsigned int i = 0; i < n_points; i++)
-		{
-			sum_xy_1 = sum_xy_1 + (nl_test[i]->getX() - x_mass_test) * W(i, i) * (nl_projected_temp[i]->getX() - x_mass_reference) +
-				(nl_test[i]->getY() - y_mass_test) * W(i, i) * (nl_projected_temp[i]->getY() - y_mass_reference);
-			sum_xy_2 = sum_xy_2 + (nl_test[i]->getY() - y_mass_test) * W(i, i) * (nl_projected_temp[i]->getX() - x_mass_reference) -
-				(nl_test[i]->getX() - x_mass_test) * W(i, i) * (nl_projected_temp[i]->getY() - y_mass_reference);
-			sum_xx_yy = sum_xx_yy + (nl_projected_temp[i]->getX() - x_mass_reference) * W(i, i) * (nl_projected_temp[i]->getX() - x_mass_reference) +
-				(nl_projected_temp[i]->getY() - y_mass_reference) * W(i, i) * (nl_projected_temp[i]->getY() - y_mass_reference);
-		}
-
-		//Transformation ratios
-		q1 = sum_xy_1 / sum_xx_yy;
-		q2 = sum_xy_2 / sum_xx_yy;
-
-		//Rotation
-		const T alpha = atan2(q2, q1) * 180.0 / M_PI;
-		//std::cout << "rot = " << alpha;
-		//std::cout << "   scale = " << sqrt(q1*q1 + q2*q2);
-
-		//Compute coordinate differences (residuals): estimated - input
-		for (unsigned int i = 0; i < m; i++)
-		{
-			//Use only non singular points
-			if (W(i, i) != 0.0)
-			{
-				V(i, 0) = (q1 * (nl_projected_temp[i]->getX() - x_mass_reference) - q2 * (nl_projected_temp[i]->getY() - y_mass_reference) - (nl_test[i]->getX() - x_mass_test));
-				V(i + m, 0) = (q2 * (nl_projected_temp[i]->getX() - x_mass_reference) + q1 * (nl_projected_temp[i]->getY() - y_mass_reference) - (nl_test[i]->getY() - y_mass_test));
-			}
-		}
-
-		//Compute DX, DY
-		const T dx = x_mass_test - x_mass_reference * q1 + y_mass_reference * q2;
-		const T dy = y_mass_test - x_mass_reference * q2 - y_mass_reference * q1;
-
-		sample_res.setDx(dx);
-		sample_res.setDy(dy);
-
-		//V.print();
-		//std::cout << q1 << "  " << q2;
-
-		//Set rotation
-		sample_res.setRotation(alpha);
-
-		//Perform scaling
-		R_def *= sqrt(q1 * q1 + q2 * q2);
-		q1 = q1 / R_def;
-		q2 = q2 / R_def;
-
-		iter++;
+		//Add point to the list
+		nl_projected_temp.push_back(n_projected);
 	}
 
-};
+	//Computer centers of mass for both systems P, P'
+	T x_mass_test = 0.0, y_mass_test = 0.0, x_mass_reference = 0.0, y_mass_reference = 0.0;
+
+	for (unsigned int i = 0; i < m; i++)
+	{
+		//Use only non singular points
+		//if (W(i, i) != 0.0)
+		{
+			x_mass_test += nl_test[i]->getX();
+			y_mass_test += nl_test[i]->getY();
+
+			x_mass_reference += nl_projected_temp[i]->getX();
+			y_mass_reference += nl_projected_temp[i]->getY();
+		}
+	}
+
+	//Centers of mass
+	x_mass_test = x_mass_test / m;
+	y_mass_test = y_mass_test / m;
+	x_mass_reference = x_mass_reference / m;
+	y_mass_reference = y_mass_reference / m;
+
+	//Compute scale using the least squares adjustment: h = inv (A'WA)A'WL, weighted Helmert transformation
+	T sum_xy_1 = 0, sum_xy_2 = 0, sum_xx_yy = 0;
+	for (unsigned int i = 0; i < m; i++)
+	{
+		sum_xy_1 = sum_xy_1 + (nl_test[i]->getX() - x_mass_test) * (nl_projected_temp[i]->getX() - x_mass_reference) +
+			(nl_test[i]->getY() - y_mass_test) * (nl_projected_temp[i]->getY() - y_mass_reference);
+		sum_xy_2 = sum_xy_2 + (nl_test[i]->getY() - y_mass_test) * (nl_projected_temp[i]->getX() - x_mass_reference) -
+			(nl_test[i]->getX() - x_mass_test) * (nl_projected_temp[i]->getY() - y_mass_reference);
+		sum_xx_yy = sum_xx_yy + (nl_projected_temp[i]->getX() - x_mass_reference) * (nl_projected_temp[i]->getX() - x_mass_reference) +
+			(nl_projected_temp[i]->getY() - y_mass_reference) * (nl_projected_temp[i]->getY() - y_mass_reference);
+	}
+
+	//Transformation ratios
+	q1 = sum_xy_1 / sum_xx_yy;
+	q2 = sum_xy_2 / sum_xx_yy;
+
+	//Rotation
+	const T alpha = atan2(q2, q1) * 180.0 / M_PI;
+
+	//Outliers
+	if (analysis_parameters.remove_outliers)
+	{
+
+		//Remove outliers
+		Matrix <T> PR(m, 2), QR(m, 2), Eps(2 * m, 1);
+		for (unsigned int i = 0; i < m; i++)
+		{
+			PR(i, 0) = (nl_test[i]->getX() - x_mass_test);
+			PR(i, 1) = (nl_test[i]->getY() - y_mass_test);
+
+			QR(i, 0) = (q1 * (nl_projected_temp[i]->getX() - x_mass_reference) - q2 * (nl_projected_temp[i]->getY() - y_mass_reference));
+			QR(i, 1) = (q2 * (nl_projected_temp[i]->getX() - x_mass_reference) + q1 * (nl_projected_temp[i]->getY() - y_mass_reference));
+		}
+
+		//Remove  outliers
+		T eps_init = 0, eps = 0;
+		unsigned int iterations = 0;
+		Outliers::findOutliersME(PR, QR, k, 1.0e-10, SimilarityScheme, me_function, 30, W, I, Eps, eps_init, eps, iterations);
+
+		for (unsigned int i = 0; i < 2 * m; i++)
+		{
+			//W(i, i) = I(i, 0);
+		}
+
+		//Eps.print();
+		//I.print();  //Huber, Andrew, Danish2, Yang, Tukey, Danish	
+	}
+
+	//Compute coordinate differences (residuals): estimated - input
+	for (unsigned int i = 0; i < m; i++)
+	{
+		//Use only non singular points
+		//if (I(i, 0) != 0.0)
+		{
+			V(i, 0) = ((q1 * (nl_projected_temp[i]->getX() - x_mass_reference) - q2 * (nl_projected_temp[i]->getY() - y_mass_reference) - (nl_test[i]->getX() - x_mass_test)));
+			V(i + m, 0) = ((q2 * (nl_projected_temp[i]->getX() - x_mass_reference) + q1 * (nl_projected_temp[i]->getY() - y_mass_reference) - (nl_test[i]->getY() - y_mass_test)));
+		}
+	}
+
+	//Compute DX, DY
+	const T dx = (x_mass_test - x_mass_reference * q1 + y_mass_reference * q2);
+	const T dy = (y_mass_test - x_mass_reference * q2 - y_mass_reference * q1);
+
+	sample_res.setDx(dx);
+	sample_res.setDy(dy);
+
+	//Set rotation
+	sample_res.setRotation(alpha);
+
+	//Perform scaling
+	R *= sqrt(q1 * q1 + q2 * q2);
+	//q1 = q1 * R;
+	//q2 = q2 * R;
+
+	res_evaluations++;
+}
 
 
 #endif

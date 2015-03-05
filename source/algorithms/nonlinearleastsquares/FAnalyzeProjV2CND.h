@@ -211,7 +211,7 @@ public:
 
 						try
 						{
-								//Convert geographic point to oblique position: use a normal direction of converted longitude
+								//Convert geographic point to oblique aspect
 								lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0));
 								lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, lat_trans, X(1, 0), X(2, 0), trans_lon_dir);
 
