@@ -172,7 +172,7 @@ template <typename T>
 std::string to_string(T const & val) 
 {
     //Convert number to string (full support to_string() in C++ X11)
-    stringstream s_string;
+    std::stringstream s_string;
     s_string << val;
     return s_string.str();
 }
