@@ -34,6 +34,8 @@
 template <typename T>
 class Projection;
 
+template <typename T>
+class FAnalyzeProjV4DEL;
 
 template <typename T>
 class FAnalyzeProjV4
