@@ -3665,7 +3665,7 @@ T CartAnalysis::solutionDiversity(Container <Sample <T> > &sl, Container <Projec
 			{
 				//Convert to lat, lon
 				const T lat_trans = CartTransformation::latToLatTrans(pl_reference[j]->getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon());
-				const T lon_trans = CartTransformation::lonToLonTrans(pl_reference[j]->getLat(), lon_red, lat_trans, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir);
+				const T lon_trans = CartTransformation::lonToLonTrans(pl_reference[j]->getLat(), lon_red, proj->getCartPole().getLat(), proj->getCartPole().getLon(), trans_lon_dir);
 
 				//Create temporary point
 				Point3DGeographic <T> point_geo_temp(lat_trans, lon_trans);

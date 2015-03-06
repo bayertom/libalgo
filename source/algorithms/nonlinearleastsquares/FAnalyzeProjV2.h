@@ -31,10 +31,15 @@
 
 #include "libalgo/source/algorithms/geneticalgorithms/FAnalyzeProjV2DEL.h"
 
+//Forward declarations
 template <typename T>
 class Projection;
 
+template <typename T>
+class FAnalyzeProjV2DEL;
 
+
+//Functor, compute matrix V of residuals for cartometric analysis
 template <typename T>
 class FAnalyzeProjV2
 {

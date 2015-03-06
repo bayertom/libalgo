@@ -30,7 +30,7 @@
 #include "libalgo/source/algorithms/cartanalysis/CartAnalysis.h"
 #include "libalgo/source/algorithms/outliers/Outliers.h"
 
-
+//Forward declaration
 template <typename T>
 class Projection;
 
