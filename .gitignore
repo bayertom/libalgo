@@ -20,6 +20,7 @@ config.status
 libtool
 .deps/
 .dirstamp
+.libs
 src/Makefile
 stamp-h1
 *.lo
