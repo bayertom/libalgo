@@ -97,95 +97,95 @@
 
 using namespace MatrixOperations;
 
-
 template <typename T>
 void CartAnalysis::computeAnalysisForAllSamplesGS(Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
-	typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
-	unsigned int & total_created_or_thrown_samples, std::ostream * output)
+                                                  typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
+                                                  unsigned int & total_created_or_thrown_samples, std::ostream * output)
 {
-	//Find mimum using the global jitterpling of the function
+    //Find mimum using the global jitterpling of the function
 
-	//Total computed analysis ( successful + thrown by the heuristic )
-	total_created_or_thrown_samples = 0;
+    //Total computed analysis ( successful + thrown by the heuristic )
+    total_created_or_thrown_samples = 0;
 
-	//Total successfully computed analysis for one cartographic projection
-	unsigned int total_created_and_analyzed_samples_projection = 0;
+    //Total successfully computed analysis for one cartographic projection
+    unsigned int total_created_and_analyzed_samples_projection = 0;
 
-	//Create sample for analyzed projection from command line and set flag for this sample
-	if (analysis_parameters.analyzed_projections.size() > 0)
-	{
-		//Analyze all projections specified in command line
-		for (typename TItemsList<Projection <T> *> ::Type::iterator i_projections = analysis_parameters.analyzed_projections.begin(); i_projections != analysis_parameters.analyzed_projections.end(); ++i_projections)
-		{
-			//Get analyzed projection
-			Projection <T> *analyzed_proj = *i_projections;
+    //Create sample for analyzed projection from command line and set flag for this sample
+    if (analysis_parameters.analyzed_projections.size() > 0)
+    {
+        //Analyze all projections specified in command line
+        for (typename TItemsList<Projection <T> *> ::Type::iterator i_projections = analysis_parameters.analyzed_projections.begin(); i_projections != analysis_parameters.analyzed_projections.end(); ++i_projections)
+        {
+            //Get analyzed projection
+            Projection <T> *analyzed_proj = *i_projections;
 
-			//List of points using new central meridian redefined in projection file
-			Container <Point3DGeographic <T> *> pl_reference_red;
+            //List of points using new central meridian redefined in projection file
+            Container <Point3DGeographic <T> *> pl_reference_red;
 
-			//Reduce lon using a new central meridian redefined in projection file, if necessary
-			if ((*i_projections)->getLon0() != 0.0) redLon(pl_reference, (*i_projections)->getLon0(), pl_reference_red);
+            //Reduce lon using a new central meridian redefined in projection file, if necessary
+            if ((*i_projections)->getLon0() != 0.0) redLon(pl_reference, (*i_projections)->getLon0(), pl_reference_red);
 
-			//Set pointer to processed file: reduced or non reduced
-			Container <Point3DGeographic <T> *> * p_pl_reference = ((*i_projections)->getLon0() == 0.0 ? &pl_reference : &pl_reference_red);
+            //Set pointer to processed file: reduced or non reduced
+            Container <Point3DGeographic <T> *> * p_pl_reference = ((*i_projections)->getLon0() == 0.0 ? &pl_reference : &pl_reference_red);
 
-			//Create temporary containers for non singular points
-			Container <Node3DCartesian <T> *> nl_test_non_sing;
-			Container <Point3DGeographic <T> *> pl_reference_non_sing;
+            //Create temporary containers for non singular points
+            Container <Node3DCartesian <T> *> nl_test_non_sing;
+            Container <Point3DGeographic <T> *> pl_reference_non_sing;
 
-			typename TDevIndexPairs <T>::Type non_singular_pairs;
-			TIndexList non_singular_points;
+            typename TDevIndexPairs <T>::Type non_singular_pairs;
+            TIndexList non_singular_points;
 
-			//Initialize non singular indices
-			for (unsigned int i = 0; i < p_pl_reference->size(); i++) non_singular_points.push_back(i);
+            //Initialize non singular indices
+            for (unsigned int i = 0; i < p_pl_reference->size(); i++) non_singular_points.push_back(i);
 
-			//Set pointer to processed file: with or wihout singular points
-			Container <Node3DCartesian <T> *> *p_nl_test = &nl_test;
+            //Set pointer to processed file: with or wihout singular points
+            Container <Node3DCartesian <T> *> *p_nl_test = &nl_test;
 
-			//Remove singular points to prevent throwing a sample
-			bool singular_points_found = false;
-			removeSingularPoints(*p_nl_test, *p_pl_reference, *i_projections, nl_test_non_sing, pl_reference_non_sing, non_singular_pairs);
+            //Remove singular points to prevent throwing a sample
+            bool singular_points_found = false;
+            removeSingularPoints(*p_nl_test, *p_pl_reference, *i_projections, nl_test_non_sing, pl_reference_non_sing, non_singular_pairs);
 
-			//Some singular points have been found
-			if (nl_test.size() != nl_test_non_sing.size())
-			{
-				//Set pointers to files without singular points
-				p_nl_test = &nl_test_non_sing;	p_pl_reference = &pl_reference_non_sing;
+            //Some singular points have been found
+            if (nl_test.size() != nl_test_non_sing.size())
+            {
+                //Set pointers to files without singular points
+                p_nl_test = &nl_test_non_sing;
+                p_pl_reference = &pl_reference_non_sing;
 
-				//Set flag to true, used for a sample using non-singular sets
-				singular_points_found = true;
+                //Set flag to true, used for a sample using non-singular sets
+                singular_points_found = true;
 
-				//Correct meridians and parallels
-				correctMeridiansAndParrallels <T>(meridians, parallels, non_singular_pairs);
+                //Correct meridians and parallels
+                correctMeridiansAndParrallels <T>(meridians, parallels, non_singular_pairs);
 
-				//Convert non singular pairs to index list: indices will be printed in output
-				non_singular_points.clear();
-				std::transform(non_singular_pairs.begin(), non_singular_pairs.end(), std::back_inserter(non_singular_points), getSecondElementInPair());
-			}
+                //Convert non singular pairs to index list: indices will be printed in output
+                non_singular_points.clear();
+                std::transform(non_singular_pairs.begin(), non_singular_pairs.end(), std::back_inserter(non_singular_points), getSecondElementInPair());
+            }
 
-			//Compute analysis
-			try
-			{
-				Sample <T> analyzed_sample;
-				(void)computeAnalysisForOneSample(*p_nl_test, *p_pl_reference, meridians, parallels, faces_test, analyzed_proj, analysis_parameters, analyzed_sample, singular_points_found, total_created_and_analyzed_samples_projection, output);
+            //Compute analysis
+            try
+            {
+                Sample <T> analyzed_sample;
+                (void) computeAnalysisForOneSample(*p_nl_test, *p_pl_reference, meridians, parallels, faces_test, analyzed_proj, analysis_parameters, analyzed_sample, singular_points_found, total_created_and_analyzed_samples_projection, output);
 
-				//Add result to the list
-				if (total_created_and_analyzed_samples_projection) sl.push_back(analyzed_sample);
-			}
+                //Add result to the list
+                if (total_created_and_analyzed_samples_projection) sl.push_back(analyzed_sample);
+            }
 
-			//Throw exception
-			catch (Error & error)
-			{
-				if (analysis_parameters.print_exceptions)
-					error.printException();
-			}
+            //Throw exception
+            catch (Error & error)
+            {
+                if (analysis_parameters.print_exceptions)
+                    error.printException();
+            }
 
-			//Sample with analyzed projection has been successfully created (not thrown by the heuristic)
-			if (total_created_and_analyzed_samples_projection > 0) sl[sl.size() - 1].setAnalyzedProjectionSample(true);
-		}
+            //Sample with analyzed projection has been successfully created (not thrown by the heuristic)
+            if (total_created_and_analyzed_samples_projection > 0) sl[sl.size() - 1].setAnalyzedProjectionSample(true);
+        }
 
-		if (total_created_and_analyzed_samples_projection == 0) throw ErrorBadData("ErrorBadData: no analyzed projection has been used because of dissimilarity.", "Analysis has been stopped.");
-	}
+        if (total_created_and_analyzed_samples_projection == 0) throw ErrorBadData("ErrorBadData: no analyzed projection has been used because of dissimilarity.", "Analysis has been stopped.");
+    }
 
 	//Process all cartographic projections from the list one by one
 	for (typename TItemsList <Projection <T> *> ::Type::const_iterator i_projections = pl.begin(); i_projections != pl.end(); ++i_projections)
