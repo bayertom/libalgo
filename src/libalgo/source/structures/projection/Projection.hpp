@@ -57,88 +57,182 @@ template <typename T>
 Projection <T> ::Projection ( const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_ )
         : R ( R_ ), lon0 ( lon0_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ )
 {
-        projection_name = NULL;
+	projection_family = NULL;
+	projection_name = NULL;
 
-        if ( ( x_equat_ != NULL ) && ( y_equat_ != NULL ) )
+        if ( x_equat_ != NULL )
         {
                 x_equat = new char [ strlen ( x_equat_ ) + 1 ];
-                y_equat = new char [ strlen ( y_equat_ ) + 1 ];
                 strcpy ( x_equat, x_equat_ );
-                strcpy ( y_equat, y_equat_ );
         }
+
+	else
+	{
+		x_equat = NULL;
+	}
+
+	if (y_equat_ != NULL)
+	{
+		y_equat = new char[strlen(y_equat_) + 1];
+		strcpy(y_equat, y_equat_);
+	}
 
         else
         {
-                x_equat = NULL;
+               
                 y_equat = NULL;
         }
 }
 
 
 template <typename T>
-Projection <T> ::Projection ( const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_name_ )
+Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_family_ , const char * projection_name_)
         : R ( R_ ), lon0 ( lon0_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ )
 {
-        if ( ( x_equat_ != NULL ) && ( y_equat_ != NULL ) && ( projection_name_ != NULL ) )
-        {
-                x_equat = new char [ strlen ( x_equat_ ) + 1 ];
-                y_equat = new char [ strlen ( y_equat_ ) + 1 ];
-                projection_name = new char [ strlen ( projection_name_ ) + 1 ];
-                strcpy ( x_equat, x_equat_ );
-                strcpy ( y_equat, y_equat_ );
-                strcpy ( projection_name, projection_name_ );
-        }
+	if (x_equat_ != NULL)
+	{
+		x_equat = new char [ strlen ( x_equat_ ) + 1 ];
+		strcpy(x_equat, x_equat_);
+	}
 
-        else
-        {
-                x_equat = NULL;
-                y_equat = NULL;
-                projection_name = NULL;
-        }
+	else
+	{
+		x_equat = NULL;
+	}
+
+	if (y_equat_ != NULL)
+	{
+		y_equat = new char[strlen(y_equat_) + 1];
+		strcpy(y_equat, y_equat_);
+	}
+
+	else
+	{
+		y_equat = NULL;
+	}
+
+	if (projection_family_ != NULL)
+	{
+		projection_family = new char[strlen(projection_family_) + 1];
+		strcpy(projection_family, projection_family_);
+	}
+
+	else
+	{
+		projection_family = NULL;
+	}
+
+	if (projection_name_ != NULL)
+	{
+		projection_name = new char[strlen(projection_name_) + 1];
+		strcpy(projection_name, projection_name_);
+	}
+
+	else
+	{
+		projection_name = NULL;
+	}
 }
 
 
 template <typename T>
 Projection <T> ::Projection ( const Projection <T> &proj ) : R ( proj.R ), lon0 ( proj.lon0 ), dx ( proj.dx ), dy ( proj.dy ), c ( proj.c )
 {
-        if ( ( proj.x_equat != NULL ) && ( proj.y_equat != NULL ) && ( proj.projection_name != NULL ) )
-        {
-                x_equat = new char [ strlen ( proj.x_equat ) + 1 ];
-                y_equat = new char [ strlen ( proj.y_equat ) + 1 ];
-                projection_name = new char [ strlen ( proj.projection_name ) + 1 ];
-                strcpy ( x_equat, proj.x_equat );
-                strcpy ( y_equat, proj.y_equat );
-                strcpy ( projection_name, proj.projection_name );
-        }
 
-        else
-        {
-                x_equat = NULL;
-                y_equat = NULL;
-                projection_name = NULL;
-        }
+	if (proj.x_equat != NULL)
+	{
+		x_equat = new char[strlen(proj.x_equat) + 1];
+		strcpy(x_equat, proj.x_equat);
+	}
+
+	else
+	{
+		x_equat = NULL;
+	}
+
+	if (proj.y_equat != NULL)
+	{
+		y_equat = new char[strlen(proj.y_equat) + 1];
+		strcpy(y_equat, proj.y_equat);
+	}
+
+	else
+	{
+		y_equat = NULL;
+	}
+
+	if (proj.projection_family != NULL)
+	{
+		projection_family = new char[strlen(proj.projection_family) + 1];
+		strcpy(projection_family, proj.projection_family);
+	}
+
+	else
+	{
+		projection_family = NULL;
+	}
+
+	if (proj.projection_name != NULL)
+	{
+		projection_name = new char[strlen(proj.projection_name) + 1];
+		strcpy(projection_name, proj.projection_name);
+	}
+
+	else
+	{
+		projection_name = NULL;
+	}
+
 }
 
 
 template <typename T>
-Projection <T> ::Projection ( const Projection <T> *proj ) : R ( proj->R ), lon0 ( proj->lon0 ), dx ( proj->dx ), dy ( proj->dy ), c ( proj->c )
+Projection <T> ::Projection(const Projection <T> *proj) : R(proj->R), lon0(proj->lon0), dx(proj->dx), dy(proj->dy), c(proj->c)
 {
-        if ( ( proj->x_equat != NULL ) && ( proj->y_equat != NULL ) && ( proj->projection_name != NULL ) )
-        {
-                x_equat = new char [ strlen ( proj->x_equat ) + 1 ];
-                y_equat = new char [ strlen ( proj->y_equat ) + 1 ];
-                projection_name = new char [ strlen ( proj->projection_name ) + 1 ];
-                strcpy ( x_equat, proj->x_equat );
-                strcpy ( y_equat, proj->y_equat );
-                strcpy ( projection_name, proj->projection_name );
-        }
 
-        else
-        {
-                x_equat = NULL;
-                y_equat = NULL;
-                projection_name = NULL;
-        }
+	if (proj->x_equat != NULL)
+	{
+		x_equat = new char[strlen(proj->x_equat) + 1];
+		strcpy(x_equat, proj->x_equat);
+	}
+
+	else
+	{
+		x_equat = NULL;
+	}
+
+	if (proj->y_equat != NULL)
+	{
+		y_equat = new char[strlen(proj->y_equat) + 1];
+		strcpy(y_equat, proj->y_equat);
+	}
+
+	else
+	{
+		y_equat = NULL;
+	}
+
+	if (proj->projection_family != NULL)
+	{
+		projection_family = new char[strlen(proj->projection_family) + 1];
+		strcpy(projection_family, proj->projection_family);
+	}
+
+	else
+	{
+		projection_family = NULL;
+	}
+
+	if (proj->projection_name != NULL)
+	{
+		projection_name = new char[strlen(proj->projection_name) + 1];
+		strcpy(projection_name, proj->projection_name);
+	}
+
+	else
+	{
+		projection_name = NULL;
+	}
 }
 
 
@@ -156,6 +250,12 @@ Projection <T>:: ~Projection()
                 delete [] y_equat;
                 y_equat = NULL;
         }
+
+	if (projection_family != NULL)
+	{
+		delete[] projection_family;
+		projection_family = NULL;
+	}
 
         if ( projection_name != NULL )
         {
@@ -195,6 +295,21 @@ void Projection <T> :: setYEquat ( const char * y_equat_ )
         {
                 y_equat = NULL;
         }
+}
+
+template <typename T>
+void Projection <T> ::setProjectionFamily(const char * projection_family_)
+{
+	if (projection_family_ != NULL)
+	{
+		projection_family = new char[strlen(projection_family_) + 1];
+		strcpy(projection_family, projection_family_);
+	}
+
+	else
+	{
+		projection_family = NULL;
+	}
 }
 
 

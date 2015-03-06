@@ -182,15 +182,15 @@
 #endif
 
 #ifndef MIN_LAT0
-#define MIN_LAT0				5.0				//Minimum latitude of the undistorted parallel
+#define MIN_LAT0				10.0				//Minimum latitude of the undistorted parallel
 #endif
 
 #ifndef MAX_LAT0
-#define MAX_LAT0				85.0				//Maximum latitude of the undistorted parallel
+#define MAX_LAT0				80.0				//Maximum latitude of the undistorted parallel
 #endif
 
 #ifndef MAX_C
-#define MAX_C					1000.0				//Maximum constant of the projection
+#define MAX_C					10000000.0			//Maximum constant of the projection
 #endif
 
 #ifndef MIN_LAT_STEP

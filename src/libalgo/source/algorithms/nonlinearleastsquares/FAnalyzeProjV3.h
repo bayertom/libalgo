@@ -76,24 +76,19 @@ public:
 			//Correct R, lat0, lon0
 			if (X(0, 0) < 0.0) X(0, 0) = fabs(X(0, 0));
 
-			//Subtract period
-			if (fabs(X(3, 0)) > MAX_LAT) X(3, 0) = fmod(X(3, 0), 90);
+			//Set lat0 inside the interval
+			if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
-			if (fabs(X(4, 0)) > MAX_LON)
-				X(4, 0) = fmod(X(4, 0), 180);
-
-			//Set to interval
-			if (X(3, 0) < lat0_min) X(3, 0) = lat0_min;
-
-			if (X(3, 0) > lat0_max) X(3, 0) = lat0_max;
+			//Set lon0
+			if (fabs(X(4, 0)) > MAX_LON) X(4, 0) = fmod(X(4, 0), 180);
 
 			//Set c inside the interval
-			if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
+			//if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
 
-			if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
+			//if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
 
 			//Subtract period
-			if (fabs(X(6, 0)) > MAX_LON) X(6, 0) = fmod(X(6, 0), 180);
+			//if (fabs(X(6, 0)) > MAX_LON) X(6, 0) = fmod(X(6, 0), 180);
 		}
 
 		//Transverse aspect: lonp, lat0
@@ -104,19 +99,19 @@ public:
 			if (X(0, 0) < 0.0) X(0, 0) = fabs(X(0, 0));
 
 			//Subtract period
-			if (fabs(X(2, 0)) > MAX_LON) X(2, 0) = fmod(X(2, 0), 180);
+			if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
+			else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
 
-			if (fabs(X(3, 0)) > MAX_LAT) X(3, 0) = fmod(X(3, 0), 90);
+			//Set lat0 inside the interval
+			if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
-			//Set to interval
-			if (X(3, 0) < lat0_min) X(3, 0) = lat0_min;
-
-			if (X(3, 0) > lat0_max) X(3, 0) = lat0_max;
+			//Set lon0
+			X(4, 0) = 0;
 
 			//Set c inside the interval
-			if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
+			//if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
 
-			if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
+			//if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
 
 			//Subtract period
 			if (fabs(X(6, 0)) > MAX_LON) X(6, 0) = fmod(X(6, 0), 180);
@@ -128,55 +123,33 @@ public:
 			//Correct R, latp, lonp, lat0
 			if (X(0, 0) < 0.0) X(0, 0) = fabs(X(0, 0));
 
-			//Subtract period
-			if (fabs(X(1, 0)) > MAX_LAT)  X(1, 0) = fmod(X(1, 0), 90);
+			if (X(1, 0) < MIN_LAT)  X(1, 0) = MIN_LAT - fmod(X(1, 0), MIN_LAT);
+			else if (X(1, 0) > MAX_LAT)  X(1, 0) = MAX_LAT - fmod(X(1, 0), MAX_LAT);
 
-			if (fabs(X(2, 0)) > MAX_LON)  X(2, 0) = fmod(X(2, 0), 180);
-
-			if (fabs(X(3, 0)) > MAX_LAT)  X(3, 0) = fmod(X(3, 0), 90);
+			if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
+			else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
 
 			//Set lat0 inside the interval
-			//if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
+			if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
-			//Set lonp to zero, if latp = 90
-			if (fabs(fabs(X(1, 0)) - MAX_LAT) < 1.0)  X(2, 0) = 0.0;
-
-			//Set c inside the interval
-			if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
-
-			if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
-
-			//Subtract period
-			if (fabs(X(6, 0)) > MAX_LON) X(6, 0) = fmod(X(6, 0), 180);
-			/*
-			//Set lat0 inside the interval
-			//if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
-			if (X(3, 0) > lat0_max)  X(3, 0) = 2 * lat0_max - X(3, 0);
-			if (X(3, 0) < lat0_min)  X(3, 0) = 2 * lat0_min - X(3, 0);
-			*/
-			
 			//Set lonp to zero, if latp = 90
 			if (fabs(fabs(X(1, 0)) - MAX_LAT) < 1.0)
 			{
-				X(1, 0) = 90.0;
+				//X(1, 0) = 90.0;
 				X(2, 0) = 0.0;
 			}
-			/*
-			else if (fabs(X(1, 0)) < 1)
-			{
-				X(1, 0) = 0;
-				X(2, 0) = 90;
-			}
-			*/
-			/*
+
+			//Set lon0
+			X(4, 0) = 0;
+
 			//Set c inside the interval
-			if (X(5, 0) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
-			if (X(5, 0) < 0) X(5, 0) = -X(5, 0);
+			//if (fabs(X(5, 0)) < 0) X(5, 0) = -X(5, 0);
+
+			//if (fabs(X(5, 0)) > MAX_C) X(5, 0) = 2 * MAX_C - X(5, 0);
 
 			//Subtract period
-			if (X(6, 0) > MAX_LON)  X(6, 0) = 2 * MAX_LON - X(6, 0);
-			if (X(6, 0) < -1.0 * MAX_LON)   X(6, 0) = -2 * MAX_LON - X(6, 0);
-			*/
+			if (fabs(X(6, 0)) > MAX_LON) X(6, 0) = fmod(X(6, 0), 180);
+				
 		}
 
 		//Set properties to the projection: ommit estimated radius, additional constants dx, dy
@@ -192,61 +165,6 @@ public:
 
 		//Get aplha
 		const T alpha = X(6, 0);
-
-		//Compute analysis for one sample
-		if (compute_analysis)
-		{
-			try
-			{
-				//Compute analysis
-				try
-				{
-					CartAnalysis::computeAnalysisForOneSample(nl_test, pl_reference, meridians, parallels, faces_test, proj, analysis_parameters, sample_res, false, created_samples, output);
-				}
-
-				//Throw exception
-				catch (Error & error)
-				{
-					if (analysis_parameters.print_exceptions)
-					{
-						//Print error and info about projection properties
-						error.printException(output);
-						*output << "proj = " << proj->getProjectionName() << "  latp = " << proj->getCartPole().getLat() << "  lonp = " << proj->getCartPole().getLon() << "  lat0 = " << proj->getLat0() << "  c = " << proj->getC() << '\n';
-					}
-				}
-
-				//Get index list of the sample
-				TIndexList non_singular_points_indices = sample_res.getNonSingularPointsIndices();
-				TIndexList k_best_points_indices = sample_res.getKBestPointsIndices();
-
-				//Change weights in W matrix: weights of singular points or outliers are 0, otherwise they are 1
-				unsigned int index_k_best_points = 0, n_k_best = k_best_points_indices.size(), n_points = pl_reference.size();
-				int index_point = (n_k_best > 0 ? non_singular_points_indices[k_best_points_indices[index_k_best_points++]] : -1);
-
-				for (int i = 0; (i < n_points) && (n_k_best > 0); i++)
-				{
-					//Set weight of point to 1 (it is not an outlier nor singular)
-					if (i == index_point)
-					{
-						W(index_point, index_point) = 1.0; W(index_point + n_points, index_point + n_points) = 1.0;
-
-						if (index_k_best_points < n_k_best) index_point = non_singular_points_indices[k_best_points_indices[index_k_best_points++]];
-					}
-
-					//Set weight of point to zero (it is an outlier or singular)
-					else
-					{
-						W(i, i) = 0.0; W(i + n_points, i + n_points) = 0.0;
-					}
-				}
-			}
-
-			//Throw error
-			catch (Error & error)
-			{
-				if (analysis_parameters.print_exceptions) error.printException();
-			}
-		}
 
 		//Clear points from the previous iteration
 		nl_projected.clear();
@@ -264,13 +182,50 @@ public:
 
 			try
 			{
-				//Convert geographic point to oblique position: use a normal direction of converted longitude
+				//Convert geographic point to oblique aspect
 				lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0));
-				lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, lat_trans, X(1, 0), X(2, 0), trans_lon_dir);
+				lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0), trans_lon_dir);
 
-				//Compute x, y coordinates
-				x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
-				y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+				for (unsigned int j = 0; j < 3; j++)
+				{
+					try
+					{
+						//Compute x, y coordinates
+						x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), 0.0, X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+						y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), 0.0, X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+
+						//x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+						//y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+					}
+
+					//2 attempt to avoid the singularity
+					catch (Error &error)
+					{
+						//Move in latitude direction
+						if (j == 0)
+						{
+							if (lat_trans == MAX_LAT) 
+								lat_trans -= GRATICULE_ANGLE_SHIFT;
+							else
+								lat_trans += GRATICULE_ANGLE_SHIFT;
+						}
+
+						//Move in longitude direction
+						else if (j == 1)
+						{
+							if (lon_trans == MAX_LON) 
+								lon_trans -= GRATICULE_ANGLE_SHIFT;
+							else 
+								lon_trans += GRATICULE_ANGLE_SHIFT;
+						}
+
+						//Neither first nor the second shhifts do not bring improvement
+						else if (j == 2)
+						{
+							throw;
+						}
+					}
+				}
 			}
 
 			catch (Error &error)
@@ -331,6 +286,7 @@ public:
 		sample_res.setDx(dx);
 		sample_res.setDy(dy);
 		sample_res.setRotation(alpha);
+
 	}
 };
 

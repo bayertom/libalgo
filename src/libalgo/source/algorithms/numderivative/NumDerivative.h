@@ -52,7 +52,7 @@ typedef enum
         VariableX5,
         VariableX6,
         VariableX7,
-        VariableX8,			//Derivative according to the last variable
+        VariableX8,		//Derivative according to the last variable
 } TDerivativeVariable;
 
 

@@ -49,7 +49,9 @@ class Sample
                 T R;										//Sphere radius
                 T latp;										//Latitude of the cartographic pole, overriden compared to the projection definition.
                 T lonp;										//Longitude of the cartographic pole, overriden compared to the projectin definition.
-                T lat0;										//Latitude of the undistorted parallel, overriden compared to the projectiondefinition.
+                T lat0;										//Latitude of the undistorted parallel, overriden compared to the projection definition.
+		T lat1;										//Latitude of the undistorted parallel, overriden compared to the projection definition.
+		T lat2;										//Latitude of the undistorted parallel, overriden compared to the projection definition.
                 T lon0;										//New central parallel
                 T dx;										//Additive constant
                 T dy;										//Additive constant
@@ -71,8 +73,10 @@ class Sample
                 T helmert_transformation_ratio;							//Helmert transformation ratio
                 T gn_turning_function_ratio;							//Turning function ratio for meridians and parallels in geographic network
                 T voronoi_cell_turning_function_ratio;						//Voronoi cell turning function ratio
-				T voronoi_cell_inner_distance_ratio;						//Voronoi cell inner distance + shape context ratio
+		T voronoi_cell_inner_distance_ratio;						//Voronoi cell inner distance + shape context ratio
 
+		unsigned int iterations;							//Amount of iterations
+		unsigned int residual_eval;							//Amount of residual evaluations
 
                 //Percentage match
                 unsigned int homothetic_transformation_perc_match;				//Percantage match ratio for homothetic transformation
@@ -92,17 +96,17 @@ class Sample
                 int helmert_transformation_ratio_position;					//Position of the sample sorted by the helmert transformation
                 int gn_turning_function_ratio_position;						//Position of the sample sorted by the geographic network tangent function
                 int voronoi_cell_turning_function_ratio_position;				//Position of the sample sorted by the voronoi cell tangent function
-				int voronoi_cell_inner_distance_ratio_position;
+		int voronoi_cell_inner_distance_ratio_position;
 				
         public:
-                Sample() :  proj ( NULL ), R ( 1.0 ), latp ( MAX_LAT ), lonp ( 0.0 ), lat0 ( 0.0 ), lon0 ( 0.0 ), dx ( 0.0 ), dy ( 0.0 ), c ( 0.0 ), alpha ( 0.0 ), scale_homt ( 1.0 ), scale_helt ( 1.0 ), rotation ( 0.0 ), analyzed_proj_sample ( false ), rotated_sample ( false ), singular_points_found ( false ), outliers_found ( false ),
-                        cross_nearest_neighbour_distance_ratio ( 0.0 ), homothetic_transformation_ratio ( 0.0 ), helmert_transformation_ratio ( 0.0 ), gn_turning_function_ratio ( 0.0 ), voronoi_cell_turning_function_ratio ( 0.0 ), homothetic_transformation_perc_match ( 0 ), helmert_transformation_perc_match ( 0 ),
+		Sample() : proj(NULL), R(1.0), latp(MAX_LAT), lonp(0.0), lat0(0.0), lat1(0.0), lat2(0.0), lon0(0.0), dx(0.0), dy(0.0), c(0.0), alpha(0.0), scale_homt(1.0), scale_helt(1.0), rotation(0.0), analyzed_proj_sample(false), rotated_sample(false), singular_points_found(false), outliers_found(false),
+			cross_nearest_neighbour_distance_ratio(0.0), homothetic_transformation_ratio(0.0), helmert_transformation_ratio(0.0), gn_turning_function_ratio(0.0), voronoi_cell_turning_function_ratio(0.0), voronoi_cell_inner_distance_ratio(0.0), iterations (0), residual_eval(0), homothetic_transformation_perc_match(0), helmert_transformation_perc_match(0),
                         non_singular_points_indices ( 0 ), k_best_points_indices ( 0 ), homothetic_transformation_matched_points_indices ( 0 ), helmert_transformation_matched_points_indices ( 0 ), cross_nearest_neighbour_distance_ratio_position ( 1 ), homothetic_transformation_ratio_position ( 1 ),
                         helmert_transformation_ratio_position ( 1 ), gn_turning_function_ratio_position ( 1 ), voronoi_cell_turning_function_ratio_position ( 1 ) {}
 
-                Sample ( Projection <T> * proj_, const T R_, const T latp_, const T lonp_, const T lat0_ , const T lon0_, const T dx_, const T dy_, const T c_, const T alpha_, const bool singular_points_found_, const bool outliers_found_, const TIndexList & non_singular_points_indices_, const TIndexList k_best_points_indices_ ) : proj ( proj_ ),
-                        R ( R_ ), latp ( latp_ ), lonp ( lonp_ ), lat0 ( lat0_ ), lon0 ( lon0_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ ), alpha ( alpha_ ),  scale_homt ( 1.0 ), scale_helt ( 1.0 ), rotation ( 0.0 ), analyzed_proj_sample ( false ), rotated_sample ( false ), singular_points_found ( singular_points_found_ ), outliers_found ( outliers_found_ ),
-                        cross_nearest_neighbour_distance_ratio ( 0.0 ), homothetic_transformation_ratio ( 0.0 ), helmert_transformation_ratio ( 0.0 ), gn_turning_function_ratio ( 0.0 ), voronoi_cell_turning_function_ratio ( 0.0 ), homothetic_transformation_perc_match ( 0 ), helmert_transformation_perc_match ( 0 ),
+		Sample(Projection <T> * proj_, const T R_, const T latp_, const T lonp_, const T lat0_, const T lat1_, const T lat2_, const T lon0_, const T dx_, const T dy_, const T c_, const T alpha_, const bool singular_points_found_, const bool outliers_found_, const TIndexList & non_singular_points_indices_, const TIndexList k_best_points_indices_) : proj(proj_),
+			R(R_), latp(latp_), lonp(lonp_), lat0(lat0_), lat1(lat1_), lat2(lat2_), lon0(lon0_), dx(dx_), dy(dy_), c(c_), alpha(alpha_), scale_homt(1.0), scale_helt(1.0), rotation(0.0), analyzed_proj_sample(false), rotated_sample(false), singular_points_found(singular_points_found_), outliers_found(outliers_found_),
+			cross_nearest_neighbour_distance_ratio(0.0), homothetic_transformation_ratio(0.0), helmert_transformation_ratio(0.0), gn_turning_function_ratio(0.0), voronoi_cell_turning_function_ratio(0.0), voronoi_cell_inner_distance_ratio(0.0), iterations(0), residual_eval(0), homothetic_transformation_perc_match(0), helmert_transformation_perc_match(0),
                         non_singular_points_indices ( non_singular_points_indices_ ), k_best_points_indices ( k_best_points_indices_ ), homothetic_transformation_matched_points_indices ( 0 ), helmert_transformation_matched_points_indices ( 0 ), cross_nearest_neighbour_distance_ratio_position ( 1 ), homothetic_transformation_ratio_position ( 1 ),
                         helmert_transformation_ratio_position ( 1 ), gn_turning_function_ratio_position ( 1 ), voronoi_cell_turning_function_ratio_position ( 1 ) {}
 
@@ -114,6 +118,8 @@ class Sample
                 T getLatP() const {return latp;}
                 T getLonP() const {return lonp;}
                 T getLat0() const {return lat0;}
+		T getLat1() const { return lat1; }
+		T getLat2() const { return lat2; }
                 T getLon0() const {return lon0;}
                 T getDx() const {return dx;}
                 T getDy() const {return dy;}
@@ -131,7 +137,9 @@ class Sample
                 T getHelmertTransformationRatio() const {return helmert_transformation_ratio;}
                 T getGNTurningFunctionRatio() const {return gn_turning_function_ratio;}
                 T getVoronoiCellTurningFunctionRatio() const {return voronoi_cell_turning_function_ratio;}
-				T getVoronoiCellInnerDistanceRatio() const { return voronoi_cell_inner_distance_ratio; }
+		T getVoronoiCellInnerDistanceRatio() const { return voronoi_cell_inner_distance_ratio; }
+		unsigned int getIterations() const { return iterations; }
+		unsigned int getResidualEval() const { return residual_eval; }
 
                 unsigned int getHomotheticTransformationPercMatch() const { return homothetic_transformation_perc_match; }
                 unsigned int getHelmertTransformationPercMatch() const { return helmert_transformation_perc_match; }
@@ -156,6 +164,8 @@ class Sample
                 void setLatP ( const T latp_ )  {latp = latp_;}
                 void setLonP ( const T lonp_ )  {lonp = lonp_;}
                 void setLat0 ( const T lat0_ )  {lat0 = lat0_;}
+		void setLat1 (const T lat1_)  { lat1 = lat1_; }
+		void setLat2( const T lat2_)  { lat2 = lat2_; }
                 void setLon0 ( const T lon0_ )  {lon0 = lon0_;}
                 void setDx ( const T dx_ )  {dx = dx_;}
                 void setDy ( const T dy_ )  {dy = dy_;}
@@ -173,9 +183,11 @@ class Sample
                 void setHelmertTransformationRatio ( const T helmert_transformation_ratio_ ) {helmert_transformation_ratio = helmert_transformation_ratio_;}
                 void setGNTurningFunctionRatio ( const T turning_function_ratio_ ) {gn_turning_function_ratio = turning_function_ratio_;}
                 void setVoronoiCellTurningFunctionRatio ( const T voronoi_cell_turning_function_ratio_ ) {voronoi_cell_turning_function_ratio = voronoi_cell_turning_function_ratio_;}
-				void setVoronoiCellInnerDistanceRatio(const T voronoi_cell_inner_distance_ratio_) { voronoi_cell_inner_distance_ratio = voronoi_cell_inner_distance_ratio_; }
+		void setVoronoiCellInnerDistanceRatio(const T voronoi_cell_inner_distance_ratio_) { voronoi_cell_inner_distance_ratio = voronoi_cell_inner_distance_ratio_; }
+		void setIterations(const unsigned int iterations_) { iterations = iterations_; }
+		void setResidualEval(const unsigned int residual_eval_) { residual_eval = residual_eval_; }
 
-				void setHomotheticTransformationPercMatch ( const unsigned int homothetic_transformation_perc_match_ ) {homothetic_transformation_perc_match = homothetic_transformation_perc_match_;}
+		void setHomotheticTransformationPercMatch ( const unsigned int homothetic_transformation_perc_match_ ) {homothetic_transformation_perc_match = homothetic_transformation_perc_match_;}
                 void setHelmertTransformationPercMatch ( const unsigned int helmert_transformation_perc_match_ ) {helmert_transformation_perc_match = helmert_transformation_perc_match_;}
                 void setNonSingularPointsIndices ( const TIndexList & non_singular_points_indices_ ) {non_singular_points_indices = non_singular_points_indices_;}
                 void setKBestPointsIndices ( const TIndexList & k_best_points_indices_ ) {k_best_points_indices = k_best_points_indices_;}
@@ -197,6 +209,7 @@ class Sample
                 virtual void print ( std::ostream * output = &std::cout ) const;
                 friend void operator << ( std::ostream & output, const Sample <T> &s ) { s.print ( &output ) ;}
                 void printSampleRatios ( const int position, const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, const unsigned int n, std::ostream * output ) const;
+		void printSampleRatios2 (const int position, const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, const unsigned int n, std::ostream * output) const;
                 void printSamplePositions ( const int position, const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, std::ostream * output ) const;
                 void printSampleMatchedPoints ( const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference, const int position,
                                                 const typename TAnalysisParameters<T>::TAnalysisType & analysis_type, std::ostream * output ) const;

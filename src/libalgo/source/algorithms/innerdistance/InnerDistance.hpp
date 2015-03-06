@@ -136,7 +136,7 @@ T InnerDistance::compare2FacesUsingInnerDistances ( const Face <T> *f1, const Fa
 
         //Best bipartite matching using Hungarian algorithm
         T matching_cost = 0;
-        GraphAlgorithms::bestBipartiteMatching ( SCD, MSC, matching_cost );
+	GraphAlgorithms::bestBipartiteMatching(SCD, MSC, matching_cost);
 
         //Return cost of the matching
         /*

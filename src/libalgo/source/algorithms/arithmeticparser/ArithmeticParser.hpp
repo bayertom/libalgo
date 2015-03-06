@@ -132,7 +132,7 @@ T ArithmeticParser::parseEq ( const char * equation, const T x, const T y, const
 
 
 template <typename T>
-T ArithmeticParser::parseEq ( const char * equation,  const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception, std::ostream * output )
+T ArithmeticParser::parseEq ( const char * equation,  const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output )
 {
         //Translation cartographic equation
         T res = 0;
@@ -145,7 +145,7 @@ T ArithmeticParser::parseEq ( const char * equation,  const T lat, const T lon, 
                 infixToPostfix ( equation, postfix, plus_minus_types );
 
                 //Parse equation
-                res = parseEquation ( postfix, plus_minus_types, ( T ) 0.0 , ( T ) 0.0 , lat, lon, R, a, b, c, lat0, lat1, lat2 );
+                res = parseEquation ( postfix, plus_minus_types, ( T ) 0.0 , ( T ) 0.0 , lat, lon, R, a, b, c, lat0, lat1, lat2, theta );
 
                 return res;
         }
@@ -179,7 +179,7 @@ T ArithmeticParser::parseEq ( const char * equation,  const T lat, const T lon, 
 
 
 template <typename T>
-T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2 )
+T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta )
 
 {
         //Parse postfix notation
@@ -527,10 +527,10 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
 
                                 //Exception
                                 if ( op > MAX_FLOAT )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sqr(x), x > MAX.", op );
+                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sqrt(x), x > MAX.", op );
 
                                 if ( op < 0 )
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "sqr(x), x = ", op );
+                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "sqrt(x), x = ", op );
 
                                 //Result
                                 result = sqrt ( op );
@@ -700,8 +700,9 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
                                 operands.push ( result );
                         }
 
+			
                         //VARIABLE lat1
-                        else if ( ( strcmp ( function_text, vars[v_lat1] ) == 0 ) || ( strcmp ( function_text, vars[v_phi1] ) == 0 ) )
+			else if ((strcmp(function_text, vars[v_lat1]) == 0) || (strcmp(function_text, vars[v_phi1]) == 0) || (strcmp(function_text, vars[v_u1]) == 0))
                         {
                                 //Get result
                                 result = lat1;
@@ -711,7 +712,7 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
                         }
 
                         //VARIABLE lat2
-                        else if ( ( strcmp ( function_text, vars[v_lat2] ) == 0 ) || ( strcmp ( function_text, vars[v_phi2] ) == 0 ) )
+			else if ((strcmp(function_text, vars[v_lat2]) == 0) || (strcmp(function_text, vars[v_phi2]) == 0) || (strcmp(function_text, vars[v_u2]) == 0))
                         {
                                 //Get result
                                 result = lat2;
@@ -719,6 +720,16 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
                                 //Add result to the stack
                                 operands.push ( result );
                         }
+			
+			//VARIABLE theta
+			else if (strcmp(function_text, vars[v_theta]) == 0)
+			{
+				//Get result
+				result = theta;
+
+				//Add result to the stack
+				operands.push(result);
+			}
 
                         //Unknown variable
                         else

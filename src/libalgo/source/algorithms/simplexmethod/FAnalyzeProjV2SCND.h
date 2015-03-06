@@ -166,7 +166,7 @@ class FAnalyzeProjV2SCND
                                 proj->setDx ( 0.0 );
                                 proj->setDy ( 0.0 );
                                 proj->setC ( X ( i, 5 ) );
-								proj->setR(X(i, 0));
+				proj->setR(X(i, 0));
 
                                 //Compute analysis for one sample
                                 if ( compute_analysis )
@@ -239,7 +239,7 @@ class FAnalyzeProjV2SCND
                                         //Reduce lon
                                         const T lon_red = CartTransformation::redLon0 ( pl_reference [j]->getLon(), X ( i, 4 ) );
 
-                                        //Convert geographic point to oblique position: use a normal direction of converted longitude
+                                        //Convert geographic point to oblique aspect
                                         T lat_trans = 0.0, lon_trans = 0.0, x = 0, y = 0;
 
                                         try

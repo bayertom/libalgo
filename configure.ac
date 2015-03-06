@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([libalgo], [1.0.0], [bayertom@natur.cuni.cz])
-AM_INIT_AUTOMAKE([-Wall foreign])
+AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/libalgo/source/comparators/sortSamplesByVoronoiCellTARRatio.h])
 AC_CONFIG_HEADERS([config.h])
 

@@ -48,7 +48,8 @@ const char * vars[] =
         "phi2",
         "v0",
         "lon0",
-        "lam0"
+        "lam0",
+	"theta"
 };
 
 
@@ -116,6 +117,7 @@ void ArithmeticParser::init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & c
         vars_list[vars[v_v0]] = v_v0;
         vars_list[vars[v_lon0]] = v_lon0;
         vars_list[vars[v_lam0]] = v_lam0;
+	vars_list[vars[v_theta]] = v_theta;
 
         //Constants
         consts_list[consts[c_pi]] = c_pi;

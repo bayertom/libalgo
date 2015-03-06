@@ -31,7 +31,7 @@ class SimplexMethod
         public:
 
                 template <typename T, typename Function>
-                static T NelderMead ( Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, unsigned short &iterations, const T max_error, const unsigned short max_iterations, std::ostream * output = &std::cout );
+                static T NelderMead ( Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, unsigned int &iterations, const T max_error, const unsigned int max_iterations, std::ostream * output = &std::cout );
 
         private:
 

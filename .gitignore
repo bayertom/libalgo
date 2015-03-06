@@ -5,6 +5,7 @@ config.guess
 config.h.in
 config.sub
 configure
+compile
 depcomp
 install-sh
 ltmain.sh
@@ -17,7 +18,8 @@ config.h
 config.log
 config.status
 libtool
-src/.deps/
+.deps/
+.dirstamp
 src/Makefile
 stamp-h1
 *.lo

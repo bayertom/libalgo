@@ -40,9 +40,12 @@ class Projection;
 //from meridian passing through the cartographic pole
 typedef enum
 {
-        NormalDirection = 1,	//Azimuthal, conic projections: positive values in east direction from meridian passing the pole
-        ReversedDirection,	//Azimuthal, conic projections: positive values in west direction from meridian passing the pole
-        EquatorDirection,	//Cylindrical projections: positive values in north direction from cartographic equator
+	NoDirection = 0,	//Projection currently exists only in the normal aspect (ellipsoid -> sphere)
+	NormalDirection,	//Positive direction lefts from the oriented line connecting the North Pole and transformed pole, measured at transformed pole
+	ReversedDirection,	//Positive direction rights from the oriented line connecting the North Pole and transformed pole, measured at transformed pole
+	NormalDirection2,	//Positive direction lefts from the  oriented line conncting the transformed pole and the North Pole, measured at transformed pole
+	ReversedDirection2,	//Positive direction rights from the oriented line conncting the transformed pole and the North Pole, measured at transformed pole
+        EquatorDirection,	//Positive values in the north direction from cartographic equator
 } TTransformedLongtitudeDirection;
 
 
@@ -55,44 +58,36 @@ class CartTransformation
                 static T latToLatTrans ( const Point3DGeographic <T> *p, const Point3DGeographic <T> *pole );
 
                 template <typename T>
-                static T lonToLonTrans ( const Point3DGeographic <T> *p, const T lat_trans, const Point3DGeographic <T> *pole, const TTransformedLongtitudeDirection lon_direction = NormalDirection );
+                static T lonToLonTrans ( const Point3DGeographic <T> *p, const Point3DGeographic <T> *pole, const TTransformedLongtitudeDirection lon_direction = NormalDirection );
 
-                //template <typename T>
-                //static T latTransToLat ( const Point3DGeographic <T> *p, const Point3DGeographic <T> *pole );
+		template <typename T>
+		static T latLonToX(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception = true);
 
-                //template <typename T>
-                //static T lonTransToLon ( const Point3DGeographic <T> *p, const T lat, const Point3DGeographic <T> *pole );
-
-                template <typename T>
-                static T latLonToX ( const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception = true );
+		template <typename T>
+		static T latLonToY(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception = true);
 
                 template <typename T>
-                static T latLonToY ( const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception = true );
-
-        public:
-                template <typename T>
-                static T redLon0 ( const T lon, const T lon0 ) { return ( lon - lon0 < MIN_LON ? 360.0 + ( lon - lon0 ) : ( lon - lon0 > MAX_LON ? ( lon - lon0 ) - 360 : lon - lon0 ) );}
+		static T redLon0(const T lon, const T lon0) {return ( lon - lon0 < MIN_LON ? 360.0 + ( lon - lon0 ) : ( lon - lon0 > MAX_LON ? ( lon - lon0 ) - 360 : lon - lon0 ) );}
 
                 template <typename T>
                 static T latToLatTrans ( const T lat, const T lon, const T latp, const T lonp );
 
                 template <typename T>
-                static T lonToLonTrans ( const T lat, const T lon, const T lat_trans, const T latp, const T lonp, const TTransformedLongtitudeDirection lon_direction = NormalDirection );
+                static T lonToLonTrans ( const T lat, const T lon, const T latp, const T lonp, const TTransformedLongtitudeDirection lon_direction = NormalDirection );
 
-                //template <typename T>
-                //static T latTransToLat ( const T lat_trans, const T lon_trans, const T latp, const T lonp );
+		template <typename T>
+		static T latLonToX(const char * equation_x, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
 
-                //template <typename T>
-                //static T lonTransToLon ( const T lat_trans, const T lon_trans, const T lat, const T latp, const T lonp );
+		template <typename T>
+		static T latLonToY(const char * equation_y, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
 
-                template <typename T>
-                static T latLonToX ( const char * equation_x,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true );
-
-                template <typename T>
-                static T latLonToY ( const char * equation_x,  const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true );
-
+		template <typename T>
+		static T latLonToCartesian(const char * equation, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
+    
                 template <typename T>
                 static void wgsToJTSK ( const Point3DGeographic <T> *p1, Point3DCartesian <T> * p2 );
+		
+		
 };
 
 #include "CartTransformation.hpp"

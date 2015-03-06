@@ -26,7 +26,8 @@
 
 #include "libalgo/source/structures/matrix/Matrix.h"
 
-#include "libalgo/source/algorithms/arithmeticparser/ArithmeticParser.h"
+#include "libalgo/source/algorithms/carttransformation/CartTransformation.h"
+
 
 
 //Functor, performs partial derivative of the projection equation using the Stirling formula
@@ -38,6 +39,8 @@ class FProjEquationDerivative2Var
         private:
                 //Map projection parameters
                 const char * equation;
+		const char * ftheta_equat;
+		const char * theta0_equat;
                 const T R;
                 const T a;
                 const T b;
@@ -51,13 +54,14 @@ class FProjEquationDerivative2Var
 
         public:
 
-                FProjEquationDerivative2Var ( const char * equation_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_ ) :
-                        equation ( equation_ ), R ( R_ ), a ( a_ ), b ( b_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ ), lat0 ( lat0_ ), lat1 ( lat1_ ), lat2 ( lat2_ ), lon0 ( lon0_ ) {}
+		FProjEquationDerivative2Var(const char * equation_, const char * ftheta_equat_, const char * theta0_equat_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_) :
+			equation(equation_), ftheta_equat(ftheta_equat_), theta0_equat(theta0_equat_), R(R_), a(a_), b(b_), dx(dx_), dy(dy_), c(c_), lat0(lat0_), lat1(lat1_), lat2(lat2_), lon0(lon0_) {}
 
                 T operator () ( const Matrix <T> &arg )
                 {
                         //Compute partial derivative of the map projection equation
-                        return ArithmeticParser::parseEq ( equation, arg ( 0, 0 ), arg ( 0, 1 ), R, a, b, c, lat0, lat1, lat2, false );
+			return CartTransformation::latLonToCartesian(equation, ftheta_equat, theta0_equat, arg(0, 0), arg(0, 1), R, a, b, 0.0, c, lat0, lat1, lat2, false);
+                        //return ArithmeticParser::parseEq ( equation, arg ( 0, 0 ), arg ( 0, 1 ), R, a, b, c, lat0, lat1, lat2, false );
                 }
 
 };

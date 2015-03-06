@@ -27,9 +27,12 @@
 
 #include "libalgo/source/structures/point/Point3DCartesian.h"
 
+#include "libalgo/source/algorithms/matrixoperations/MatrixOperations.h"
+
 #include "libalgo/source/exceptions/ErrorBadData.h"
 #include "libalgo/source/exceptions/ErrorMathZeroDevision.h"
 
+using namespace MatrixOperations;
 
 template <typename Point1, typename Point2, typename Point3, TDestructable destructable, TDestructable destructable2, TDestructable destructable3>
 void HelmertTransformation2D::transformPoints ( const Container <Point1 *, destructable> &global_points, const Container <Point2 *, destructable2> &local_points, Container <Point3 *, destructable3> &transformed_points,
@@ -159,6 +162,93 @@ void HelmertTransformation2D::transform ( const Container <Point1 *, destructabl
                 //Add point to the list
                 transformed_points.push_back ( new Point3 ( x_transform, y_transform ) );
         }
+}
+
+
+template <typename T>
+Matrix <T> HelmertTransformation2D::getTransformKey(const Matrix <T> &P, const Matrix <T> &Q, const Matrix <T> &W)
+{
+	//Helmert transformation, matrix notation
+	const unsigned int m = P.rows(), n = P.cols();
+
+	//Compute centers of gravity
+
+	//Set elements of A(2m, 4) matrix, applicable to each scheme
+	Matrix <T> A(2 * m, 4);
+	A.submat(Q(0, m - 1, 0, 0), 0, 0);
+	A.submat(Q(0, m - 1, 1, 1), m, 0);
+
+	A.submat(-1.0 * Q(0, m - 1, 1, 1), 0, 1);
+	A.submat(Q(0, m - 1, 0, 0), m, 1);
+
+	Matrix <T> I = ones(m, 1, 1.0);
+	A.submat(I, 0, 2);
+	A.submat(I, m, 3);
+
+	//Create Y vector
+	Matrix <T> Y(2 * m, 1);
+	Y.submat(P(0, m - 1, 0, 0), 0, 0);
+	Y.submat(P(0, m - 1, 1, 1), m, 0);
+
+	//Find solution
+	Matrix <T> beta = inv(trans(A) * W * A) * trans(A) * W  * Y;
+
+	return beta;
+}
+
+
+template <typename T>
+void HelmertTransformation2D::getTransformKey2(const Matrix <T> &P, const Matrix <T> &Q, const Matrix <T> &W, Matrix <T> &A, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &C)
+{
+	//Helmert transformation, matrix notation
+	const unsigned int m = P.rows(), n = P.cols();
+
+	//Get matrices
+	const Matrix <T> XG = P(0, m - 1, 0, 0);
+	const Matrix <T> YG = P(0, m - 1, 1, 1);
+	const Matrix <T> XL = Q(0, m - 1, 0, 0);
+	const Matrix <T> YL = Q(0, m - 1, 1, 1);
+	const Matrix <T> WX = W(0, m - 1, 0, m - 1);
+	const Matrix <T> WY = W(m, 2 * m - 1, m, 2 * m - 1);
+	
+	//Sum of weights
+	const T swx = sum(diag(WX));
+	const T swy = sum(diag(WY));
+
+	//Centers of gravity
+	const T x_mass_glob = sum( trans( XG ) * WX ) / swx;
+	const T y_mass_glob = sum( trans( YG ) * WY ) / swy;
+	const T x_mass_loc = sum( trans(XL) * WX ) / swx;
+	const T y_mass_loc = sum( trans(YL) * WY ) / swy;
+
+	//Store coordinates
+	C(0, 0) = x_mass_glob;
+	C(0, 1) = y_mass_glob;
+	C(1, 0) = x_mass_loc;
+	C(1, 1) = y_mass_loc;
+
+	//Reduce coordinates
+	const Matrix <T> XLR = XL - x_mass_loc;
+	const Matrix <T> YLR = YL - y_mass_loc;
+
+	//Set elements of A(2m, 4) matrix, applicable to each scheme
+	A.submat(XLR, 0, 0);
+	A.submat(YLR, m, 0);
+
+	A.submat(-1.0 * YLR, 0, 1);
+	A.submat(XLR, m, 1);
+
+	Matrix <T> I = ones(m, 1, 1.0);
+	A.submat(I, 0, 2);
+	A.submat(I, m, 3);
+
+	//Create Y vector
+	Y.submat(XG, 0, 0);
+	Y.submat(YG, m, 0);
+
+	//Find solution
+	X = inv(trans(A) * W * A) * trans(A) * W  * Y;
+
 }
 
 

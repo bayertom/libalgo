@@ -22,6 +22,7 @@
 #ifndef DifferentialEvolution_HPP
 #define DifferentialEvolution_HPP
 
+
 #include <ctime>
 #include <stdlib.h>
 
@@ -32,10 +33,11 @@
 #include "libalgo/source/exceptions/ErrorMathMatrixDifferentSize.h"
 #include "libalgo/source/exceptions/ErrorBadData.h"
 
+using namespace MatrixOperations;
 
 template <typename T, typename Function>
 T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Matrix <T> &XMAX, const unsigned int population_size,
-	const T epsilon, const unsigned int max_gener, Matrix <T> F, T CR, const TMutationStrategy & mutation_strategy, const TAdaptiveControl &adaptive_control, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &RES, Matrix <T> &XAVER, T &aver_res, T &max_res, unsigned int &gener, std::ostream * output)
+	const T epsilon, const unsigned int max_gener, Matrix <T> F, T CR, const TMutationStrategy & mutation_strategy, const TAdaptiveControl &adaptive_control, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &RES, Matrix <T> &XAVER, T &aver_res, T &max_res, unsigned int &gener, const bool add_x0, std::ostream * output)
 {
 	
 	//Compute global minimum of the function dim <2,m> using the current differential evolution algorithm
@@ -58,8 +60,12 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 	//Create population matrices: matrix of arguments and matrix of values
 	Matrix <T> P_A(population_size, dim), P_V(population_size, 1);
 
+	//Add the initial solution to the population
+	if (add_x0) 
+		P_A.submat(X, 0, 0);
+
 	//Create intial populaton
-	createInitialPopulation(function, XMIN, XMAX, W, Y, RES, population_size, dim, P_A, P_V);
+	createInitialPopulation(function, XMIN, XMAX, W, Y, RES, population_size, dim, P_A, P_V, add_x0);
 	
 	//Initialize min and old min
 	T min_res = MatrixOperations::min(P_V), min_res_old_100 = min_res, min_res_old = min_res;
@@ -82,8 +88,9 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 		if (adaptive_control == AdaptiveDecreasing)
 			F(0, 0) = 0.5 * (max_gener - gener) / max_gener;
 
+		//Set initial dg
 		T dg = 1.2;
-
+		
 		for (unsigned int i = 0; i < population_size; i++)
 		{
 			//Set mutation and cross-over factors depending on the adaptive control
@@ -190,7 +197,7 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 			try
 			{
 				function(V, Y, RES, W);
-				function_val_y = (MatrixOperations::trans(RES) * W * RES) (0, 0);
+				function_val_y = norm(trans(RES) * W * RES);
 			}
 
 			catch (Error & error)
@@ -205,7 +212,7 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 				Q_V(i, 0) = function_val_y;
 			}
 		}
-
+		
 		//Replace P with Q: P elements can not be overwritten inside the cycle
 		P_A = Q_A;
 		P_V = Q_V;
@@ -215,9 +222,9 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 
 		//Actualize new maximum, minimum and average of the population
 		min_res_old = min_res;
-		max_res = MatrixOperations::max(P_V);
-		min_res = MatrixOperations::min(P_V, row_index_min, column_index_min);
-		aver_res = MatrixOperations::sumCol(P_V, 0) / population_size;
+		max_res = max(P_V);
+		min_res = min(P_V, row_index_min, column_index_min);
+		aver_res = sumCol(P_V, 0) / population_size;
 
 		//Compute residual difference for population
 		T diff = max_res - min_res;
@@ -226,13 +233,15 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 		gener++;
 
 		//Terminal condition: population diversity, no improvement during the last 100 generations
-		if ((diff < epsilon * std::max(1.0, min_res)) /*&& (min_res < 1.0e2)*/|| ((gener % 100 == 0) && (fabs(min_res - min_res_old_100) < epsilon * std::max(1.0, min_res)) /*&& (min_res < 1.0e2)*/))
+		if ((diff < epsilon * std::max(1.0, min_res)) && (min_res < 1.0e2)|| ((gener % 100 == 0) && (fabs(min_res - min_res_old_100) < epsilon * std::max(1.0, min_res)) && (min_res < 1.0e2)))
 		{
+			/*
 			std::cout << "gener=" << gener;
 			std::cout << std::fixed;
 			std::cout << " res_min = " << std::setprecision(7) << min_res << "   res_max = " << std::setprecision(7) << max_res << "   res_aver = " << std::setprecision(7) << aver_res;
 			std::cout << std::scientific;
-			std::cout << "   res_dif = " << diff << '\n';			
+			std::cout << "   res_dif = " << diff << '\n';	
+			*/
 			//RE.print();
 			break;
 		}
@@ -260,6 +269,10 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 			//RE.print();
 		}
 		
+		//Change weights according to the best sample
+		Matrix <T> XT = P_A.row(row_index_min);
+		function(XT, Y, RES, W, false);
+
 		//Additional stopping condition
 		//if (gener > 250)
 		//{
@@ -275,18 +288,22 @@ T DifferentialEvolution::diffEvolution(Function function, Matrix <T> &XMIN,  Mat
 		{
 			//std::cout << max_res << "   " << min_res << '\n';
 			//P_A.print();
+			//RES.print();
 		}
 	}
 
 	//Actualize minimum argument
 	X = P_A.row(row_index_min);
 
+	//Compute residuals
+	function(X, Y, RES, W, false );
+
 	return min_res;
 }
 
 
 template <typename T, typename Function>
-void DifferentialEvolution::createInitialPopulation(Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W,  Matrix <T> &Y, Matrix <T> &RES, const unsigned int population_size, const unsigned int dim, Matrix <T> &P_A, Matrix <T> &P_V)
+void DifferentialEvolution::createInitialPopulation(Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W,  Matrix <T> &Y, Matrix <T> &RES, const unsigned int population_size, const unsigned int dim, Matrix <T> &P_A, Matrix <T> &P_V, const bool add_x0)
 {
 	//Create initial population
 
@@ -297,14 +314,24 @@ void DifferentialEvolution::createInitialPopulation(Function function, const Mat
 	for (unsigned int i = 0; i < population_size; i++)
 	{
 		//Create random vectors
-		for (unsigned int j = 0; j < dim; j++)
-			P_A(i, j) = XMIN(0, j) + (XMAX(0, j) - XMIN(0, j)) * ((T)rand() / (RAND_MAX + 1));
+		if ( ( i != 0 ) && ( add_x0 ) || ( ! add_x0 ) )
+		{
+			for (unsigned int j = 0; j < dim; j++)
+				P_A(i, j) = XMIN(0, j) + (XMAX(0, j) - XMIN(0, j)) * ((T)rand() / (RAND_MAX + 1));
+		}
 
 		//Compute function values for random population
 		try
 		{
-			function(P_A.row(i), Y, RES, W);
-			P_V(i, 0) = (MatrixOperations::trans(RES) * W * RES) (0, 0);
+                        //Get current row
+                        Matrix <T> P_AR = P_A.row(i);
+			
+                        //Compute residuals
+                        function(P_AR, Y, RES, W);
+			
+                        //Evaluate objective function
+                        P_V(i, 0) = (trans(RES) * W * RES) (0, 0);
+                        
 		}
 
 		catch (Error & error)
@@ -833,12 +860,24 @@ void DifferentialEvolution::reflection(const Matrix <T> &XMIN, const Matrix <T> 
         {
 		while ((V(0, j) < XMIN(0, j)) || (V(0, j) > XMAX(0, j)))
                 {
-			if (XMIN(0, j) == XMAX(0, j))
+			//XMIN == XMAX
+			if (XMAX(0, j) - XMIN(0, j) < MAX_FLOAT_OPER_ERROR)
+			{
 				V(0, j) = XMIN(0, j);
+				break;
+			}
+			
+			//Left form the lower bound
 			else if (V(0, j) > XMAX(0, j))
+			{
 				V(0, j) = 2 * XMAX(0, j) - V(0, j);
+			}
+
+			//Right to the upper bound
 			else if (V(0, j) < XMIN(0, j))
+			{
 				V(0, j) = 2 * XMIN(0, j) - V(0, j);
+			}
                 }
         }
 }

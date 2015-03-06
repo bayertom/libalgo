@@ -32,10 +32,14 @@
 
 #include "libalgo/source/algorithms/arithmeticparser/ArithmeticParser.h"
 
+#include "libalgo/source/algorithms/numderivative/FProjEquationDerivative1Var.h"
+#include "libalgo/source/algorithms/numderivative/NumDerivative.h"
+
 #include "libalgo/source/exceptions/ErrorMathInvalidArgument.h"
 #include "libalgo/source/exceptions/ErrorMathOverflow.h"
 #include "libalgo/source/exceptions/ErrorParse.h"
 #include "libalgo/source/exceptions/ErrorBadData.h"
+
 
 
 template <typename T>
@@ -47,28 +51,44 @@ T CartTransformation::latToLatTrans ( const Point3DGeographic <T> *p, const Poin
 
 
 template <typename T>
-T CartTransformation::lonToLonTrans ( const Point3DGeographic <T> *p, const T lat_trans, const Point3DGeographic <T> *pole, const TTransformedLongtitudeDirection lon_direction )
+T CartTransformation::lonToLonTrans ( const Point3DGeographic <T> *p, const Point3DGeographic <T> *pole, const TTransformedLongtitudeDirection lon_direction )
 {
         //Transform longitude  ( lat, lon, lat_trans ) -> ( lon_tans ) using a cartographic pole (latp, lonp)
-        return lonToLonTrans ( p->getLat(), p->getLon(), lat_trans, pole->getLat(), pole->getLon(), lon_direction );
+        return lonToLonTrans ( p->getLat(), p->getLon(),  pole->getLat(), pole->getLon(), lon_direction );
 }
 
 
 template <typename T>
-T CartTransformation::latLonToX ( const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception )
+T CartTransformation::latLonToX(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception)
 {
         //Compute x coordinate of the point P[lat, lon] in specific projection
-        return latLonToX ( proj->getXEquat(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(), proj->getC(),
+	return latLonToCartesian( proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(), proj->getC(),
                            proj->getLat0(), proj->getLat1(), proj->getLat2(), print_exception ) ;
 }
 
 
 template <typename T>
-T CartTransformation::latLonToY ( const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception )
+T CartTransformation::latLonToY(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception)
 {
-        //Compute y coordinate of the point P[lat, lon] in specific projection
-        return latLonToY ( proj->getYEquat(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDy(), proj->getC(),
-                           proj->getLat0(), proj->getLat1(), proj->getLat2(), print_exception ) ;
+	//Compute y coordinate of the point P[lat, lon] in specific projection
+	return latLonToCartesian(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDy(), proj->getC(),
+		proj->getLat0(), proj->getLat1(), proj->getLat2(), print_exception);
+}
+
+
+template <typename T>
+T CartTransformation::latLonToX(const char * equation_x, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
+{
+	//Compute x coordinate of the point P[lat, lon] in specific projection
+	return latLonToCartesian(equation_x, equation_ftheta, equation_theta0, lat, lon, R, a, b, dx, c, lat0, lat1, lat2, print_exception);
+}
+
+
+template <typename T>
+T CartTransformation::latLonToY(const char * equation_y, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
+{
+	//Compute y coordinate of the point P[lat, lon] in specific projection
+	return latLonToCartesian(equation_y, equation_ftheta, equation_theta0, lat, lon, R, a, b, dy, c, lat0, lat1, lat2, print_exception);
 }
 
 
@@ -76,7 +96,7 @@ template <typename T>
 T CartTransformation::latToLatTrans ( const T lat, const T lon, const T latp, const T lonp )
 {
         //Transform latitude  ( lat, lon ) -> ( lat_tans ) using a cartographic pole (latp, lonp)
-
+	
         //Throw exception: bad lat
         if ( fabs ( lat ) > MAX_LAT )
         {
@@ -95,50 +115,43 @@ T CartTransformation::latToLatTrans ( const T lat, const T lon, const T latp, co
                 return lat;
         }
 
-        //Projection in oblique aspect
-        else
-        {
-                //Same coordinates as the cartographic pole, singular point
-                if ( ( fabs ( lon - lonp ) < ANGLE_ROUND_ERROR ) && ( fabs ( lat - latp ) < ANGLE_ROUND_ERROR ) )
-                {
-                        return MAX_LAT;
-                }
+	//Same coordinates as the cartographic pole, singular point
+	if ((fabs(lon - lonp) < ANGLE_ROUND_ERROR) && (fabs(lat - latp) < ANGLE_ROUND_ERROR))
+	{
+		return MAX_LAT;
+	}
 
-                //Compute latitude
-                T lat_trans_asin = sin ( lat * M_PI / 180.0 ) * sin ( latp * M_PI / 180.0 ) + cos ( lat * M_PI / 180.0 ) * cos ( latp * M_PI / 180.0 ) * cos ( ( lonp - lon ) * M_PI / 180.0 );
+	//Compute latitude
+	T lat_trans_asin = sin(lat * M_PI / 180.0) * sin(latp * M_PI / 180.0) + cos(lat * M_PI / 180.0) * cos(latp * M_PI / 180.0) * cos((lonp - lon) * M_PI / 180.0);
 
-                //Throw exception
-                if ( ( lat_trans_asin > 1.0 + ARGUMENT_ROUND_ERROR )  || ( lat_trans_asin < -1.0 - ARGUMENT_ROUND_ERROR ) )
-                {
-                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", "can not convert lat to lat_trans, asin(arg), arg = ", lat_trans_asin );
-                }
+	//Throw exception
+	if ((lat_trans_asin > 1.0 + ARGUMENT_ROUND_ERROR) || (lat_trans_asin < -1.0 - ARGUMENT_ROUND_ERROR))
+	{
+		throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: ", "can not convert lat to lat_trans, asin(arg), arg = ", lat_trans_asin);
+	}
 
-                //Correct latitude
-                if ( lat_trans_asin > 1.0 )
-                {
-                        return MAX_LAT;
-                }
+	//Correct latitude
+	if (lat_trans_asin > 1.0)
+	{
+		return MAX_LAT;
+	}
 
-                //Correct latitude
-                if ( lat_trans_asin < -1.0 )
-                {
-                        return MIN_LAT;
-                }
+	//Correct latitude
+	if (lat_trans_asin < -1.0)
+	{
+		return MIN_LAT;
+	}
 
-                T test = asin ( lat_trans_asin ) * 180.0 / 3.14;
-
-                //Compute transformed latitude
-                return  asin ( lat_trans_asin ) * 180.0 / M_PI;
-        }
+	//Compute transformed latitude
+	return  asin(lat_trans_asin) * 180.0 / M_PI;
 }
 
 
 template <typename T>
-T CartTransformation::lonToLonTrans ( const T lat, const T lon, const T lat_trans, const T latp, const T lonp, const TTransformedLongtitudeDirection lon_direction )
+T CartTransformation::lonToLonTrans ( const T lat, const T lon,  const T latp, const T lonp, const TTransformedLongtitudeDirection lon_direction )
 {
         //Transform longitude  ( lat, lon, lat_trans ) -> ( lon_tans ) using a cartographic pole (latp, lonp)
-        //Normal direction (positive value in east direction) or reversed  direction (positive value in west direction, suitable for JTSK - Czech)
-
+	
         //Throw exception: bad lat
         if ( fabs ( lat ) > MAX_LAT )
         {
@@ -148,7 +161,7 @@ T CartTransformation::lonToLonTrans ( const T lat, const T lon, const T lat_tran
         //Throw exception: bad lon
         if ( fabs ( lon ) > MAX_LON )
         {
-                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", " can not convert lon to lon_trans, lon > +- Pi", lat );
+                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", " can not convert lon to lon_trans, lon > +- Pi", lon );
         }
 
         //Projection in normal position
@@ -157,204 +170,96 @@ T CartTransformation::lonToLonTrans ( const T lat, const T lon, const T lat_tran
                 return lon;
         }
 
-        //Singular point
-        if ( ( lonp >= 0 ) && ( lon == lonp + MIN_LON ) )
-        {
-                throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lon = lonp - 180)." );
-        }
-
-        //Singular point
-        if ( ( lonp < 0 ) && ( lon == lonp + MAX_LON ) )
-        {
-                throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lon = lonp + 180)." );
-        }
-
-        //Projection in oblique aspect
-        else
-        {
-                //Same coordinates as the cartographic pole: singular point
-                if ( ( fabs ( lon - lonp ) < ANGLE_ROUND_ERROR ) && ( fabs ( lat - latp ) < ANGLE_ROUND_ERROR ) )
-                {
-                        throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lat=latp, lon=lonp)." );
-                }
-
-                //First computation of the longitude
-                T lon_trans_asin = sin ( ( lonp - lon ) * M_PI / 180.0 ) * cos ( lat * M_PI / 180.0 ) / cos ( lat_trans * M_PI / 180.0 );
-
-                //Opposite pole, singular point: unable to compute lon_trans
-                if ( lon_trans_asin > 1.0 + ARGUMENT_ROUND_ERROR  || lon_trans_asin < -1.0 - ARGUMENT_ROUND_ERROR )
-                {
-                        throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lat=-latp, lon=lonp)." );
-                }
-
-                //Correct longitude
-                if ( lon_trans_asin > 1 )
-                {
-                        lon_trans_asin = 1;
-                }
-
-                //Correct longitude
-                else if ( lon_trans_asin < -1 )
-                {
-                        lon_trans_asin = -1;
-                }
-
-                //Compute lon_temp
-                const T lon_temp = fabs ( asin ( lon_trans_asin ) * 180 / M_PI );
-
-                //Second calculation of the longitude
-                const T lon_trans_acos = ( -cos ( latp * M_PI / 180 ) * sin ( lat * M_PI / 180 ) + sin ( latp * M_PI / 180 ) * cos ( lat * M_PI / 180 ) * cos ( ( lonp - lon ) * M_PI / 180 ) ) / cos ( lat_trans * M_PI / 180 );
-
-                //(0, Pi/2)
-                if ( ( lon_trans_asin >= 0.0 ) && ( lon_trans_acos >= 0.0 ) )
-                {
-                        if ( lon_direction == NormalDirection ) return -lon_temp;
-                        else if ( lon_direction == ReversedDirection ) return lon_temp;
-                        else return lon_temp - 90.0;
-
-                        //return ( lon_direction == NormalDirection ? -lon_temp : lon_temp );
-                }
-
-                //(Pi/2, Pi)
-                if ( ( lon_trans_asin >= 0.0 ) && ( lon_trans_acos <= 0.0 ) )
-                {
-                        if ( lon_direction == NormalDirection ) return lon_temp - 180.0;
-                        else if ( lon_direction == ReversedDirection ) return 180.0 - lon_temp;
-                        else return 90.0 - lon_temp;
-
-                        //return ( lon_direction == NormalDirection ? lon_temp - 180.0 : 180.0 - lon_temp );
-                }
-
-                //(Pi, 3/2 * Pi)
-                if ( ( lon_trans_asin <= 0.0 ) && ( lon_trans_acos <= 0.0 ) )
-                {
-                        if ( lon_direction == NormalDirection ) return 180.0 - lon_temp;
-                        else if ( lon_direction == ReversedDirection ) return lon_temp - 180.0;
-                        else return lon_temp + 90.0;
-
-                        //return ( lon_direction == NormalDirection ? 180.0 - lon_temp : lon_temp - 180.0 );
-                }
-
-                //(3/2 * Pi, 2 * Pi)
-                if ( lon_direction == NormalDirection ) return lon_temp;
-                else if ( lon_direction == ReversedDirection ) return - lon_temp;
-                else return -lon_temp - 90.0;
-
-                //return ( lon_direction == NormalDirection ? lon_temp : - lon_temp );
-        }
-}
-
-/*
-template <typename T>
-T CartTransformation::latTransToLat ( const T lat_trans, const T lon_trans, const T latp, const T lonp )
-{
-	//Transform latitude  ( lat_trans, lon_trans ) -> ( lat ) using a cartographic pole (lapt, lonp)
-	//Throw exception: bad lat
-        if ( fabs ( lat_trans ) > MAX_LAT )
-        {
-                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", "can not convert lat to lat_trans, lat > +- Pi/2", lat );
-        }
-
-        //Throw exception: bad lon
-        if ( fabs ( lon_trans ) > MAX_LON )
-        {
-                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", "can not convert lon to lon_trans, lon > +- Pi", lon );
-        }
-
-        //Projection in normal position
-        if ( fabs ( MAX_LAT - latp ) < ANGLE_ROUND_ERROR )
-        {
-                return lat_trans;
-        }
-
-        //Projection in oblique position
-        else
-        {
-
-	}
-
-	return 0.0;
-}
-
-
-template <typename T>
-T CartTransformation::lonTransToLon ( const T lat_trans, const T lon_trans, const T lat, const T latp, const T lonp )
-{
-	        //Transform longitude  ( lat_trans, lon_trans, lat ) -> ( lon ) using a cartographic pole (latp, lonp)
-
-	 //Throw exception: bad lat
-        if ( fabs ( lat_trans ) > MAX_LAT )
-        {
-                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", " can not convert lon to lon_trans, lat > +- Pi/2", lat );
-        }
-
-        //Throw exception: bad lon
-        if ( fabs ( lon_trans ) > MAX_LON )
-        {
-                throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: ", " can not convert lon to lon_trans, lon > +- Pi", lat );
-        }
-
-        //Projection in normal position
-        if ( fabs ( MAX_LAT - latp ) < ANGLE_ROUND_ERROR )
-        {
-                return lon_trans;
-        }
-
-	/*
-        //Singular point
-        if ( ( lonp >= 0 ) && ( lon_trans == lonp + MIN_LON ) )
-        {
-                throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lon = lonp - 180)." );
-        }
-
-        //Singular point
-        if ( ( lonp < 0 ) && ( lon == lonp + MAX_LON ) )
-        {
-                throw ErrorBadData ( "ErrorBadData: ", " can not convert lon to lon_trans, singular point (lon = lonp + 180)." );
-        }
-
-        //Projection in oblique position
-        else
+	//Same coordinates as the cartographic pole: singular point
+	if ((fabs(lon - lonp) < ANGLE_ROUND_ERROR) && (fabs(lat - latp) < ANGLE_ROUND_ERROR))
 	{
+		return lon;
+	}
+	
+	//Compute lon_trans: Normal direction
+	T lon_trans = atan2(cos(lat * M_PI / 180) * sin((lon - lonp) * M_PI / 180), cos((lon - lonp) * M_PI / 180) * sin(latp * M_PI / 180) * cos(lat * M_PI / 180) - sin(lat * M_PI / 180) * cos(latp * M_PI / 180)) * 180 / M_PI;
+
+	//Reversed direction (JTSK)
+	if (lon_direction == ReversedDirection)
+		lon_trans = -lon_trans;
+
+	//Normal direction 2
+	else if (lon_direction == NormalDirection2)
+	{
+		if (lon_trans < 0)
+			lon_trans = lon_trans + 180;
+		else
+			lon_trans = lon_trans - 180;
 	}
 
-	return 0.0;
+	//Reversed direction 2
+	else if (lon_direction == ReversedDirection2)
+	{
+		if (lon_trans < 0)
+			lon_trans = -180 - lon_trans;
+		else
+			lon_trans = 180 - lon_trans;
+	}
 
-}
-*/
-
-
-template <typename T>
-T CartTransformation:: latLonToX ( const char * equation_x,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c,  const T lat0, const T lat1, const T lat2, const bool print_exception )
-{
-        //Compute x coordinate of the point P[lat, lon] in specific projection
-        const T x_total = ArithmeticParser::parseEq ( equation_x,  lat, lon, R, a, b, c, lat0, lat1, lat2, print_exception ) + dx;
-
-        //Throw exception
-        if ( ( x_total > MAX_POINT_COORDINATE ) || ( x_total < -MAX_POINT_COORDINATE ) )
-        {
-                throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not compute x coordinate, x coordinate > MAX_POINT_COORDINATE, ", " MAX_POINT_COORDINATE  = 1.0e +09", x_total );
-        }
-
-        //Result
-        return  x_total;
+	return lon_trans;
+	
 }
 
 
 template <typename T>
-T CartTransformation::latLonToY ( const char * equation_y,  const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception )
+T CartTransformation::latLonToCartesian(const char * equation, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
 {
-        //Compute y coordinate of the point P[lat, lon]  in specific projection
-        const T y_total = ArithmeticParser::parseEq ( equation_y,  lat, lon, R, a, b, c, lat0, lat1, lat2, print_exception ) + dy;
+	//Compute cartesian coordinate x / y of the point P[lat, lon] in specific projection, additional equations solved by Newton-RTaphson method are included
+	T theta = lat;
 
-        //Throw exception
-        if ( ( y_total > MAX_POINT_COORDINATE ) || ( y_total < -MAX_POINT_COORDINATE ) )
-        {
-                throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not compute y coordinate, y coordinate > MAX_POINT_COORDINATE, ", " MAX_POINT_COORDINATE  = 1.0e +09", y_total );
-        }
+	//Apply Newton-Raphson method to evaluate p
+	if ((equation_ftheta != NULL) && (equation_theta0 != NULL))
+	{
+		bool convergence = false;
+		unsigned int iterations = 0;
+		const unsigned int max_iterations = 10;
+		const T max_diff = 1.0e-5;
 
-        //Result
-        return  y_total;
+		//Determine p[0]
+		theta = ArithmeticParser::parseEq(equation_theta0, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
+		
+		//Apply Newton-Raphson method
+		while ( (!convergence) && (iterations <= max_iterations))
+		{
+			Matrix <T> X(1, 1);
+			X(0, 0) = theta;
+
+			//Compute F(theta) and F'(theta)
+			const T ftheta = ArithmeticParser::parseEq(equation_ftheta, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
+			const T ftheta_der = NumDerivative::getDerivative(FProjEquationDerivative1Var <T>(equation_ftheta, lat, lon, R, a, b, 0, 0, c, lat0, lat1, lat2), X, FirstDerivative, VariableX1, 0.1 * NUM_DERIV_STEP, print_exception);
+		
+			//New value of theta
+			T theta_n = 0;
+			if (fabs(ftheta_der) < MIN_FLOAT)
+				theta_n = theta;
+			else
+				theta_n = theta - ftheta / ftheta_der;
+
+			//Test terminal condition
+			if (fabs(theta_n - theta) < max_diff)
+			{
+				convergence = true;
+			}
+
+			//Assign new p
+			theta = theta_n;
+
+			iterations++;
+		}
+
+		//Convert to deg
+		theta = theta * 180 / M_PI;
+	}
+	
+	//Compute equations including determined theta, if necessary
+	const T coord = ArithmeticParser::parseEq(equation, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception) + shift;
+
+	return coord;
 }
 
 

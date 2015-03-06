@@ -81,15 +81,11 @@ class FAnalyzeProjVS
 					//Correct R, lat0, lon0
 					if (X(i, 0) < 0.0) X(i, 0) = fabs(X(i, 0));
 
-					//Subtract period
-					if (fabs(X(i, 3)) > MAX_LAT) X(i, 3) = fmod(X(i, 3), 90);
+					//Set lat0 inside the interval
+					if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
 
+					//Set lon0
 					if (fabs(X(i, 4)) > MAX_LON) X(i, 4) = fmod(X(i, 4), 180);
-
-					//Set to interval
-					if (X(i, 3) < lat0_min) X(i, 3) = lat0_min;
-
-					if (X(i, 3) > lat0_max) X(i, 3) = lat0_max;
 				}
 
 				//Transverse aspect: lonp, lat0
@@ -100,12 +96,14 @@ class FAnalyzeProjVS
 					if (X(i, 0) < 0.0) X(i, 0) = fabs(X(i, 0));
 
 					//Subtract period
-					if (fabs(X(i, 2)) > MAX_LON) X(i, 2) = fmod(X(i, 2), 180);
+					if (X(i, 2) < MIN_LON)  X(i, 2) = MIN_LON - fmod(X(i, 2), MIN_LON);
+					else if (X(i, 2) > MAX_LON)  X(i, 2) = MAX_LON - fmod(X(i, 2), MAX_LON);
 
-					if (fabs(X(i, 3)) > MAX_LAT) X(i, 3) = fmod(X(i, 3), 90);
-
-					//Set to interval
+					//Set lat0 inside the interval
 					if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
+
+					//Set lon0
+					X(i, 4) = 0;
 				}
 
 				//Oblique aspect: latp, lonp, lat0
@@ -115,11 +113,11 @@ class FAnalyzeProjVS
 					if (X(i, 0) < 0.0) X(i, 0) = fabs(X(i, 0));
 
 					//Subtract period
-					if (fabs(X(i, 1)) > MAX_LAT)  X(i, 1) = fmod(X(i, 1), 90);
+					if (X(i, 1) < MIN_LAT)  X(i, 1) = MIN_LAT - fmod(X(i, 1), MIN_LAT);
+					else if (X(i, 1) > MAX_LAT)  X(i, 1) = MAX_LAT - fmod(X(i, 1), MAX_LAT);
 
-					if (fabs(X(i, 2)) > MAX_LON)  X(i, 2) = fmod(X(i, 2), 180);
-
-					if (fabs(X(i, 3)) > MAX_LAT)  X(i, 3) = fmod(X(i, 3), 90);
+					if (X(i, 2) < MIN_LON)  X(i, 2) = MIN_LON - fmod(X(i, 2), MIN_LON);
+					else if (X(i, 2) > MAX_LON)  X(i, 2) = MAX_LON - fmod(X(i, 2), MAX_LON);
 
 					//Set lat0 inside the interval
 					if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
@@ -127,6 +125,8 @@ class FAnalyzeProjVS
 					//Set lonp to zero, if latp = 90
 					if (fabs(X(i, 1) - MAX_LAT) < 1.0)  X(i, 2) = 0.0;
 
+					//Set lon0
+					X(i, 4) = 0;
 				}
 
 				//Set properties to the projection: ommit estimated radius, additional constants dx, dy
@@ -140,115 +140,89 @@ class FAnalyzeProjVS
 				proj->setDy(X(i, 6));
 				proj->setC(X(i, 7));
 
-				//Compute analysis for one sample
-				if (compute_analysis)
-				{
-					try
-					{
-						//Compute analysis
-						try
-						{
-							CartAnalysis::computeAnalysisForOneSample(nl_test, pl_reference, meridians, parallels, faces_test, proj, analysis_parameters, sample_res, false, created_samples, output);
-						}
-
-						//Throw exception
-						catch (Error & error)
-						{
-							if (analysis_parameters.print_exceptions)
-							{
-								//Print error and info about projection properties
-								error.printException(output);
-								*output << "proj = " << proj->getProjectionName() << "  latp = " << proj->getCartPole().getLat() << "  lonp = " << proj->getCartPole().getLon() << "  lat0 = " << proj->getLat0() << '\n';
-							}
-						}
-
-						//Get index list of the sample
-						TIndexList non_singular_points_indices = sample_res.getNonSingularPointsIndices();
-						TIndexList k_best_points_indices = sample_res.getKBestPointsIndices();
-
-						//Change weights in W matrix: weights of singular points or outliers are 0, otherwise they are 1
-						unsigned int index_k_best_points = 0, n_k_best = k_best_points_indices.size(), n_points = pl_reference.size();
-						int index_point = (n_k_best > 0 ? non_singular_points_indices[k_best_points_indices[index_k_best_points++]] : -1);
-
-						for (int j = 0; (j < n_points) && (n_k_best > 0); j++)
-						{
-							//Set weight of point to 1 (it is not an outlier nor singular)
-							if (j == index_point)
-							{
-								W(index_point, index_point) = 1.0; W(index_point + n_points, index_point + n_points) = 1.0;
-
-								if (index_k_best_points < n_k_best) index_point = non_singular_points_indices[k_best_points_indices[index_k_best_points++]];
-							}
-
-							//Set weight of point to zero (it is an outlier or singular)
-							else
-							{
-								W(j, j) = 0.0; W(j + n_points, j + n_points) = 0.0;
-							}
-						}
-					}
-
-					//Throw error
-					catch (Error & error)
-					{
-						if (analysis_parameters.print_exceptions) error.printException();
-					}
-				}
-
 				//Compute new coordinates and residuals
 				Matrix <T> v(2 * m, 1);
 
 				for (unsigned int j = 0; j < m; j++)
 				{
-					T x_new, y_new;
+					//Get type of the direction
+					TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+
+					//Reduce lon
+					const T lon_red = CartTransformation::redLon0(pl_reference[j]->getLon(), X(i, 4));
+
+					T lat_trans = 0.0, lon_trans = 0.0, x = 0, y = 0;
 
 					try
 					{
-						//Get type of the direction
-						TTransformedLongtitudeDirection trans_lon_dir = proj->getLonDir();
+						//Convert geographic point to oblique aspect
+						lat_trans = CartTransformation::latToLatTrans(pl_reference[j]->getLat(), lon_red, X(i, 1), X(i, 2));
+						lon_trans = CartTransformation::lonToLonTrans(pl_reference[j]->getLat(), lon_red, X(i, 1), X(i, 2), trans_lon_dir);
 
-						//Reduce lon
-						const T lon_red = CartTransformation::redLon0(pl_reference[j]->getLon(), X(i, 4));
-
-						//Convert geographic point to oblique position: use a normal direction of converted longitude
-						const T lat_trans = CartTransformation::latToLatTrans(pl_reference[j]->getLat(), lon_red, X(i, 1), X(i, 2));
-						const T lon_trans = CartTransformation::lonToLonTrans(pl_reference[j]->getLat(), lon_red, lat_trans, X(i, 1), X(i, 2), trans_lon_dir);
-
-						//Compute new coordinates: add shifts
-						const T x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false) + X(i, 5);
-						const T y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false) + X(i, 6);
-						
-						//Y(j, 0) = x; 
-						//Y(j + m, 0) = y;
-
-						if (W(j, j) != 0.0)
+						for (unsigned int k = 0; k < 3; k++)
 						{
-
-							//Compute residuals
-							const T vx = x - nl_test[j]->getX();
-							const T vy = y - nl_test[j]->getY();
-
-							//Input is the best vector
-							if ((m1 == 1) && (m2 > 1))
+							try
 							{
-								V(j, 0) = vx;
-								V(j + m, 0) = vy;
+								//Compute new coordinates: add shifts
+								x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+								y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 6), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+								//const T x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false) + X(i, 5);
+								//const T y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 7), X(i, 3), proj->getLat1(), proj->getLat2(), false) + X(i, 6);
 							}
 
-							//Input is a simplex
-							else
+							//2 attempt to avoid the singularity
+							catch (Error &error)
 							{
-								v(j, 0) = vx;
-								v(j + m, 0) = vy;
+								//Move in latitude direction
+								if (k == 0)
+								{
+									if (lat_trans == MAX_LAT)
+										lat_trans -= GRATICULE_ANGLE_SHIFT;
+									else 
+										lat_trans += GRATICULE_ANGLE_SHIFT;
+								}
+
+								//Move in longitude direction
+								else if (k == 1)
+								{
+									if (lon_trans == MAX_LON) 
+										lon_trans -= GRATICULE_ANGLE_SHIFT;
+									else 
+										lon_trans += GRATICULE_ANGLE_SHIFT;
+								}
+
+								//Neither first nor the second shhifts do not bring improvement
+								else if (k == 2)
+								{
+									throw;
+								}
 							}
 						}
 					}
 
-					//Throw exception: bad conversion, a singular point
-					catch (Error & error)
+					//Bad conversion: singular point
+					catch (Error &error)
 					{
-						x_new = 1.0;
-						y_new = 0.0;
+						//Disable point from analysis: set weight to zero
+						W(j, j) = 0; W(j + m, j + m) = 0;
+					}
+						
+					//Compute residuals
+					const T vx = x - nl_test[j]->getX();
+					const T vy = y - nl_test[j]->getY();
+
+					//Input is the best vector
+					if ((m1 == 1) && (m2 > 1))
+					{
+						V(j, 0) = vx;
+						V(j + m, 0) = vy;
+					}
+
+					//Input is a simplex
+					else
+					{
+						v(j, 0) = vx;
+						v(j + m, 0) = vy;
 					}
 				}
 

@@ -88,7 +88,8 @@ enum variables
         v_phi2,
         v_v0,
         v_lon0,
-        v_lam0
+        v_lam0,
+	v_theta
 };
 
 
@@ -138,7 +139,7 @@ class ArithmeticParser
                 static T parseEq ( const char * equation, const T x, const T y, const bool print_exception = true, std::ostream * output = &std::cout );
 
                 template <typename T>
-                static T parseEq ( const char * equation, const T lat, const T lon, const T R, const T a, const T b,  const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true, std::ostream * output = &std::cout );
+                static T parseEq ( const char * equation, const T lat, const T lon, const T R, const T a, const T b,  const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout );
 
         private:
 
@@ -147,7 +148,7 @@ class ArithmeticParser
                 static void infixToPostfix ( const char * infix, char * postfix, TPlusMinusOperatorTypes & plus_minus_types );
 
                 template <typename T>
-                static T parseEquation ( const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2 );
+		static T parseEquation(const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T p);
 
                 static void findSequence ( const char ** equation, char * operator_text );
 

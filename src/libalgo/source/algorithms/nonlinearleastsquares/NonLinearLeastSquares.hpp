@@ -52,6 +52,9 @@ T NonLinearLeastSquares::GN ( FunctionJ function_j, FunctionV function_v, Functi
         //Perform iterations
         while ( iterations < max_iterations )
         {
+		//Increment iterations
+		iterations++;
+
                 //Compute new J matrix: linearize solution using the Taylor approximation
                 function_j ( X, J );
 
@@ -71,9 +74,6 @@ T NonLinearLeastSquares::GN ( FunctionJ function_j, FunctionV function_v, Functi
                 function_v ( X, Y, V, W );
 
                 //X.print();
-
-                //Increment iterations
-                iterations++;
         }
 
         //Compute final values in V
@@ -112,6 +112,9 @@ T NonLinearLeastSquares::GND(FunctionJ function_j, FunctionV function_v, Functio
         //Perform iterations
         while ( iterations < max_iterations )
         {
+		//Increment iterations
+		iterations++;
+
                 //Compute new J matrix: linearize solution using the Taylor approximation
                 //function_j ( X, J );
 
@@ -168,7 +171,7 @@ T NonLinearLeastSquares::GND(FunctionJ function_j, FunctionV function_v, Functio
                 //Compute new residuals and gradient
                 Matrix <T> F_new = trans ( V ) * W * V;
                 Matrix <T> G_new = trans ( J ) * W * V;
-
+		
                 //Terminal condition
                 if ( ( norm ( G ) < max_error ) || ( fabs ( F_new ( 0, 0 ) - F ( 0, 0 ) ) < max_diff * std::max ( 1.0 , F ( 0, 0 ) ) ) ||
                                 ( F ( 0, 0 ) <  max_error ) )
@@ -180,6 +183,9 @@ T NonLinearLeastSquares::GND(FunctionJ function_j, FunctionV function_v, Functio
 
                 //Increment iterations
                 iterations++;
+
+		//X.print();
+		//J.print();
         }
 
         //Compute final values in V
@@ -234,6 +240,9 @@ T NonLinearLeastSquares::BFGS(FunctionJ function_j, FunctionV function_v, Functi
 	//Perform iterations
 	while (iterations < max_iterations)
 	{
+		//Increment iterations
+		iterations++;
+
 		//Compute new dX
 		dX = pinv1 ( H ) * G * ( -1.0 );
 		//dX = mlsqr(J, W, V) * (-1.0);
@@ -323,9 +332,6 @@ T NonLinearLeastSquares::BFGS(FunctionJ function_j, FunctionV function_v, Functi
 		//X.print(output);
 		//*output << iterations << '\t' << F_new(0, 0) << '\n';
 		//X.print();
-
-		//Increment iterations
-		iterations++;
 	}
 
 	//Compute final values in V
@@ -364,7 +370,7 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
 
         //Compute initial J matrix
         function_j ( X, J );
-
+	
         //Compute matrices
         Matrix <T> H = trans ( J ) * W * J;
         Matrix <T> G = trans ( J ) * W * V;
@@ -375,27 +381,31 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
 
         //Set iterations to 0
         iterations = 0;
-	//X.print();
-	//J.print();
-	//V.print();
 
         //Perform iterations
         while ( iterations < max_iterations )
         {
+		//Increment iterations
+		iterations++;
+
                 //Compute new dX
 		dX = pinv1 ( H ) * G * ( -1.0 );
-		//dX = mlsqr ( J, W, V ) * ( -1.0 );
 
+		//J.print();
+		//std::cout << "dx";
 		//dX.print();
+
                 //Compute new trial X
                 Matrix <T> X2 = X + dX;
 		//Matrix <T> X2 = addStep(X, dX, A, B);
 
 		//Reflection into the search space
-		//reflection(X2, A, B);
+		reflection(X2, A, B);
 
                 //Compute new trial V matrix (residuals)
-                function_v ( X2, Y2, V2, W );
+                function_v ( X2, Y2, V2, W, false );
+
+		//std::cout << v1 << "   " << v2 << '\n';
 
                 //Apply back-step using a bisection
                 const T t_min = 1.0e-10; 
@@ -406,9 +416,8 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                         //Step t bisection
                         t /= 2;
 
-                        //Compute new X2
-                        X2 = X + dX * t;
-			//X2 = addStep(X, dX * t, A, B);
+			//Compute new X2
+			X2 = X + dX * t;
 
 			//Reflection into the search space
 			reflection(X2, A, B);
@@ -417,41 +426,40 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                         function_v ( X2, Y2, V2, W, false );
                 }
 
-		
 		//Compute new X using back-step method
                 X = X + dX * t;
-		//X = addStep(X, dX * t, A, B);
+
+		//X.print();
 
 		//Reflection into the search space
 		reflection(X, A, B);
 
                 //Compute new V matrix and residual matrix V
-                function_v ( X, Y, V, W );
+                function_v ( X, Y, V, W, true );
 
                 //Compute new J matrix
                 function_j ( X, J );
 
                 //Compute new residuals and gradient
                 F_new = trans ( V ) * V;
-                G_new = trans ( J ) * W * V;		
+                G_new = trans ( J ) * W * V;	
 		
-		/*std::cout << norm(G) << '\n';
-		std::cout << fabs(F_new(0, 0) - F(0, 0)) << '\n';
-		std::cout << max_diff * std::max(1.0, F(0, 0)) << '\n';
-		std::cout << F(0, 0) << '\n';
-		std::cout << F_new(0, 0) << '\n';*/
-
-		//const T d1 = norm(G);
-		//const T d2 = fabs(F_new(0, 0) - F(0, 0));
-		//const T d3 = max_diff * std::max(1.0, F(0, 0));
-		//std::cout << d1 << '\t' << d2 << '\t' << d3 << '\n';
-		//std::cout << max_error << '\t' << max_diff << '\n';
+		/*
+		const T d1 = norm(G);
+		const T d2 = fabs(F_new(0, 0) - F(0, 0));
+		const T d3 = max_diff * std::max(1.0, F(0, 0));
+		std::cout << d1 << '\t' << d2 << '\t' << d3 << '\n';
+		std::cout << max_error << '\t' << max_diff << '\n';
+		*/
 		
 		//Terminal condition
-                if ( ( norm ( G ) < max_error ) || ( fabs ( F_new ( 0, 0 ) - F ( 0, 0 ) ) < 1.0 * max_diff * std::max ( 1.0 , F ( 0, 0 ) ) ) ||
-                                ( F ( 0, 0 ) <  max_error ) )
-				break;
-
+		if ((norm(G) < max_error) || (fabs(F_new(0, 0) - F(0, 0)) < 1.0 * max_diff * std::min(1.0, F(0, 0))) ||
+			(F(0, 0) < max_error))
+		{
+			//std::cout << norm(G) << "   " << F_new(0, 0) << "    " << F(0, 0) << '\n';
+			break;
+		}
+		
                 //Compute selection criterium
                 const T dF = ( ( F ( 0, 0 ) - F_new ( 0, 0 ) ) / F ( 0, 0 ) );
 
@@ -475,9 +483,25 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                         //Compute new Hessian matrix using BFGS
                         const Matrix <T> D1 =  trans ( y ) * d;
                         const Matrix <T> D2 =  trans ( d ) * H * d;
+			
+			//Compute update
+			Matrix <T> dH(n, n);
 
-                        Matrix <T> dH = y * trans ( y ) / D1 ( 0, 0 ) - H * d * trans ( H * d ) / D2 ( 0, 0 );
-                        H_new = H + dH;
+			if (fabs(D1(0, 0)) > MIN_FLOAT)
+			{
+				dH = dH + y * trans(y) / D1(0, 0);
+			}
+
+			if (fabs(D2(0, 0)) > MIN_FLOAT)
+			{
+				dH = dH - H * d * trans(H * d) / D2(0, 0);
+			}
+
+			//Scaling
+			//const T rho = D1(0, 0) / (2 * (F_new(0, 0) - F(0, 0)) + norm(d * G));
+			//const T nu = D1(0, 0) / norm(trans(y) * H * y) * rho;
+
+			H_new = H + dH;
                 }
 
                 //Assign values
@@ -485,13 +509,16 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                 G = G_new;
                 F = F_new;
 
+		//X.print();
+		//dX.print();
+		//dX.print(output);
+		//X.print(output);
+		//V.print(output);
+		//J.print(output);
+		//H.print(output);
 		//X.print(output);
 		//*output << iterations << '\t' << F_new(0, 0) << '\n';
 		//dX.print();
-		//X.print();
-
-                //Increment iterations
-                iterations++;
         }
 
         //Compute final values in V
@@ -559,6 +586,9 @@ T NonLinearLeastSquares::LM(FunctionJ function_j, FunctionV function_v, Function
 	//Perform iterations
 	while (iterations < max_iterations)
 	{
+		//Increment iterations
+		iterations++;
+
 		//Compute Minimum Weighteed Least Squares using qr decomposition
 		dX = pinv1(H + I * lambda) * G * (-1.0);
 
@@ -628,9 +658,6 @@ T NonLinearLeastSquares::LM(FunctionJ function_j, FunctionV function_v, Function
 
 		//X2.print();
 		//X2.print(output);
-
-		//Increment iterations
-		iterations++;
 	}
 
 	//Compute final values in V
@@ -698,6 +725,9 @@ T NonLinearLeastSquares::TR(FunctionJ function_j, FunctionV function_v, Function
 	//Perform iterations
 	while (iterations < max_iterations)
 	{
+		//Increment iterations
+		iterations++;
+
 		//Compute optimal step inside the trust region
 		dX = optTRStep2(J, V, W, delta, 0.2 * max_iterations);
 
@@ -795,9 +825,6 @@ T NonLinearLeastSquares::TR(FunctionJ function_j, FunctionV function_v, Function
 
 		//X.print();
 		//X2.print(output);
-
-		//Increment iterations
-		iterations++;
 	}
 
 	//Compute final values in V
@@ -860,6 +887,9 @@ T NonLinearLeastSquares::TR2(FunctionJ function_j, FunctionV function_v, Functio
 
 	while (iterations < max_iterations)
 	{
+		//Increment iterations
+		iterations++;
+
 		//Compute optimal step inside the trust region
 		dX = optTRStep2(J, V, W, delta, 0.2 * max_iterations);
 
@@ -988,12 +1018,9 @@ T NonLinearLeastSquares::TR2(FunctionJ function_j, FunctionV function_v, Functio
 			delta = std::max(gamma2 * ndx, delta);
 		}
 
-
 		//X.print();
 		//X2.print(output);
 
-		//Increment iterations
-		iterations++;
 	}
 
 	//Compute final values in V
@@ -1055,6 +1082,9 @@ T NonLinearLeastSquares::TR3(FunctionJ function_j, FunctionV function_v, Functio
 	unsigned short j = 0;
 	while (iterations < max_iterations)
 	{
+		//Increment iterations
+		iterations++;
+
 		//Compute optimal step inside the trust region
 		dX = optTRStep2(J, V, W, delta, 0.2 * max_iterations);
 
@@ -1223,9 +1253,6 @@ T NonLinearLeastSquares::TR3(FunctionJ function_j, FunctionV function_v, Functio
 		rho_old = rho;
 		//X.print();
 		//X2.print(output);
-
-		//Increment iterations
-		iterations++;
 	}
 
 	//Compute final values in V
@@ -1724,6 +1751,71 @@ void NonLinearLeastSquares::trStep62(const Matrix <T> &R, const Matrix <T> &s, c
 
 
 template <typename T>
+void NonLinearLeastSquares::reflection(Matrix <T> &X, const Matrix <T> &XMIN, const Matrix <T> &XMAX)
+{
+	//Reflect elements of vectors into the search space represented by the n-dimensional cuboid
+	const unsigned int n = X.rows();
+	const T max_multiplier = 100;
+	
+	for (unsigned int i = 0; i < n; i++)
+	{
+		//int iter = 0;
+
+		//Process each element of the vector
+		while ((X(i, 0) < XMIN(i, 0)) || (X(i, 0) > XMAX(i, 0)))
+		{
+			//std::cout << X(i, 0) << " ";
+
+			//XMIN == XMAX
+			if (XMAX(i, 0) - XMIN(i, 0) < MAX_FLOAT_OPER_ERROR)
+			{
+				X(i, 0) = XMIN(i, 0);
+				break;
+			}
+
+			//Left form the lower bound
+			else if (X(i, 0) > XMAX(i, 0))
+			{
+				
+				//X(i) too far from the upper bound (due to the pseudoinverse)
+				if (X(i, 0) - XMAX(i, 0) > max_multiplier * (XMAX(i, 0) - XMIN(i, 0)))
+				{
+					X(i, 0) = 2 * XMAX(i, 0) - fmod(X(i, 0), XMAX(i, 0) - XMIN(i, 0));
+				}
+				
+				//X(i) close to the upper bound
+				else
+					
+				{
+					X(i, 0) = 2 * XMAX(i, 0) - X(i, 0);
+				}
+			}
+
+			//Right to the upper bound
+			else if (X(i, 0) < XMIN(i, 0))
+			{
+				
+				//X(i) too far from the lower bound (due to the pseudoinverse)
+				if (XMIN(i, 0) - X(i, 0) > max_multiplier * (XMAX(i, 0) - XMIN(i, 0)))
+				{
+					X(i, 0) = 2 * XMIN(i, 0) - fmod(X(i, 0), XMAX(i, 0) - XMIN(i, 0));
+				}
+				
+				//X(i) close to the lower bound
+				else
+				
+				{
+					X(i, 0) = 2 * XMIN(i, 0) - X(i, 0);
+				}
+			}
+		}
+	}
+}
+
+
+
+/*
+template <typename T>
 void NonLinearLeastSquares::reflection(Matrix <T> &X, const Matrix <T> &A, const Matrix <T> &B)
 {
 	//Reflection into the search space
@@ -1756,7 +1848,7 @@ void NonLinearLeastSquares::reflection(Matrix <T> &X, const Matrix <T> &A, const
 		}
 	}
 }
-
+*/
 
 template <typename T>
 bool NonLinearLeastSquares::checkIntervals(Matrix <T> &X, const Matrix <T> &A, const Matrix <T> &B)

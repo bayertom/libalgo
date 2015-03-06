@@ -22,12 +22,16 @@
 #ifndef DifferentialEvolution_H
 #define DifferentialEvolution_H
 
+#include <ostream>
+#include <iostream>
+
 //Forward declaration
 template <typename T>
 class Matrix;
 
-#include <ostream>
-#include <iostream>
+template <typename T>
+class FAnalyzeProjV2DE;
+
 
 //Example: Schwefel function
 template <typename T>
@@ -78,13 +82,13 @@ class DifferentialEvolution
 
 		template <typename T, typename Function>
 		static T diffEvolution(Function function, Matrix <T> &XMIN, Matrix <T> &XMAX, const unsigned int population_size,
-			const T epsilon, const unsigned int max_iterations, Matrix <T> F, T CR, const TMutationStrategy & mutation_strategy, const TAdaptiveControl &adaptive_control, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &RES, Matrix <T> &XAVER, T &aver_res, T &max_res, unsigned int &iterations, std::ostream * output = &std::cout);
+			const T epsilon, const unsigned int max_iterations, Matrix <T> F, T CR, const TMutationStrategy & mutation_strategy, const TAdaptiveControl &adaptive_control, Matrix <T> &W, Matrix <T> &X, Matrix <T> &Y, Matrix <T> &RES, Matrix <T> &XAVER, T &aver_res, T &max_res, unsigned int &iterations, const bool add_x0 = false, std::ostream * output = &std::cout);
 
 
         private:
 
 		template <typename T, typename Function>
-		static void createInitialPopulation(Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &Y, Matrix <T> &RES, const unsigned int population_size, const unsigned int dim, Matrix <T> &P_A, Matrix <T> &P_V);
+		static void createInitialPopulation(Function function, const Matrix <T> &XMIN, const Matrix <T> &XMAX, Matrix <T> &W, Matrix <T> &Y, Matrix <T> &RES, const unsigned int population_size, const unsigned int dim, Matrix <T> &P_A, Matrix <T> &P_V, const bool add_x0 = false);
 
                 template <typename T>
 		static void mutationStrategyDERand1(const Matrix <T> &P_A, const unsigned int & i, const unsigned int & population_size, const Matrix <T> & F, Matrix <T> &U);
