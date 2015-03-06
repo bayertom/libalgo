@@ -1,0 +1,5 @@
+Run
+autoreconf -i
+./configure
+make
+make install
