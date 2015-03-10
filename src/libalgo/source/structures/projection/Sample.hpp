@@ -225,7 +225,7 @@ void Sample <T> ::printSamplePositions ( const int position, const typename TAna
         const char DASH[5] = "----";
 
         //Get category
-	char *category = (proj != NULL ? proj->getProjectionFamily() : "Unknown");
+	const char *category = (proj != NULL ? proj->getProjectionFamily() : "Unknown");
 
         *output << std::showpoint << std::fixed << std::right;
 
