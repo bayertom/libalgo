@@ -30,10 +30,12 @@
 #include "libalgo/source/algorithms/outliers/Outliers.h"
 
 
+//Forward declaration
 template <typename T>
 class Projection;
 
 
+//Functor, compute matrix V of squares of residuals for cartometric analysis, determine lon0 (1D optimization)
 template <typename T>
 class FAnalyzeProjV4DEL
 {
@@ -96,7 +98,7 @@ void evaluateResidualsL(const Matrix <T> &XL, Matrix <T> &Y, Matrix <T> &V, Matr
 	X(0, 3) = XL(0, 0);
 	X(0, 4) = proj->getC();
 
-	//Call function from FAnalyzeProjV2
+	//Call function from FAnalyzeProjV4
 	evaluateResiduals(X, Y, V, W, nl_test, pl_reference, meridians, parallels, faces_test, proj, R, q1, q2, analysis_parameters, aspect, sample_res, created_samples, res_evaluation, me_function, k, I, output);
 }
 

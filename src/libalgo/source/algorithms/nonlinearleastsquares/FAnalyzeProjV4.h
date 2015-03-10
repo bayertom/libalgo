@@ -28,15 +28,18 @@
 
 #include "libalgo/source/algorithms/cartanalysis/CartAnalysis.h"
 #include "libalgo/source/algorithms/outliers/Outliers.h"
-//#include "FAnalyzeProjV4DEL.h"
+
 #include "libalgo/source/algorithms/geneticalgorithms/FAnalyzeProjV4DEL.h"
 
+//Forwards declarations
 template <typename T>
 class Projection;
 
 template <typename T>
 class FAnalyzeProjV4DEL;
 
+
+// Functor, compute matrix V of residuals for cartometric analysis
 template <typename T>
 class FAnalyzeProjV4
 {

@@ -34,6 +34,7 @@ template <typename T>
 class Projection;
 
 
+//Functor, compute matrix V of squares of residuals for cartometric analysis, determine lon0 (1D optimization)
 template <typename T>
 class FAnalyzeProjV2DEL
 {
