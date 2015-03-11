@@ -78,6 +78,13 @@ void Container <Point, destructable> ::load ( const char * file,  const bool pri
         loadPoints ( file, Dimension <dim>(),  print_exception, output );
 }
 
+template <typename Point, const TDestructable destructable>
+void Container <Point, destructable> ::loadFromVector ( const std::vector<Point>& data )
+{
+    for (typename std::vector<Point>::const_iterator it = data.begin(); it != data.end(); it++) {
+        this->items.push_back(*it);
+    }
+}
 
 template <typename Point, const TDestructable destructable>
 void Container <Point, destructable>::toIndexList ( TIndexList & il )
@@ -219,7 +226,6 @@ void Container <Point, destructable> ::loadPoints ( const char * file, Dimension
         }
 }
 
-
 //*********************************************************************************************************************
 //Partial specialization for Point * (List of points)
 //*********************************************************************************************************************
@@ -254,6 +260,13 @@ void Container <Point *, destructable> ::load ( const char * file,  const bool p
         loadPoints ( file, Dimension <dim>(),  print_exception, output );
 }
 
+template <typename Point, const TDestructable destructable>
+void Container <Point*, destructable> ::loadFromVector ( const std::vector<Point*>& data )
+{
+    for (typename std::vector<Point>::const_iterator it = data.begin(); it != data.end(); it++) {
+        this->items.push_back(*it);
+    }
+}
 
 template <typename Point, const TDestructable destructable>
 template <TDimension dim>
@@ -572,8 +585,8 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                         if ( strcmp ( line_text, "<projection>" ) == 0 || strcmp ( line_text, "<Projection>" )  == 0 || strcmp ( line_text, "<name>" ) == 0 || strcmp ( line_text, "<Name>" ) == 0 ||
 				strcmp(line_text, "<x>") == 0 || strcmp(line_text, "<X>") == 0 || strcmp(line_text, "<y>") == 0 || strcmp(line_text, "<Y>") == 0 || strcmp(line_text, "<ftheta>") == 0 || strcmp(line_text, "<Ftheta>") == 0 ||
 				strcmp(line_text, "<theta0>") == 0 || strcmp(line_text, "<Theta0>") == 0 || strcmp(line_text, "<Lon_pole>") == 0 || strcmp(line_text, "<lat_pole>") == 0 || strcmp(line_text, "<Lat_pole>") == 0 || strcmp(line_text, "<lon_pole>") == 0 ||
-				strcmp(line_text, "<lat0>") == 0 || strcmp(line_text, "<Lat0>") == 0 || strcmp(line_text, "<lat1>") == 0 || strcmp ( line_text, "<Lat1>" ) == 0 || strcmp ( line_text, "<lat2>" ) == 0 || 
-				strcmp ( line_text, "<Lat2>" ) == 0 || strcmp ( line_text, "<lon0>" ) == 0 || strcmp ( line_text, "<Lon0>" )  == 0 || strcmp ( line_text, "<lon_dir>" ) == 0 || strcmp ( line_text, "<Lon_dir>" )  == 0 || 
+				strcmp(line_text, "<lat0>") == 0 || strcmp(line_text, "<Lat0>") == 0 || strcmp(line_text, "<lat1>") == 0 || strcmp ( line_text, "<Lat1>" ) == 0 || strcmp ( line_text, "<lat2>" ) == 0 ||
+				strcmp ( line_text, "<Lat2>" ) == 0 || strcmp ( line_text, "<lon0>" ) == 0 || strcmp ( line_text, "<Lon0>" )  == 0 || strcmp ( line_text, "<lon_dir>" ) == 0 || strcmp ( line_text, "<Lon_dir>" )  == 0 ||
 				strcmp ( line_text, "<dx>" ) == 0 || strcmp ( line_text, "<Dx>" ) == 0 || strcmp ( line_text, "<dy>" )  == 0 || strcmp ( line_text, "<Dy>" ) == 0 || strcmp ( line_text, "<r>" ) == 0 ||
                                 strcmp ( line_text, "<R>" ) == 0 || strcmp ( line_text, "<a>" ) == 0 || strcmp ( line_text, "<A>" ) == 0 || strcmp ( line_text, "<b>" ) == 0 || strcmp ( line_text, "<B>" ) == 0 )
                         {
