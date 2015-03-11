@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-CFLAGS = --pedantic -Wall -std=c99 -O2
+AM_CFLAGS = --pedantic -Wall -std=c99 -Oi2
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libalgo.la
