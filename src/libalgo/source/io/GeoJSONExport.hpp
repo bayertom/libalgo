@@ -82,13 +82,13 @@ void GeoJSONExport::processGraticuleElements ( std::ostream& out, GraticulePart 
         }
 }
 
-void GeoJSONExport::createHeader( std::ostream& out) {
+inline void GeoJSONExport::createHeader( std::ostream& out) {
     out << "{";
     out << "\"type\":\"FeatureCollection\",";
     out << "\"features\":[";
 }
 
-void GeoJSONExport::endHeader( std::ostream& out) {
+inline void GeoJSONExport::endHeader( std::ostream& out) {
     out << "]";
     out << "}";
 }
