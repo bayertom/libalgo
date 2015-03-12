@@ -263,7 +263,7 @@ void Container <Point *, destructable> ::load ( const char * file,  const bool p
 template <typename Point, const TDestructable destructable>
 void Container <Point*, destructable> ::loadFromVector ( const std::vector<Point*>& data )
 {
-    for (typename std::vector<Point>::const_iterator it = data.begin(); it != data.end(); it++) {
+    for (typename std::vector<Point*>::const_iterator it = data.begin(); it != data.end(); it++) {
         this->items.push_back(*it);
     }
 }
