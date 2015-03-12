@@ -8,7 +8,7 @@ class GeoJSONExport {
     
 public:
     template <typename Point>
-    static void exportGraticuleToDXF ( std::ostream& out, const typename TMeridiansListF <typename Point::Type> ::Type & meridians, const typename TParallelsListF <typename Point::Type> ::Type & parallels,
+    static void exportGraticule ( std::ostream& out, const typename TMeridiansListF <typename Point::Type> ::Type & meridians, const typename TParallelsListF <typename Point::Type> ::Type & parallels,
                                        const Container <Point *> &points, const typename Point::Type font_height, const typename Point::Type lat_step, const typename Point::Type lon_step );
     
 private:
