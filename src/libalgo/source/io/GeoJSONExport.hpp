@@ -57,7 +57,7 @@ void GeoJSONExport::processGraticuleElements ( std::ostream& out, GraticulePart 
 
                 //Create a line> part of the meridian or parallel
                 createLine ( out, layer_graticule_name, p_previous->getX(), p_previous->getY(), p->getX(), p->getY() );
-                
+
                 out << ",";
         }
 
@@ -118,9 +118,7 @@ void GeoJSONExport::createPoint ( std::ostream& out, const char * layer_name, co
     out << "{";
     out << "\"geometry\":{";
     out << "\"type\":\"Point\",";
-    out << "\"coordinates\":[";
-    out << "[" << x << "," << y << "]";
-    out << "]";
+    out << "\"coordinates\":[" << x << "," << y << "]";
     out << "},";
     out << "\"type\":\"Feature\",";
     out << "\"properties\":{";
@@ -136,9 +134,7 @@ void GeoJSONExport::createText ( std::ostream& out, const char * layer_name, con
     out << "{";
     out << "\"geometry\":{";
     out << "\"type\":\"Point\",";
-    out << "\"coordinates\":[";
-    out << "[" << x << "," << y << "]";
-    out << "]";
+    out << "\"coordinates\":[" << x << "," << y << "]";
     out << "},";
     out << "\"type\":\"Feature\",";
     out << "\"properties\":{";
@@ -149,4 +145,3 @@ void GeoJSONExport::createText ( std::ostream& out, const char * layer_name, con
 }
 
 #endif	/* GEOJSONEXPORT_HPP */
-
