@@ -82,6 +82,8 @@ class Container : public GenericContainer2 <Point, destructable>
                 template <TDimension dim>
                 void load ( const char * file, const bool print_exception = true, std::ostream * output = &std::cout );
 
+                void loadFromVector ( const std::vector<Point>& data );
+
                 void toIndexList ( TIndexList & il );
 
         private:
@@ -124,6 +126,8 @@ class Container <Point *, destructable> : public GenericContainer2 <Point *, des
         public:
                 template <TDimension dim>
                 void load ( const char * file, const bool print_exception = true, std::ostream * output = &std::cout );
+                
+                void loadFromVector ( const std::vector<Point*>& data );
 
                 void toIndexList ( TIndexList & il );
 
@@ -131,7 +135,7 @@ class Container <Point *, destructable> : public GenericContainer2 <Point *, des
                 template <TDimension dim>
                 void loadPoints ( const char * file, Dimension <dim>, const bool print_exception, std::ostream * output );
 
-                void loadPoints ( const char * file, Dimension <Dim2D>, const bool print_exception, std::ostream * output );
+                void loadPoints ( const char * file, Dimension <Dim2D>, const bool print_exception, std::ostream * output );                
 
         public:
                 //Other functions
