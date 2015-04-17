@@ -206,7 +206,8 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/structures/face/Face.cpp \
     ./libalgo/source/io/File.cpp \
     ./libalgo/source/io/Format.cpp \
-    ./libalgo/source/io/DXFExport.cpp 
+    ./libalgo/source/io/DXFExport.cpp \
+    ./libalgo/source/io/GeoJSONExport.cpp 
 
 nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTARRatio.h \
     ./libalgo/source/comparators/sortSamplesByVoronoiCellTangentFunctionRatio.h \
@@ -412,6 +413,7 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/face/VoronoiCell.h \
     ./libalgo/source/structures/face/Face.h \
     ./libalgo/source/io/DXFExport.h \
+    ./libalgo/source/io/GeoJSONExport.h \
     ./libalgo/source/io/File.h \
     ./libalgo/source/io/Format.h \
     ./libalgo/source/algorithms/linelineangle/LineLineAngle.hpp \
@@ -493,4 +495,5 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/face/Face.hpp \
     ./libalgo/source/structures/face/VoronoiCell.hpp \
     ./libalgo/source/io/DXFExport.hpp \
+    ./libalgo/source/io/GeoJSONExport.hpp \
     ./libalgo/source/io/Format.hpp 
