@@ -1,0 +1,328 @@
+// Description: Position of two lines
+
+// Copyright (c) 2010 - 2011
+// Tomas Bayer
+// Charles University in Prague, Faculty of Science
+// bayertom@natur.cuni.cz
+
+// This library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+
+#ifndef LineLinePosition_HPP
+#define LineLinePosition_HPP
+
+
+template <typename Point>
+unsigned short LineLinePosition::get2LineSegmentsPosition2 ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, const TRoundType round )
+{
+        /*  Tests, if a line segemnt(p1,p2) is intersected by the line segment (p3,p4). Results
+
+        		6: Coliner (identical points),
+        		5: Colinear (1 identical point)
+        		4: Colinear (no identical points)
+        		3: Intersect in two end points,
+        		2: Intersect in one end point,
+        		1: Intersect (but not in end points)
+        		0: Do not intersect ( not collinear nor parallel)
+        */
+
+        typename Point::Type denom =	p1->getX() * ( p4->getY() - p3->getY() ) + p2->getX() * ( p3->getY() - p4->getY() ) +
+                                        p4->getX() * ( p2->getY() - p1->getY() ) + p3->getX() * ( p1->getY() - p2->getY() ) ;
+
+        //Segments are parallel
+        if ( denom == 0 )
+        {
+                //Points are not colinear, there is no intersection
+                if ( PointLinePosition::getPointLinePosition2D ( p1, p3, p4, round ) != 2 )
+                {
+                        return 0;
+                }
+
+                // Colinear (identical points)
+                if ( ( *p1 == *p3 ) && ( *p2 == *p4 ) || ( *p1 == *p4 ) && ( *p2 == *p3 ) )
+                {
+                        return 6;
+                }
+
+                // Colinear (one identical point)
+                if ( *p1 == *p3 || *p2 == *p4 || *p1 == *p4 || *p2 == *p3 )
+                {
+                        return 5;
+                }
+
+                // Colinear (no identical points)
+                return 4;
+        }
+
+        typename Point::Type numer1 =	p1->getX() * ( p4->getY() - p3->getY() ) + p3->getX() * ( p1->getY() - p4->getY() ) +
+                                        p4->getX() * ( p3->getY() - p1->getY() );
+
+        typename Point::Type numer2 =	- ( p1->getX() * ( p3->getY() - p2->getY() ) + p2->getX() * ( p1->getY() - p3->getY() ) +
+                                            p3->getX() * ( p2->getY() - p1->getY() ) );
+
+        //Compute tests
+        bool t1 = ( fabs ( numer1 ) < MIN_FLOAT ) || ( fabs ( numer1 - denom ) < MIN_FLOAT ) ;
+        bool t2 = ( fabs ( numer2 ) < MIN_FLOAT ) || ( fabs ( numer2 - denom ) < MIN_FLOAT ) ;
+
+        //Both segments intersect in 2 end points
+        if ( t1 && t2 )
+        {
+                return 3;
+        }
+
+        //Both segments intersect in 1 end point
+        if ( t1 || t2 )
+        {
+                return 2;
+        }
+
+        //Compute parameters s,t
+        typename Point::Type s = numer1 / denom;
+        typename Point::Type t = numer2 / denom;
+
+        //Segments intersect, but not in end points
+        if ( ( s > 0 ) && ( s < 1 ) && ( t > 0 ) && ( t < 1 ) )
+        {
+                return 1;
+        }
+
+        //Segments do not intersect
+        if ( ( s < 0 ) || ( s > 0 ) || ( t < 0 ) || ( t > 1 ) )
+        {
+                return 0;
+        }
+}
+
+
+template <typename Point>
+unsigned short LineLinePosition::get2LineSegmentsPosition ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, const TRoundType round )
+{
+        /*  Tests, if a line segment(p1,p2) is intersected by the line segment (p3,p4). Results
+
+        		6: Coliner (identical points),
+        		5: Colinear (1 identical point)
+        		4: Colinear (no identical points)
+        		3: Intersect in two end points,
+        		2: Intersect in one end point,
+        		1: Intersect (but not in end points)
+        		0: Do not intersect ( not collinear nor parallel)
+        */
+
+        // Four half planes tests
+        const unsigned short t1 = PointLinePosition::getPointLinePosition2D ( p3, p1, p2, round );
+        const unsigned short t2 = PointLinePosition::getPointLinePosition2D ( p4, p1, p2, round );
+        const unsigned short t3 = PointLinePosition::getPointLinePosition2D ( p1, p3, p4, round );
+        const unsigned short t4 = PointLinePosition::getPointLinePosition2D ( p2, p3, p4, round );
+
+        // Both lines are collinear
+        if ( ( t1 == 2 ) && ( t2 == 2 ) || ( t3 == 2 ) && ( t4 == 2 ) )
+        {
+                // Colinear (identical points)
+                if ( ( *p1 == *p3 ) && ( *p2 == *p4 ) || ( *p1 == *p4 ) && ( *p2 == *p3 ) )
+                {
+                        return 6;
+                }
+
+                // Colinear (one identical point)
+                if ( *p1 == *p3 || *p2 == *p4 || *p1 == *p4 || *p2 == *p3 )
+                {
+                        return 5;
+                }
+
+                // Colinear (no identical points)
+                return 4;
+        }
+
+        // Lines intersect in two end points
+        else if ( ( t1 == 2 || t2 == 2 ) && ( t3 == 2 || t4 == 2 ) )
+        {
+                //Aditional test to avoid round error
+                if ( ( *p1 == *p3 || *p2 == *p4 || *p1 == *p4 || *p2 == *p3 ) )
+                {
+                        return 3;
+                }
+        }
+
+        // Lines intersect in one start point
+        else if ( ( t1 == 2 || t2 == 2 || t3 == 2 || t4 == 2 ) && ( t1 != t2 ) && ( t3 != t4 ) )
+        {
+                return 2;
+        }
+
+        // Lines intersect (but not in end points)
+        else if ( ( t1 != t2 ) && ( t3 != t4 ) )
+        {
+                return 1;
+        }
+
+        // Lines do not intersect (parallels or do not have intersection)
+        return 0;
+}
+
+
+template <typename Point>
+void LineLinePosition::get2LineSegmentsIntersection ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, typename Point::Type & x_int, typename Point::Type & y_int, unsigned short & inters_exists_code, const TRoundType round )
+{
+        //Compute intersection of two line segments
+        /* Results
+        		6: Coliner (identical points),
+        		5: Colinear (1 identical point)
+        		4: Colinear (no identical points)
+        		3: Intersect in two end points,
+        		2: Intersect in one end point,
+        		1: Intersect (but not in end points)
+        		0: Do not intersect ( not collinear nor parallel)
+        */
+
+        //Get position of the line segments
+        inters_exists_code = get2LineSegmentsPosition ( p1, p2, p3, p4, round );
+
+        //Yes/no intersection indicator (we have a position from the previous test)
+        bool inters_exists;
+
+        //Exists intersection of 2 line segments
+        if ( inters_exists_code > 0  &&  inters_exists_code < 4 )
+        {
+                //Compute their intersection as intersections of two lines
+                get2LinesIntersection ( p1, p2, p3, p4, x_int, y_int, inters_exists );
+        }
+
+        //There is no intersection
+        else
+        {
+                //Initialize variables
+                x_int = 0;
+                y_int = 0;
+        }
+}
+
+
+template <typename Point>
+void LineLinePosition::get2LinesIntersection ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, typename Point::Type & x_int, typename Point::Type & y_int, bool & inters_exists )
+{
+        /*Compute itersection of two lines and returns code:
+        		1: Intersection exist
+        		0: Intersecion does not exist
+        		*/
+
+        //Vectors
+        const typename Point::Type ux = p2->getX() - p1->getX();
+        const typename Point::Type uy = p2->getY() - p1->getY();
+        const typename Point::Type vx = p4->getX() - p3->getX();
+        const typename Point::Type vy = p4->getY() - p3->getY();
+        const typename Point::Type wx = p1->getX() - p3->getX();
+        const typename Point::Type wy = p1->getY() - p3->getY();
+
+        //Compute k1, k2
+        const typename Point::Type k1 = vx * wy - vy * wx;
+        const typename Point::Type k2 = vy * ux - vx * uy;
+
+        //Intersection exists, compute coordinates of the intersection point
+        if ( k2 != 0 )
+        {
+                //Compute bearing
+                const typename Point::Type alpha = k1 / k2;
+
+                //Intersections
+                x_int = p1->getX() + alpha * ux;
+                y_int = p1->getY() + alpha * uy;
+
+                //Intersection code could be set using i
+                inters_exists = true;
+        }
+
+        //Intersection does not exist
+        else
+        {
+                //Initialize
+                x_int = 0;
+                y_int = 0;
+
+                //Code
+                inters_exists = false;
+        }
+}
+
+
+template <typename Point>
+unsigned short LineLinePosition::getLineAndLineSegmentPosition ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, const TRoundType round )
+{
+        /*  Tests, if the line segment(p3,p4) is intersected by the line (p1,p2). Results
+        		3: Colinear (no identical points)
+        		2: Intersect in end point of the line segment,
+        		1: Intersect (but not in end points)
+        		0: Do not intersect (not collinear nor parallel)
+        */
+
+        //Two half planes tests (vector orientation)
+        const unsigned short t1 = PointLinePosition::getPointLinePosition2D ( p3, p1, p2, round );
+        const unsigned short t2 = PointLinePosition::getPointLinePosition2D ( p4, p1, p2, round );
+
+        // Constrained edge and analyzed edge are collinear
+        if ( ( t1 == 2 ) && ( t2 == 2 ) )
+        {
+                // Colinear (no identical points)
+                return 3;
+        }
+
+        // Lines intersect in one start point
+        if ( ( t1 == 2 || t2 == 2 ) )
+        {
+                return 2;
+        }
+
+        // Lines intersect (but not in end points)
+        if ( t1 != t2 )
+        {
+                return 1;
+        }
+
+        // Lines do not intersect (parallels or do not have intersection)
+        return 0;
+}
+
+
+template <typename Point>
+void LineLinePosition::getLineAndLineSegmentIntersection ( const Point * p1, const Point * p2, const Point * p3, const Point * p4, typename Point::Type & x_int, typename Point::Type & y_int, unsigned short & inters_exists_code, const TRoundType round )
+{
+        /*Compute itersection of the line and line segment and returns code:
+        		3: Colinear (no identical points)
+        		2: Intersect in end point of the line segment,
+        		1: Intersect (but not in end points)
+        		0: Do not intersect (not collinear nor parallel)
+        */
+
+        //Get position of the line
+        inters_exists_code = getLineAndLineSegmentPosition ( p1, p2, p3, p4, round );
+
+        //Yes/no intersection indicator (we have a position from the previous test)
+        bool inters_exists;
+
+        // Intersection exists, compute coordinates of the intersection point
+        if ( inters_exists_code == 1  ||  inters_exists_code == 2 )
+        {
+                //Compute intersection of two lines
+                get2LinesIntersection ( p1, p2, p3, p4, x_int, y_int, inters_exists );
+        }
+
+        //Intersection does not exist
+        else
+        {
+                //Initialize variables
+                x_int = 0;
+                y_int = 0;
+        }
+}
+
+#endif
