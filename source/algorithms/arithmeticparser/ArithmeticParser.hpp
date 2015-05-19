@@ -1,6 +1,7 @@
-// Description: Arithmetic parser using postfix notation based on modified Shunting-yard algorithm
+// Description: Arithmetic parserm converting the infix notation to the postfix notation, based on modified shunting-yard algorithm
+//Unary minus represented by _
 
-// Copyright (c) 2010 - 2013
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -40,327 +41,241 @@
 
 
 template <typename T>
-T ArithmeticParser::parseEq ( const char * equation, const T x, const bool print_exception, std::ostream * output )
+T ArithmeticParser::parseEquation(const char * equation, char ** equation_postfix, const T x, const bool print_exception, std::ostream * output)
 {
-        //Translation equation
-        T res = 0;
-        char postfix[MAX_TEXT_LENGTH];
-        TPlusMinusOperatorTypes plus_minus_types;
+	//Translation equation
+	T res = 0;
+	char equation_postfix_[MAX_TEXT_LENGTH];
 
-        try
-        {
-                //ArithmeticParser infix notation to postfix notation
-                infixToPostfix ( equation, postfix, plus_minus_types );
+	try
+	{
+		//Convert the infix notation to the postfix notation
+		if (*equation_postfix == NULL)
+		{
+			infixToPostfix(equation, equation_postfix_);
 
-                //Parse equation
-                res = parseEquation ( postfix, plus_minus_types, x, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0 );
+			*equation_postfix = new char[strlen(equation_postfix_) + 1];
+			strcpy(*equation_postfix, equation_postfix_);
 
-                return res;
-        }
+		}
 
-        //Throw exception
-        catch ( ErrorMath <T> & error )
-        {
-                //Print exeption
-                if ( print_exception )
-                {
-                        error.printException();
-                }
+		//Evaluate equation in the postfix notation
+		res = evaluatePostfixEquation(*equation_postfix, x, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0);
 
-                //Throw exception
-                throw;
-        }
+		return res;
+	}
 
-        //Throw exception
-        catch ( Error & error )
-        {
-                if ( print_exception )
-                {
-                        error.printException ( output );
-                }
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
 
-                throw;
-        }
+		//Throw exception
+		throw;
+	}
+
+	//Throw exception
+	catch (Error & error)
+	{
+		if (print_exception)
+		{
+			error.printException(output);
+		}
+
+		throw;
+	}
 }
 
 
 template <typename T>
-T ArithmeticParser::parseEq ( const char * equation, const T x, const T y, const bool print_exception, std::ostream * output )
+T ArithmeticParser::parseEquation(const char * equation, char ** equation_postfix, const T x, const T y, const bool print_exception, std::ostream * output)
 {
-        //Translation equation
-        T res = 0;
-        char postfix[MAX_TEXT_LENGTH];
-        TPlusMinusOperatorTypes plus_minus_types;
+	//Parse equation from the infix notation to the postfix notation
+	T res = 0;
+	char equation_postfix_[MAX_TEXT_LENGTH];
 
-        try
-        {
-                //ArithmeticParser infix notation to postfix notation
-                infixToPostfix ( equation, postfix, plus_minus_types );
+	try
+	{
+		//Convert the infix notation to the postfix notation
+		if (*equation_postfix == NULL)
+		{
+			infixToPostfix(equation, equation_postfix_);
 
-                //Parse equation
-                res = parseEquation ( postfix, plus_minus_types, x, y, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0, ( T ) 0.0 );
+			*equation_postfix = new char[strlen(equation_postfix_) + 1];
+			strcpy(*equation_postfix, equation_postfix_);
 
-                return res;
-        }
+			std::cout << "no postfix" << " ";
+		}
 
-        //Throw exception
-        catch ( ErrorMath <T> & error )
-        {
-                //Print exeption
-                if ( print_exception )
-                {
-                        error.printException();
-                }
+		//Evaluate equation in the postfix notation
+		res = evaluatePostfixEquation(*equation_postfix, x, y, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0, (T) 0.0);
 
-                //Throw exception
-                throw;
-        }
+		return res;
+	}
 
-        //Throw exception
-        catch ( Error & error )
-        {
-                //Print exeption
-                if ( print_exception )
-                {
-                        error.printException ( output );
-                }
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
 
-                //Throw exception
-                throw;
-        }
+		//Throw exception
+		throw;
+	}
+
+	//Throw exception
+	catch (Error & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException(output);
+		}
+
+		//Throw exception
+		throw;
+	}
 }
 
 
 template <typename T>
-T ArithmeticParser::parseEq ( const char * equation,  const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output )
+T ArithmeticParser::parseEquation(const char * equation, char ** equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output)
 {
-        //Translation cartographic equation
-        T res = 0;
-        char postfix[MAX_TEXT_LENGTH];
-        TPlusMinusOperatorTypes plus_minus_types;
+	//Parse equation from the infix notation to the postfix notation
+	T res = 0;
+	char equation_postfix_[MAX_TEXT_LENGTH];
 
-        try
-        {
-                //ArithmeticParser infix notation to postfix notation
-                infixToPostfix ( equation, postfix, plus_minus_types );
+	try
+	{
+		//Convert the infix notation to the postfix notation
+		if (*equation_postfix == NULL)
+		{
+			infixToPostfix(equation, equation_postfix_);
 
-                //Parse equation
-                res = parseEquation ( postfix, plus_minus_types, ( T ) 0.0 , ( T ) 0.0 , lat, lon, R, a, b, c, lat0, lat1, lat2, theta );
+			*equation_postfix = new char[strlen(equation_postfix_) + 1];
+			strcpy(*equation_postfix, equation_postfix_);
+		}
 
-                return res;
-        }
+		//Evaluate equation in the postfix notation
+		res = evaluatePostfixEquation(*equation_postfix, (T) 0.0, (T) 0.0, lat, lon, R, a, b, c, lat0, lat1, lat2, theta);
 
-        //Throw exception
-        catch ( ErrorMath <T> & error )
-        {
-                //Print exeption
-                if ( print_exception )
-                {
-                        error.printException();
-                }
+		return res;
+	}
 
-                //Throw exception
-                throw;
-        }
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
 
-        //Throw exception
-        catch ( Error & error )
-        {
-                //Print exeption
-                if ( print_exception )
-                {
-                        error.printException();
-                }
+		//Throw exception
+		throw;
+	}
 
-                //Throw exception
-                throw error;
-        }
+	//Throw exception
+	catch (Error & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
+
+		//Throw exception
+		throw error;
+	}
 }
 
 
 template <typename T>
-T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta )
-
+T ArithmeticParser::parseEquation(const char * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output)
 {
-        //Parse postfix notation
-        unsigned int plus_minus_types_index = 0, n_plus_minus_types = plus_minus_types.size();
-        T result = 0.0;
+	//Parse equation from the infix notation to the postfix notation
+	T res = 0;
 
-        //Process postfix notation
-        std::stack <T> operands;
+	try
+	{
+		//Evaluate equation in the postfix notation
+		res = evaluatePostfixEquation(equation_postfix, (T) 0.0, (T) 0.0, lat, lon, R, a, b, c, lat0, lat1, lat2, theta);
 
-        while ( *equation != '\0' )
-        {
-                //NUMBER
-                if ( isdigit ( *equation ) )
-                {
-                        char number_text[32];
+		return res;
+	}
 
-                        //Find number and convert to T
-                        findSequence ( & equation, number_text );
-                        T number = atof ( number_text );
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
 
-                        //Add into stack
-                        operands.push ( number );
-                }
+		//Throw exception
+		throw;
+	}
 
-                //Function or variable
-                else if ( isalpha ( *equation ) )
-                {
-                        char function_text[32];
-                        findSequence ( &equation, function_text );
+	//Throw exception
+	catch (Error & error)
+	{
+		//Print exeption
+		if (print_exception)
+		{
+			error.printException();
+		}
 
-                        //Functions **************************************************************************************************************
+		//Throw exception
+		throw error;
+	}
+}
 
-                        //SIN(x)
-                        if ( strcmp ( function_text, functs[f_sin] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "sin(x)" );
 
-                                //Pop one operand
-                                T op = operands.top();
+template <typename T>
+T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta)
+{
+	//Evaluate expression in the postfix notation
+	T result = 0.0;
 
-                                //Remove operand from the stack
-                                operands.pop();
+	//Process postfix notation
+	std::stack <T> operands;
 
-                                //Exception
-                                if ( abs(op) > MAX_FLOAT ) 
-					throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sin(x), abs(x) > MAX.", op );
+	while (*equation_postfix != '\0')
+	{
+		//NUMBER
+		if (isdigit(*equation_postfix))
+		{
+			char number_text[32];
 
-                                //Result
-                                result = sin ( op * M_PI / 180 );
+			//Find number and convert to T
+			findSequence(&equation_postfix, number_text);
+			T number = atof(number_text);
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//Add into stack
+			operands.push(number);
+		}
 
-                        //COS(x)
-                        else if ( strcmp ( function_text, functs[f_cos] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) 
-					throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "cos(x)." );
+		//Function or variable
+		else if (isalpha(*equation_postfix))
+		{
+			char function_text[32];
+			findSequence(&equation_postfix, function_text);
 
-                                //Pop one operand
-                                const T op = operands.top();
+			//Functions **************************************************************************************************************
 
-                                //Remove operand from the stack
-                                operands.pop();
-
-                                //Exception
-                                if ( fabs(op) > MAX_FLOAT ) 
-					throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation: ", "cos(x), abs(x) > MAX.", op );
-
-                                //Result
-                                result = cos ( op * M_PI / 180 );
-
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
-
-                        //TAN(x)
-                        else if ( ( strcmp ( function_text, functs[f_tg] ) == 0 ) || ( strcmp ( function_text, functs[f_tan] ) == 0 ) )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "tan(x)" );
-
-                                //Pop one operand
-                                const T op = operands.top();
-
-                                //Remove operand from the stack
-                                operands.pop();
-
-                                //Exception
-                                if ( fabs(op) > MAX_FLOAT ) 
-					throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "tan(x), abs(x) > MAX.", op );
-                                else if ( fabs ( cos ( op * M_PI / 180 ) ) < MIN_FLOAT )
-                                {
-                                        //throw ErrorMathMatrixNotSquare <T> ( "ERangError: can not parse equation ", "tan(x), x = ", 1.0, 1.0);
-                                        throw ErrorMathRange <T> ( "ErrorMathRange: can not parse equation ", "tan(x), x = ", op );
-                                }
-
-                                //Result
-                                result = tan ( op * M_PI / 180 );
-
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
-
-                        //COT(x)
-                        else if ( ( strcmp ( function_text, functs[f_cot] ) == 0 ) || ( strcmp ( function_text, functs[f_cotg] ) == 0 ) )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "cotg(x)" );
-
-                                //Pop one operand
-                                const T op = operands.top();
-
-                                //Remove operand from the stack
-                                operands.pop();
-
-                                //Exceptions
-                                if ( fabs(op) > MAX_FLOAT )
-                                {
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "cotg(x), abs(x) > MAX.", op );
-                                }
-
-                                else if ( fabs ( sin ( op * M_PI / 180 ) ) < MIN_FLOAT )
-                                {
-                                        throw ErrorMathRange <T> ( "ErrorMathRange: can not parse equation ", "cotg(x), x = ", op );
-                                }
-
-                                //Result
-                                result = 1.0 / tan ( op * M_PI / 180 );
-
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
-
-                        //ASIN(x)
-                        else if ( strcmp ( function_text, functs[f_asin] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "asin(x)" );
-
-                                //Pop one operand
-                                T op = operands.top();
-
-                                //Remove operand from the stack
-                                operands.pop();
-
-                                //Exception
-                                if ( abs(op) > MAX_FLOAT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "asin(x), abs(x) > MAX.", op );
-
-                                //Throw exception: fabs (abn_acos) - 1.0 > MIN_FLOAT
-                                if ( ( op > 1.0 + ARGUMENT_ROUND_ERROR ) || ( op < - 1.0 - ARGUMENT_ROUND_ERROR ) )
-                                {
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "asin(x), x = ", op );
-                                }
-
-                                //Correct round errors
-                                else if ( op > 1.0 )
-                                {
-                                        op = 1.0;
-                                }
-
-                                else if ( op < - 1.0 )
-                                {
-                                        op = -1.0;
-                                }
-
-                                //Result
-                                result = asin ( op ) * 180 / M_PI;
-
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
-
-                        //ACOS(x)
-			else if (strcmp(function_text, functs[f_acos]) == 0)
+			//SIN(x)
+			if (strcmp(function_text, functs[f_sin]) == 0)
 			{
 				//Empty stack ?
-				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation, argument missing: ", "acos(x)");
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "sin(x)");
 
 				//Pop one operand
 				T op = operands.top();
@@ -369,358 +284,502 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
 				operands.pop();
 
 				//Exception
-				if (abs(op) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation ", "acos(x), abs(x) > MAX.", op);
+				if (abs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "sin(x), abs(x) > MAX.", op);
 
-                                //Throw exception: fabs (abn_acos) - 1.0 > MIN_FLOAT
-                                if ( ( op > 1.0 + ARGUMENT_ROUND_ERROR ) || ( op < - 1.0 - ARGUMENT_ROUND_ERROR ) )
-                                {
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation", "acos(x), x = ", op );
-                                }
+				//Result
+				result = sin(op * M_PI / 180);
 
-                                //Correct round errors
-                                else if ( op > 1.0 )
-                                {
-                                        op = 1.0;
-                                }
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                else if ( op < - 1.0 )
-                                {
-                                        op = -1.0;
-                                }
+			//COS(x)
+			else if (strcmp(function_text, functs[f_cos]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty())
+					throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "cos(x).");
 
-                                //Result
-                                result = acos ( op ) * 180 / M_PI;
+				//Pop one operand
+				const T op = operands.top();
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Remove operand from the stack
+				operands.pop();
 
-                        //ATAN(x)
-                        else if ( ( strcmp ( function_text, functs[f_atan] ) == 0 ) )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", "atan(x)." );
+				//Exception
+				if (fabs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix: ", "cos(x), abs(x) > MAX.", op);
 
-                                //Pop one operand
-                                const T op = operands.top();
+				//Result
+				result = cos(op * M_PI / 180);
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Exception
-                                if ( fabs(op) > MAX_FLOAT )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "atan(x), abs(x) > MAX.", op );
+			//TAN(x)
+			else if ((strcmp(function_text, functs[f_tg]) == 0) || (strcmp(function_text, functs[f_tan]) == 0))
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "tan(x)");
 
-                                //Result
-                                result = atan ( op ) * 180 / M_PI;
+				//Pop one operand
+				const T op = operands.top();
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Remove operand from the stack
+				operands.pop();
 
-                        //LN(x)
-                        else if ( strcmp ( function_text, functs[f_ln] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, ", "ln(x)" );
+				//Exception
+				if (fabs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "tan(x), abs(x) > MAX.", op);
+				else if (fabs(cos(op * M_PI / 180)) < MIN_FLOAT)
+				{
+					//throw ErrorMathMatrixNotSquare <T> ( "ERangError: can not parse equation_postfix ", "tan(x), x = ", 1.0, 1.0);
+					throw ErrorMathRange <T>("ErrorMathRange: can not parse equation_postfix ", "tan(x), x = ", op);
+				}
 
-                                //Pop one operand
-                                const T op = operands.top();
+				//Result
+				result = tan(op * M_PI / 180);
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Exception
-                                if ( op > MAX_FLOAT )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "ln(x), x > MAX.", op );
-                                else if ( op <= MIN_FLOAT )
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "ln(x), x = ", op );
+			//COT(x)
+			else if ((strcmp(function_text, functs[f_cot]) == 0) || (strcmp(function_text, functs[f_cotg]) == 0))
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "cotg(x)");
 
-                                //Result
-                                result = log ( op );
+				//Pop one operand
+				const T op = operands.top();
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Remove operand from the stack
+				operands.pop();
 
-                        //LOG(x)
-                        else if ( strcmp ( function_text, functs[f_log] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: ", function_text );
+				//Exceptions
+				if (fabs(op) > MAX_FLOAT)
+				{
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "cotg(x), abs(x) > MAX.", op);
+				}
 
-                                //Pop one operand
-                                const T op = operands.top();
+				else if (fabs(sin(op * M_PI / 180)) < MIN_FLOAT)
+				{
+					throw ErrorMathRange <T>("ErrorMathRange: can not parse equation_postfix ", "cotg(x), x = ", op);
+				}
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Result
+				result = 1.0 / tan(op * M_PI / 180);
 
-                                //Exception
-                                if ( op > MAX_FLOAT )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "log(x), x > MAX.", op );
-                                else if ( op <= MIN_FLOAT )
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "log(x), x = ", op );
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Result
-                                result = log10 ( op );
+			//ASIN(x)
+			else if (strcmp(function_text, functs[f_asin]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "asin(x)");
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Pop one operand
+				T op = operands.top();
 
-                        //EXP(x)
-                        else if ( strcmp ( function_text, functs[f_exp] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation. argument missing: ", function_text );
+				//Remove operand from the stack
+				operands.pop();
 
-                                //Pop one operand
-                                const T op = operands.top();
+				//Exception
+				if (abs(op) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "asin(x), abs(x) > MAX.", op);
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Throw exception: fabs (abn_acos) - 1.0 > MIN_FLOAT
+				if ((op > 1.0 + ARGUMENT_ROUND_ERROR) || (op < -1.0 - ARGUMENT_ROUND_ERROR))
+				{
+					throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: can not parse equation_postfix ", "asin(x), x = ", op);
+				}
 
-                                //Exception
-                                if ( op > MAX_FLOAT_EXPONENT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "exp^x, x > MAX.", op );
+				//Correct round errors
+				else if (op > 1.0)
+				{
+					op = 1.0;
+				}
 
-                                //Result
-                                result = exp ( op );
+				else if (op < -1.0)
+				{
+					op = -1.0;
+				}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Result
+				result = asin(op) * 180 / M_PI;
 
-                        //SQR(x)
-                        else if ( strcmp ( function_text, functs[f_sqr] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", function_text );
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Pop one operand
-                                const T op = operands.top();
+			//ACOS(x)
+			else if (strcmp(function_text, functs[f_acos]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "acos(x)");
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Pop one operand
+				T op = operands.top();
 
-                                //Exception
-                                if ( fabs(op) > sqrt ( MAX_FLOAT ) )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sqr(x), x > MAX.", op );
+				//Remove operand from the stack
+				operands.pop();
 
-                                //Result
-                                result = op * op;
+				//Exception
+				if (abs(op) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "acos(x), abs(x) > MAX.", op);
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Throw exception: fabs (abn_acos) - 1.0 > MIN_FLOAT
+				if ((op > 1.0 + ARGUMENT_ROUND_ERROR) || (op < -1.0 - ARGUMENT_ROUND_ERROR))
+				{
+					throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: can not parse equation_postfix", "acos(x), x = ", op);
+				}
 
-                        //SQRT(x)
-                        else if ( strcmp ( function_text, functs[f_sqrt] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing: ", function_text );
+				//Correct round errors
+				else if (op > 1.0)
+				{
+					op = 1.0;
+				}
 
-                                //Pop one operand
-                                const T op = operands.top();
+				else if (op < -1.0)
+				{
+					op = -1.0;
+				}
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Result
+				result = acos(op) * 180 / M_PI;
 
-                                //Exception
-                                if ( op > MAX_FLOAT )
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sqrt(x), x > MAX.", op );
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                if ( op < 0 )
-                                        throw ErrorMathInvalidArgument <T> ( "ErrorMathInvalidArgument: can not parse equation ", "sqrt(x), x = ", op );
+			//ATAN(x)
+			else if ((strcmp(function_text, functs[f_atan]) == 0))
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", "atan(x).");
 
-                                //Result
-                                result = sqrt ( op );
+				//Pop one operand
+				const T op = operands.top();
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Remove operand from the stack
+				operands.pop();
 
-                        //ABS(x)
-                        else if ( strcmp ( function_text, functs[f_abs] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing:  ", function_text );
+				//Exception
+				if (fabs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "atan(x), abs(x) > MAX.", op);
 
-                                //Pop one operand
-                                const T op = operands.top();
+				//Result
+				result = atan(op) * 180 / M_PI;
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Exception
-                                if ( fabs(op) > MAX_FLOAT ) 
-					throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "abs(x), x > MAX.", op );
+			//LN(x)
+			else if (strcmp(function_text, functs[f_ln]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, ", "ln(x)");
 
-                                //Result
-                                result = fabs ( op );
+				//Pop one operand
+				const T op = operands.top();
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Remove operand from the stack
+				operands.pop();
 
-                        //sign(x)
-                        else if ( strcmp ( function_text, functs[f_sign] ) == 0 )
-                        {
-                                //Empty stack ?
-                                if ( operands.empty() ) throw ErrorParse ( "ErrorParse: can not parse equation, argument missing:  ", function_text );
+				//Exception
+				if (op > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "ln(x), x > MAX.", op);
+				else if (op <= MIN_FLOAT)
+					throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: can not parse equation_postfix ", "ln(x), x = ", op);
 
-                                //Pop one operand
-                                const T op = operands.top();
+				//Result
+				result = log(op);
 
-                                //Remove operand from the stack
-                                operands.pop();
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Exception
-                                if ( fabs (op) > MAX_FLOAT ) 
-					throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "sign(x), fabs(x) > MAX.", op );
+			//LOG(x)
+			else if (strcmp(function_text, functs[f_log]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: ", function_text);
 
-                                //Result
-                                if ( op > 0 ) result = 1.0;
-                                else if ( op < 0 ) result = -1.0;
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (op > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "log(x), x > MAX.", op);
+				else if (op <= MIN_FLOAT)
+					throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: can not parse equation_postfix ", "log(x), x = ", op);
+
+				//Result
+				result = log10(op);
+
+				//Add result to the stack
+				operands.push(result);
+			}
+
+			//EXP(x)
+			else if (strcmp(function_text, functs[f_exp]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix. argument missing: ", function_text);
+
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (op > MAX_FLOAT_EXPONENT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "exp^x, x > MAX.", op);
+
+				//Result
+				result = exp(op);
+
+				//Add result to the stack
+				operands.push(result);
+			}
+
+			//SQR(x)
+			else if (strcmp(function_text, functs[f_sqr]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", function_text);
+
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (fabs(op) > sqrt(MAX_FLOAT))
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "sqr(x), x > MAX.", op);
+
+				//Result
+				result = op * op;
+
+				//Add result to the stack
+				operands.push(result);
+			}
+
+			//SQRT(x)
+			else if (strcmp(function_text, functs[f_sqrt]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing: ", function_text);
+
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (op > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "sqrt(x), x > MAX.", op);
+
+				if (op < 0)
+					throw ErrorMathInvalidArgument <T>("ErrorMathInvalidArgument: can not parse equation_postfix ", "sqrt(x), x = ", op);
+
+				//Result
+				result = sqrt(op);
+
+				//Add result to the stack
+				operands.push(result);
+			}
+
+			//ABS(x)
+			else if (strcmp(function_text, functs[f_abs]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing:  ", function_text);
+
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (fabs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "abs(x), x > MAX.", op);
+
+				//Result
+				result = fabs(op);
+
+				//Add result to the stack
+				operands.push(result);
+			}
+
+			//sign(x)
+			else if (strcmp(function_text, functs[f_sign]) == 0)
+			{
+				//Empty stack ?
+				if (operands.empty()) throw ErrorParse("ErrorParse: can not parse equation_postfix, argument missing:  ", function_text);
+
+				//Pop one operand
+				const T op = operands.top();
+
+				//Remove operand from the stack
+				operands.pop();
+
+				//Exception
+				if (fabs(op) > MAX_FLOAT)
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "sign(x), fabs(x) > MAX.", op);
+
+				//Result
+				if (op > 0) result = 1.0;
+				else if (op < 0) result = -1.0;
 				else result = 0;
-                                
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
 
-                        // Variables **************************************************************************************************************
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                        //VARIABLE x
-                        else if ( function_text[0] == *vars[v_x] )
-                        {
-                                //Get result
-                                result = x;
+			// Variables **************************************************************************************************************
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE x
+			else if (function_text[0] == *vars[v_x])
+			{
+				//Get result
+				result = x;
 
-                        //VARIABLE y
-                        else if ( function_text[0] == *vars[v_y] )
-                        {
-                                //Get result
-                                result = y;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE y
+			else if (function_text[0] == *vars[v_y])
+			{
+				//Get result
+				result = y;
 
-                        //CONST RO = PI/ 180
-                        else if ( ( strcmp ( function_text, consts[c_RO] )  == 0 ) || ( strcmp ( function_text, consts[c_Ro] ) == 0 ) )
-                        {
-                                //Get result
-                                result = 180 / M_PI;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//CONST RO = PI/ 180
+			else if ((strcmp(function_text, consts[c_RO]) == 0) || (strcmp(function_text, consts[c_Ro]) == 0))
+			{
+				//Get result
+				result = 180 / M_PI;
 
-                        //CONST PI
-                        else if ( ( strcmp ( function_text, consts[c_pi] ) == 0 ) || ( strcmp ( function_text, consts[c_Pi] ) == 0 ) || ( strcmp ( function_text, consts[c_PI] ) == 0 ) )
-                        {
-                                //Get result
-                                result = M_PI;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//CONST PI
+			else if ((strcmp(function_text, consts[c_pi]) == 0) || (strcmp(function_text, consts[c_Pi]) == 0) || (strcmp(function_text, consts[c_PI]) == 0))
+			{
+				//Get result
+				result = M_PI;
 
-                        //VARIABLE R
-                        else if ( function_text[0] == *vars[v_R] )
-                        {
-                                //Get result
-                                result = R;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE R
+			else if (function_text[0] == *vars[v_R])
+			{
+				//Get result
+				result = R;
 
-                        //VARIABLE a
-                        else if ( function_text[0] == *vars[v_a] )
-                        {
-                                //Get result
-                                result = a;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE a
+			else if (function_text[0] == *vars[v_a])
+			{
+				//Get result
+				result = a;
 
-                        //VARIABLE b
-                        else if ( function_text[0] == *vars[v_b] )
-                        {
-                                //Get result
-                                result = a;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE b
+			else if (function_text[0] == *vars[v_b])
+			{
+				//Get result
+				result = a;
 
-                        //VARIABLE c
-                        else if ( function_text[0] == *vars[v_c] )
-                        {
-                                //Get result
-                                result = c;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE c
+			else if (function_text[0] == *vars[v_c])
+			{
+				//Get result
+				result = c;
 
-                        //VARIABLE lon
-                        else if ( ( strcmp ( function_text, vars[v_lon] ) == 0 ) || ( strcmp ( function_text, vars[v_lam] )  == 0 ) || ( strcmp ( function_text, vars[v_v] ) == 0 ) )
-                        {
-                                //Get result
-                                result = lon;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE lon
+			else if ((strcmp(function_text, vars[v_lon]) == 0) || (strcmp(function_text, vars[v_lam]) == 0) || (strcmp(function_text, vars[v_v]) == 0))
+			{
+				//Get result
+				result = lon;
 
-                        //VARIABLE lat
-                        else if ( ( strcmp ( function_text, vars[v_lat] ) == 0 ) || ( strcmp ( function_text, vars[v_phi] ) == 0 ) || ( strcmp ( function_text, vars[v_u] ) == 0 ) )
-                        {
-                                //Get result
-                                result = lat;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE lat
+			else if ((strcmp(function_text, vars[v_lat]) == 0) || (strcmp(function_text, vars[v_phi]) == 0) || (strcmp(function_text, vars[v_u]) == 0))
+			{
+				//Get result
+				result = lat;
 
-                        //VARIABLE lat0
-                        else if ( ( strcmp ( function_text, vars[v_lat0] ) == 0 ) || ( strcmp ( function_text, vars[v_phi0] ) == 0 ) || ( strcmp ( function_text, vars[v_u0] ) == 0 ) )
-                        {
-                                //Get result
-                                result = lat0;
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+			//VARIABLE lat0
+			else if ((strcmp(function_text, vars[v_lat0]) == 0) || (strcmp(function_text, vars[v_phi0]) == 0) || (strcmp(function_text, vars[v_u0]) == 0))
+			{
+				//Get result
+				result = lat0;
 
-			
-                        //VARIABLE lat1
+				//Add result to the stack
+				operands.push(result);
+			}
+
+
+			//VARIABLE lat1
 			else if ((strcmp(function_text, vars[v_lat1]) == 0) || (strcmp(function_text, vars[v_phi1]) == 0) || (strcmp(function_text, vars[v_u1]) == 0))
-                        {
-                                //Get result
-                                result = lat1;
+			{
+				//Get result
+				result = lat1;
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
+				//Add result to the stack
+				operands.push(result);
+			}
 
-                        //VARIABLE lat2
+			//VARIABLE lat2
 			else if ((strcmp(function_text, vars[v_lat2]) == 0) || (strcmp(function_text, vars[v_phi2]) == 0) || (strcmp(function_text, vars[v_u2]) == 0))
-                        {
-                                //Get result
-                                result = lat2;
+			{
+				//Get result
+				result = lat2;
 
-                                //Add result to the stack
-                                operands.push ( result );
-                        }
-			
+				//Add result to the stack
+				operands.push(result);
+			}
+
 			//VARIABLE theta
 			else if (strcmp(function_text, vars[v_theta]) == 0)
 			{
@@ -731,158 +790,154 @@ T ArithmeticParser::parseEquation ( const char * equation, const TPlusMinusOpera
 				operands.push(result);
 			}
 
-                        //Unknown variable
-                        else
-                        {
-                                //Throw exception
-                                throw ErrorParse ( "ErrorParse: can not parse equation, unknown variable ", function_text );
-                        }
-                }
+			//Unknown variable
+			else
+			{
+				//Throw exception
+				throw ErrorParse("ErrorParse: can not parse equation_postfix, unknown variable ", function_text);
+			}
+		}
 
-                //OPERATORS **************************************************************************************************************
+		//OPERATORS **************************************************************************************************************
 
-                //Operators ^ * / + - (sorted according the priority)
-                else if ( ( *equation == '^' ) || ( *equation == '*' ) || ( *equation == '/' ) || ( *equation == '+' ) || ( *equation == '-' ) )
-                {
-                        //Empty stack ?
-                        if ( operands.empty() ) throw ErrorParse ( "ErrorParse: ", "Invalid second argument for operation +, -, *, /." );
+		//Operators ^ * / + - _ (sorted according the priority)
+		else if ((*equation_postfix == '^') || (*equation_postfix == '*') || (*equation_postfix == '/') || (*equation_postfix == '+') || (*equation_postfix == '-') || (*equation_postfix == '_'))
+		{
+			//Empty stack ?
+			if (operands.empty()) throw ErrorParse("ErrorParse: ", "Invalid second argument for operation +, -, *, /.");
 
-                        //Pop the second operand
-                        const  T op2 = operands.top();
+			//Pop the second operand
+			const  T op2 = operands.top();
 
-                        //Remove operand from the stack
-                        operands.pop();
+			//Remove operand from the stack
+			operands.pop();
 
-                        //Process the second operand only if there is a binary operator
-                        T op1 =  0.0 ;
+			//Process the second operand only if there is a binary operator
+			T op1 = 0.0;
 
-                        if ( ( *equation == '*' )  || ( *equation == '/' ) || ( *equation == '^' ) || ( ( *equation == '+' ) || ( *equation == '-' ) ) &&
-                                        ( plus_minus_types_index < n_plus_minus_types ) && ( plus_minus_types[plus_minus_types_index] == BinaryOperator ) )
-                        {
-                                //Pop the first operand
-                                op1 = operands.top();
+			if ((*equation_postfix == '*') || (*equation_postfix == '/') || (*equation_postfix == '^') || (*equation_postfix == '+') || (*equation_postfix == '-'))
+			{
+				//Pop the first operand
+				op1 = operands.top();
 
-                                //Remove operand from the stack
-                                operands.pop();
-                        }
+				//Remove operand from the stack
+				operands.pop();
+			}
 
-                        //Compute result (Power)
-                        if ( *equation == '^' )
-                        {
-                                //Convergate to zero
-                                if ( op2 < -MAX_FLOAT_EXPONENT )  result = 0;
+			//Compute result (Power)
+			if (*equation_postfix == '^')
+			{
+				//Convergate to zero
+				if (op2 < -MAX_FLOAT_EXPONENT)  result = 0;
 
-                                //Overflows
-                                if ( op2 > MAX_FLOAT_EXPONENT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x^y, number > MAX", op2 );
+				//Overflows
+				if (op2 > MAX_FLOAT_EXPONENT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "x^y, number > MAX", op2);
 
-                                if ( op1 > MAX_FLOAT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x^y, exponent > MAX.", op1 );
+				if (op1 > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "x^y, exponent > MAX.", op1);
 
-                                result = pow ( op1, op2 );
-                        }
+				result = pow(op1, op2);
+			}
 
-                        //Compute result (Multiply)
-                        else if ( *equation == '*' )
-                        {
-                                //Exception
-                                if ( op2 > MAX_FLOAT || op1 > MAX_FLOAT )
-                                {
-                                        throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x * y, number > MAX", op2 );
-                                }
+			//Compute result (Multiply)
+			else if (*equation_postfix == '*')
+			{
+				//Exception
+				if (op2 > MAX_FLOAT || op1 > MAX_FLOAT)
+				{
+					throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "x * y, number > MAX", op2);
+				}
 
-                                result = op1 * op2;
-                        }
+				result = op1 * op2;
+			}
 
-                        //Compute result (Divide)
-                        else if ( *equation == '/' )
-                        {
-                                //Exception
-                                if ( fabs ( op2 ) < MIN_FLOAT )
-                                {
-                                        throw  ErrorMathZeroDevision <T> ( "ErrorMathDivisonByZero: can not parse equation ", "x / y, y = 0.", op2 );
-                                }
+			//Compute result (Divide)
+			else if (*equation_postfix == '/')
+			{
+				//Exception
+				if (fabs(op2) < MIN_FLOAT)
+				{
+					throw  ErrorMathZeroDevision <T>("ErrorMathDivisonByZero: can not parse equation_postfix ", "x / y, y = 0.", op2);
+				}
 
-                                result = op1 / op2;
-                        }
+				result = op1 / op2;
+			}
 
-                        //Compute result (Add)
-                        else if ( *equation == '+' )
-                        {
-                                //Exception
-                                if ( fabs ( op2 ) + fabs ( op1 ) > MAX_FLOAT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x + y, result > MAX", op2 );
+			//Compute result (Add)
+			else if (*equation_postfix == '+')
+			{
+				//Exception
+				if (fabs(op2) + fabs(op1) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "x + y, result > MAX", op2);
 
-                                //Increment plus-minus index
-                                plus_minus_types_index++;
+				result = op1 + op2;
+			}
 
-                                result = op1 + op2;
-                        }
+			//Compute result (Unary or binary -)
+			else if (*equation_postfix == '-' || *equation_postfix == '_')
+			{
+				//Exception
+				if (fabs(op2) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation ", "x - y, number > MAX", op2);
 
-                        //Compute result (Subtract)
-                        else if ( *equation == '-' )
-                        {
-                                //Exception
-                                if ( fabs ( op2 ) > MAX_FLOAT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x - y, number > MAX", op2 );
+				if (fabs(op1) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation ", "x - y, number > MAX", op1);
 
-                                if ( fabs ( op1 ) > MAX_FLOAT ) throw ErrorMathOverflow <T> ( "ErrorMathOverflow: can not parse equation ", "x - y, number > MAX", op1 );
+				result = op1 - op2;
+			}
 
-                                //Increment plus-minus index
-                                plus_minus_types_index++;
+			//Add result to the stack
+			operands.push(result);
 
-                                result = op1 - op2;
-                        }
+			//Jump to next char
+			equation_postfix++;
+		}
 
-                        //Add result to the stack
-                        operands.push ( result );
+		//Space, TAB
+		else if ((*equation_postfix == ' ') || (*equation_postfix == '\t'))
+		{
+			equation_postfix++;
+		}
 
-                        //Jump to next char
-                        equation ++;
-                }
+		//Illegal character
+		else
+		{
+			//Error
+			throw ErrorParse("ErrorParse: ", "Illegal character in equation_postfix, parsing stopped.");
+		}
+	}
 
-                //Space, TAB
-                else if ( ( *equation == ' ' ) || ( *equation == '\t' ) )
-                {
-                        equation ++;
-                }
+	//Get result from the stack
+	if (!operands.empty())
+	{
+		//Get the result
+		result = operands.top();
 
-                //Illegal character
-                else
-                {
-                        //Error
-                        throw ErrorParse ( "ErrorParse: ", "Illegal character in equation, parsing stopped." );
-                }
-        }
+		//Remove result from the stack
+		operands.pop();
 
-        //Get result from the stack
-        if ( !operands.empty() )
-        {
-                //Get the result
-                result = operands.top();
+		//Is this result correct?
+		if (operands.empty())
+		{
+			//Result is correct
+			return result;
+		}
 
-                //Remove result from the stack
-                operands.pop();
+		//Something in the stack
+		else
+		{
+			//Error in equation_postfix
+			char oper[64];
+			sprintf(oper, "%20.4f", operands.top());
 
-                //Is this result correct?
-                if ( operands.empty() )
-                {
-                        //Result is correct
-                        return result;
-                }
+			throw ErrorParse("ErrorParse: can not parse equation_postfix, bad argument: ", oper);
+		}
+	}
 
-                //Something in the stack
-                else
-                {
-                        //Error in equation
-                        char oper[64];
-                        sprintf ( oper, "%20.4f", operands.top() );
+	//Empty stack before result calculation
+	else
+	{
+		throw ErrorParse("ErrorParse: can not parse equation_postfix, ", " no equation_postfix.");
+	}
 
-                        throw ErrorParse ( "ErrorParse: can not parse equation, bad argument: ", oper );
-                }
-        }
-
-        //Empty stack before result calculation
-        else
-        {
-                throw ErrorParse ( "ErrorParse: can not parse equation, ", " no equation." );
-        }
 }
+
+
 
 #endif

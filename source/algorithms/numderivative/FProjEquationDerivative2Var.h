@@ -38,9 +38,9 @@ class FProjEquationDerivative2Var
 
         private:
                 //Map projection parameters
-                const char * equation;
-		const char * ftheta_equat;
-		const char * theta0_equat;
+		const char * equation_postfix;
+		const char * ftheta_equat_postfix;
+		const char * theta0_equat_postfix;
                 const T R;
                 const T a;
                 const T b;
@@ -54,14 +54,14 @@ class FProjEquationDerivative2Var
 
         public:
 
-		FProjEquationDerivative2Var(const char * equation_, const char * ftheta_equat_, const char * theta0_equat_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_) :
-			equation(equation_), ftheta_equat(ftheta_equat_), theta0_equat(theta0_equat_), R(R_), a(a_), b(b_), dx(dx_), dy(dy_), c(c_), lat0(lat0_), lat1(lat1_), lat2(lat2_), lon0(lon0_) {}
+		FProjEquationDerivative2Var(const char * equation_postfix_, const char * ftheta_equat_postfix_, const char * theta0_equat_postfix_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_) :
+			equation_postfix(equation_postfix_), ftheta_equat_postfix(ftheta_equat_postfix_), theta0_equat_postfix(theta0_equat_postfix_), R(R_), a(a_), b(b_), dx(dx_), dy(dy_), c(c_), lat0(lat0_), lat1(lat1_), lat2(lat2_), lon0(lon0_) {}
 
                 T operator () ( const Matrix <T> &arg )
                 {
                         //Compute partial derivative of the map projection equation
-			return CartTransformation::latLonToCartesian(equation, ftheta_equat, theta0_equat, arg(0, 0), arg(0, 1), R, a, b, 0.0, c, lat0, lat1, lat2, false);
-                        //return ArithmeticParser::parseEq ( equation, arg ( 0, 0 ), arg ( 0, 1 ), R, a, b, c, lat0, lat1, lat2, false );
+			return CartTransformation::latLonToCartesian(equation_postfix, ftheta_equat_postfix, theta0_equat_postfix, arg(0, 0), arg(0, 1), R, a, b, 0.0, c, lat0, lat1, lat2, false);
+                        //return ArithmeticParser::parseEquation ( equation, arg ( 0, 0 ), arg ( 0, 1 ), R, a, b, c, lat0, lat1, lat2, false );
                 }
 
 };

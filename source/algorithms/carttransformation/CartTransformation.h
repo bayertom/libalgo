@@ -26,6 +26,8 @@
 
 #include "libalgo/source/const/Const.h"
 
+#include "libalgo/source/algorithms/arithmeticparser/ArithmeticParser.h"
+
 //Forward declaration
 template <typename T>
 class Point3DCartesian;
@@ -76,13 +78,16 @@ class CartTransformation
                 static T lonToLonTrans ( const T lat, const T lon, const T latp, const T lonp, const TTransformedLongtitudeDirection lon_direction = NormalDirection );
 
 		template <typename T>
-		static T latLonToX(const char * equation_x, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
+		static T latLonToX(char * equation_x_postfix, char *equation_ftheta_postfix, char *equation_theta0_postfix, const T lat, const T lon,
+			const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
 
 		template <typename T>
-		static T latLonToY(const char * equation_y, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
+		static T latLonToY(char * equation_y_postfix, char *equation_ftheta_postfix, char *equation_theta0_postfix, const T lat, const T lon, 
+			const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
 
 		template <typename T>
-		static T latLonToCartesian(const char * equation, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
+		static T latLonToCartesian(const char * equation_postfix, const char *equation_ftheta_postfix, const char *equation_theta0_postfix, const T lat, 
+			const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception = true);
     
                 template <typename T>
                 static void wgsToJTSK ( const Point3DGeographic <T> *p1, Point3DCartesian <T> * p2 );

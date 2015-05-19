@@ -391,19 +391,20 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                 //Compute new dX
 		dX = pinv1 ( H ) * G * ( -1.0 );
 
-		//J.print();
-		//std::cout << "dx";
 		//dX.print();
 
                 //Compute new trial X
                 Matrix <T> X2 = X + dX;
 		//Matrix <T> X2 = addStep(X, dX, A, B);
+		
 
 		//Reflection into the search space
-		reflection(X2, A, B);
+		//reflection(X2, A, B);
 
                 //Compute new trial V matrix (residuals)
                 function_v ( X2, Y2, V2, W, false );
+
+		//X2.print();
 
 		//std::cout << v1 << "   " << v2 << '\n';
 
@@ -420,7 +421,7 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
 			X2 = X + dX * t;
 
 			//Reflection into the search space
-			reflection(X2, A, B);
+			//reflection(X2, A, B);
 
                         //Compute new V matrix: do not change parameters in one iteration step
                         function_v ( X2, Y2, V2, W, false );
@@ -432,7 +433,7 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
 		//X.print();
 
 		//Reflection into the search space
-		reflection(X, A, B);
+		//reflection(X, A, B);
 
                 //Compute new V matrix and residual matrix V
                 function_v ( X, Y, V, W, true );
@@ -509,11 +510,13 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
                 G = G_new;
                 F = F_new;
 
-		//X.print();
 		//dX.print();
+		//X.print();
+		
 		//dX.print(output);
 		//X.print(output);
 		//V.print(output);
+		//J.print();
 		//J.print(output);
 		//H.print(output);
 		//X.print(output);

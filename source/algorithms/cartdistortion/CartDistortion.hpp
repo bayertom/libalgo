@@ -41,7 +41,7 @@ template <typename T>
 T CartDistortion::H ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute distortion h (length distortion in meridian) for point p = [lat, lon] in cartographic projection
-        return H ( step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return H(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                    proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -50,7 +50,7 @@ template <typename T>
 T CartDistortion::K ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute distortion k (length distortion in parallel) for point p = [lat, lon] in cartographic projection
-	return K(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return K(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),   p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                    proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -59,7 +59,7 @@ template <typename T>
 T CartDistortion::Theta ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute angle between meridian and parallel in point p = [lat, lon]
-	return Theta(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return Theta(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                        proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -68,7 +68,7 @@ template <typename T>
 T CartDistortion::S ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute distortion S (aerial distortion) for point p = [lat, lon] in cartographic projection
-	return S(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return S(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                    proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -77,7 +77,7 @@ template <typename T>
 T CartDistortion::P ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute P for point p = [lat, lon] in cartographic projection
-	return P(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return P(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                    proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -86,7 +86,7 @@ template <typename T>
 T CartDistortion::BM ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute bearing of the meridian given by the point p = [lat, lon] in cartographic projection
-	return BM(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return BM(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                     proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -95,7 +95,7 @@ template <typename T>
 T CartDistortion::BP ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute bearing of the parallel given by the point p = [lat, lon] in cartographic projection
-	return BP(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return BP(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),   p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                     proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
@@ -104,21 +104,21 @@ template <typename T>
 TTissotIndicatrix <T> CartDistortion::Tiss ( const T step, const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exceptions )
 {
         //Compute major, semi-major axis, rotation angle of Tissot indicatrix and bearing of the meridian in point p = [lat, lon]
-	return Tiss(step, proj->getXEquat(), proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
+	return Tiss(step, proj->getXEquatPostfix(), proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(),
                       proj->getDy(), proj->getC(), proj->getLat0(), proj->getLat1(), proj->getLat2(), proj->getLon0(), print_exceptions );
 }
 
 
 template <typename T>
-T CartDistortion::H(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::H(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute distortion h (length distortion in meridian) for point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
 
         //Distortion
         return H ( R, dx_dlat, dy_dlat );
@@ -140,15 +140,15 @@ T CartDistortion:: H ( const T R, const T dx_dlat, const T dy_dlat )
 
 
 template <typename T>
-T CartDistortion::K(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::K(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute distortion k (length distortion in parallel) for point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinates functions
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         //Compute distortion
         return K ( lat, R, dx_dlon, dy_dlon );
@@ -178,17 +178,17 @@ T CartDistortion:: K ( const T lat, const T R, const T dx_dlon, const T dy_dlon 
 
 
 template <typename T>
-T CartDistortion::Theta(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::Theta(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute angle between meridian and parallel in point p = [lat, lon]
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         return Theta ( lat, R, dx_dlat, dx_dlon, dy_dlat, dy_dlon );
 }
@@ -247,17 +247,17 @@ T CartDistortion:: Theta ( const T lat, const T R, const T dx_dlat, const T dx_d
 
 
 template <typename T>
-T CartDistortion::S(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::S(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute distortion S (aerial distortion) for point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         //Compute distortion S
         return S ( lat, R, dx_dlat, dx_dlon, dy_dlat, dy_dlon );
@@ -288,17 +288,17 @@ T CartDistortion::S ( const T lat, const T R, const T dx_dlat, const T dx_dlon, 
 
 
 template <typename T>
-T CartDistortion::P(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::P(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute P for point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         //Comnpute P
         return P ( lat, R, dx_dlat, dx_dlon, dy_dlat, dy_dlon );
@@ -328,15 +328,15 @@ T CartDistortion::P ( const T lat, const T R, const T dx_dlat, const T dx_dlon, 
 
 
 template <typename T>
-T CartDistortion::BM(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::BM(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute bearing of the meridian given by the point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
 
         return BM ( dx_dlat, dy_dlat );
 }
@@ -371,15 +371,15 @@ T CartDistortion:: BM ( const T dx_dlat, const T dy_dlat )
 
 
 template <typename T>
-T CartDistortion::BP(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::BP(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute bearing of the parallel given by the point p = [lat, lon] in cartographic projection
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         //Throw exception
         if ( ( dx_dlon == 0.0 ) && ( dy_dlon == 0.0 ) )
@@ -415,17 +415,17 @@ T CartDistortion:: BP ( const T dx_dlon, const T dy_dlon )
 
 
 template <typename T>
-TTissotIndicatrix <T> CartDistortion::Tiss(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+TTissotIndicatrix <T> CartDistortion::Tiss(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equation_theta0_postfix, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute major, semi-major axis, rotation angle of Tissot indicatrix and bearing of the meridian in point p = [lat, lon]
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equation_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equation_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equation_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equation_theta0, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equation_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equation_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equation_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equation_theta0_postfix,  R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         return Tiss ( lat, R, dx_dlat, dx_dlon, dy_dlat, dy_dlon );
 }
@@ -512,10 +512,10 @@ TTissotIndicatrix <T> CartDistortion:: Tiss ( const T lat, const T R, const T dx
 
 
 template <typename T>
-T CartDistortion::W(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a_, const T b_, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::W(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,   const T lat, const T lon, const T R, const T a_, const T b_, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute max angular distortion
-	const TTissotIndicatrix <T> tiss = Tiss(step, equation_x, equation_y, equation_ftheta, equat_theta0, lat, lon, R, a_, b_, dx, dy, lat0, lat1, lat2, lon0);
+	const TTissotIndicatrix <T> tiss = Tiss(step, equation_x_postfix, equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix, lat, lon, R, a_, b_, dx, dy, lat0, lat1, lat2, lon0);
 
         //Throw exception
         if ( ( tiss.a_tiss == 0.0 ) && ( tiss.b_tiss == 0.0 ) )
@@ -550,17 +550,17 @@ T CartDistortion::W(const T step, const char * equation_x, const char * equation
 
 
 template <typename T>
-T CartDistortion::Airy(const T step, const char * equation_x, const char * equation_y, const char * equation_ftheta, const char * equat_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
+T CartDistortion::Airy(const T step, const char * equation_x_postfix, const char * equation_y_postfix, const char * equation_ftheta_postfix, const char * equat_theta0_postfix,  const T lat, const T lon, const T R, const T a, const T b, const T dx, const T dy, const T c, const T lat0, const T lat1, const T lat2, const T lon0, const bool print_exceptions)
 {
         //Compute local Airy criterion
         Matrix <double> args ( 1, 2 );
         args ( 0, 0 ) = lat; args ( 0, 1 ) = lon;
 
         //Partial derivative of coordinate functions
-	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
-	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x, equation_ftheta, equat_theta0, lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
-	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y, equation_ftheta, equat_theta0, lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dx_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dy_dlat = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX1, step, print_exceptions);
+	const T dx_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_x_postfix, equation_ftheta_postfix, equat_theta0_postfix,  lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
+	const T dy_dlon = 180.0 / M_PI * NumDerivative::getDerivative(FProjEquationDerivative2Var <T>(equation_y_postfix, equation_ftheta_postfix, equat_theta0_postfix,  lat, lon, R, a, b, dx, dy, c, lat0, lat1, lat2, lon0), args, FirstDerivative, VariableX2, step, print_exceptions);
 
         //Compute parameters of a Tissot indicatrix
         TTissotIndicatrix <T> tissot;

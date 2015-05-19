@@ -1058,11 +1058,17 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                 throw ErrorBadData ( "ErrorBadData: error in projection file, following two attribute lines, line ", line_number );
                         }
 
-
                         //All items were set?
                         if ( set_projection_type && set_name && set_x_equation && set_y_equation && set_lat_pole && set_lon_pole && set_lat0 &&
                                         set_lat1 && set_lat2 && set_lon0 && set_lon_dir && set_dx && set_dy && set_r && set_a && set_b )
                         {
+
+				//Convert the infix notation to the postfix notation
+				proj->XEquatToPostfix();
+				proj->YEquatToPostfix();
+				proj->FThetaEquatToPostfix();
+				proj->Theta0EquatToPostfix();
+				std::cout << proj->getProjectionName() << " ";
 
                                 //Add projection to the list
                                 this->items.push_back ( proj );

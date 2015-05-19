@@ -186,8 +186,8 @@ namespace MatrixOperations
         template <typename T>
 	void bidiag(const Matrix <T> &A, Matrix <T> &U, Matrix <T> &B, Matrix <T> &V);
         
-        //template <typename T>
-        //void qr0Shift ( Matrix <T> &D, Matrix <T> &E, Matrix <T> &U, Matrix <T> &V )
+        template <typename T>
+	void qr0Shift(Matrix <T> &D, Matrix <T> &E, Matrix <T> &U, Matrix <T> &V);
         
         template <typename T>
 	Matrix <T> hous(const Matrix <T> &A, const unsigned int i, const unsigned int j);

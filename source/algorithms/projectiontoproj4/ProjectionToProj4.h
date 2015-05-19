@@ -38,7 +38,7 @@ template <typename T>
 class Projection;
 
 
-//Projections identificators
+//Projections identificators, corresponding to detectproj
 enum projections
 {
 	p_aea = 0,
@@ -88,6 +88,8 @@ enum projections
 	p_kav7,
 	p_laea,
 	p_larr,
+
+	p_lask,
 
 	p_lcc,
 	p_krovak,

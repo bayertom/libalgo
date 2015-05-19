@@ -62,16 +62,16 @@ private:
 	TMEstimatorsWeightFunction me_function;
 	T k;
 	Matrix <unsigned int> &I;
-	bool &enable_additional_analysis;
+	bool &enable_additional_lon0_analysis;
 	std::ostream * output;
 
 public:
 
 	FAnalyzeProjV4(Container <Node3DCartesian <T> *> &nl_test_, Container <Point3DGeographic <T> *> &pl_reference_, typename TMeridiansList <T> ::Type &meridians_, typename TParallelsList <T> ::Type &parallels_,
 		const Container <Face <T> *> &faces_test_, Projection <T> *proj_, T &R_est_, T &q1_, T &q2_, const TAnalysisParameters <T> & analysis_parameters_, const TProjectionAspect aspect_, Sample <T> &sample_res_,
-		unsigned int & created_samples_, unsigned int &res_evaluation_, const TMEstimatorsWeightFunction &me_function_, const T k_, Matrix <unsigned int> &I_, bool & enable_additional_analysis_, std::ostream * output_)
+		unsigned int & created_samples_, unsigned int &res_evaluation_, const TMEstimatorsWeightFunction &me_function_, const T k_, Matrix <unsigned int> &I_, bool & enable_additional_lon0_analysis_, std::ostream * output_)
 		: nl_test(nl_test_), pl_reference(pl_reference_), meridians(meridians_), parallels(parallels_), faces_test(faces_test_), proj(proj_), R(R_est_), q1(q1_), q2(q2_), analysis_parameters(analysis_parameters_), aspect(aspect_), sample_res(sample_res_),
-		created_samples(created_samples_), res_evaluation(res_evaluation_), me_function(me_function_), k(k_), I(I_), enable_additional_analysis(enable_additional_analysis_), output(output_) {}
+		created_samples(created_samples_), res_evaluation(res_evaluation_), me_function(me_function_), k(k_), I(I_), enable_additional_lon0_analysis(enable_additional_lon0_analysis_), output(output_) {}
 
 
 	void operator () (Matrix <T> &X, Matrix <T> &Y, Matrix <T> &V, Matrix <T> &W, const bool compute_analysis = true)
@@ -91,18 +91,15 @@ public:
 			//Set lat0 inside the interval
 			//if (X(2, 0) < lat0_min || X(2, 0) > lat0_max) X(2, 0) = 0.5 * (lat0_min + lat0_max);
 
-			//Set to interval
+			//Set lat0 to interval
 			if (fabs(X(2, 0)) > MAX_LAT)  X(2, 0) = fmod(X(2, 0), 90);
 
 			//Set lon0
-			//if (X(3, 0) < MIN_LON) X(3, 0) = X(3, 0) + 360;
-			//else if (X(3, 0) > MAX_LON) X(3, 0) = X(3, 0) - 360;
+			if (X(3, 0) < MIN_LON)  X(3, 0) = MAX_LON + fmod(X(3, 0), MIN_LON);
+			else if (X(3, 0) > MAX_LON)  X(3, 0) = MIN_LON + fmod(X(3, 0), MAX_LON);
 
-			//Set to interval
-			//if (fabs(X(3, 0)) > MAX_LAT)  X(3, 0) = fmod(X(3, 0), 90);
-
-			//Set lon0
-			if (fabs(X(3, 0)) > MAX_LON) 	X(3, 0) = fmod(X(3, 0), 180);
+			//Set lon0 to interval
+			//if (fabs(X(3, 0)) > MAX_LON) 	X(3, 0) = fmod(X(3, 0), 90);
 		}
 
 		//Transverse aspect: lonp, lat0
@@ -110,16 +107,8 @@ public:
 
 		{
 			//Subtract period
-			//if (fabs(X(1, 0)) > MAX_LON) X(1, 0) = fmod(X(1, 0), 180);
-
-			//if (fabs(X(2, 0)) > MAX_LAT) X(2, 0) = fmod(X(2, 0), 90);
-
-			//Set to interval
-			//if (X(2, 0) < lat0_min) X(2, 0) = lat0_min;
-			//if (X(2, 0) > lat0_max) X(2, 0) = lat0_max;
-
-			if (X(1, 0) < MIN_LON)  X(1, 0) = MIN_LON - fmod(X(1, 0), MIN_LON);
-			else if (X(1, 0) > MAX_LON)  X(1, 0) = MAX_LON - fmod(X(1, 0), MAX_LON);
+			if (X(1, 0) < MIN_LON)  X(1, 0) = MAX_LON + fmod(X(1, 0), MIN_LON);
+			else if (X(1, 0) > MAX_LON)  X(1, 0) = MIN_LON + fmod(X(1, 0), MAX_LON);
 
 			//Set lat0 inside the interval
 			if (X(2, 0) < lat0_min || X(2, 0) > lat0_max) X(2, 0) = 0.5 * (lat0_min + lat0_max);
@@ -131,43 +120,20 @@ public:
 		//Oblique aspect: latp, lonp, lat0
 		else if (aspect == ObliqueAspect)
 		{
-			/*
-			//Refelct to the search space
-			if (X(0, 0) > MAX_LAT)  X(0, 0) = 2 * MAX_LAT - X(0, 0);
-			if (X(1, 0) > MAX_LON)  X(1, 0) = 2 * MAX_LON - X(1, 0);
-			if (X(0, 0) < -1.0 *  MAX_LAT)  X(0, 0) = -2 * MAX_LAT - X(0, 0);
-			if (X(1, 0) < -1.0 * MAX_LON)   X(1, 0) = -2 * MAX_LON - X(1, 0);
-			*/
-			/*
+			
 			//Subtract period
-			if (fabs(X(0, 0)) > MAX_LAT)  X(0, 0) = fmod(X(0, 0), 90);
+			if (X(0, 0) < MIN_LAT)  X(0, 0) = MIN_LAT - fmod(X(0, 0), MIN_LAT);
+			else if (X(0, 0) > MAX_LAT)  X(0, 0) = MAX_LAT - fmod(X(0, 0), MAX_LAT);
 
-			if (fabs(X(1, 0)) > MAX_LON)  X(1, 0) = fmod(X(1, 0), 180);
-
-			if (fabs(X(2, 0)) > MAX_LAT)  X(2, 0) = fmod(X(2, 0), 90);
-			*/
+			if (X(1, 0) < MIN_LON)  X(1, 0) = MAX_LON + fmod(X(1, 0), MIN_LON);
+			else if (X(1, 0) > MAX_LON)  X(1, 0) = MIN_LON + fmod(X(1, 0), MAX_LON);
 			
-			if (X(0, 0) < MIN_LAT)  
-				X(0, 0) = MIN_LAT - fmod(X(0, 0), MIN_LAT);
-			else if (X(0, 0) > MAX_LAT)  
-				X(0, 0) = MAX_LAT - fmod(X(0, 0), MAX_LAT);
-
-			
-			if (X(1, 0) < MIN_LON)  
-				X(1, 0) = MIN_LON - fmod(X(1, 0), MIN_LON);
-			else if (X(1, 0) > MAX_LON)  
-				X(1, 0) = MAX_LON - fmod(X(1, 0), MAX_LON);
-			
-			//Set lat0 inside the interval
-			if (X(2, 0) < lat0_min || X(2, 0) > lat0_max) X(2, 0) = 0.5 * (lat0_min + lat0_max);
-
 			//Set lat0 inside the interval
 			//if (X(2, 0) < lat0_min || X(2, 0) > lat0_max) X(2, 0) = 0.5 * (lat0_min + lat0_max);
-			//if (X(2, 0) > lat0_max)  X(2, 0) = 2 * lat0_max - X(2, 0);
-			//if (X(2, 0) < lat0_min)  X(2, 0) = 2 * lat0_min - X(2, 0);
-
+			if (X(2, 0) < lat0_min) X(2, 0) = lat0_min + fabs(fmod(X(2, 0), MIN_LAT));
+			if (X(2, 0) > lat0_max) X(2, 0) = lat0_max - fabs(fmod(X(2, 0), MAX_LAT));
+			
 			//Set lonp to zero, if latp = 90
-
 			if (fabs(X(0, 0) - MAX_LAT) < 5)
 			{
 				//X(0, 0) = 90.0;
@@ -176,6 +142,9 @@ public:
 
 			//Set lon0
 			X(3, 0) = 0;
+
+			if (X(4, 0) < MIN_LAT)  X(4, 0) = MIN_LAT - fmod(X(4, 0), MIN_LAT);
+			else if (X(4, 0) > MAX_LAT)  X(4, 0) = MAX_LAT - fmod(X(4, 0), MAX_LAT);
 		}
 
 		// Set properties of the projection
@@ -194,7 +163,7 @@ public:
 		T min_cost = 0, min_cost_lon0 = 0;
 		Matrix <T> XL(1, 1);
 
-		if ( (enable_additional_analysis) && (aspect == NormalAspect) && (compute_analysis) )
+		if ( (enable_additional_lon0_analysis) && (aspect == NormalAspect) && (compute_analysis) )
 		{
 			//Create matrices
 			const unsigned int population = 8 * n, max_gen = 5;
@@ -220,7 +189,7 @@ public:
 		min_cost = norm(trans(V)*W*V);
 
 		//Compare NLSP and DE solutions, minimum is flat
-		if ((enable_additional_analysis) && (aspect == NormalAspect) && (fabs(min_cost - min_cost_lon0) > 1.0e-5) && (compute_analysis))
+		if ((enable_additional_lon0_analysis) && (aspect == NormalAspect) && (fabs(min_cost - min_cost_lon0) > 1.0e-5) && (compute_analysis))
 		{
 			X(3, 0) = XL(0, 0);
 		}
@@ -305,15 +274,15 @@ public:
 					try
 					{
 						//Compute x, y coordinates
-						x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), X(2, 0), X(4, 0), false);
-						y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), X(2, 0), X(4, 0), false);
+						x = CartTransformation::latLonToX(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), X(2, 0), X(4, 0), false);
+						y = CartTransformation::latLonToY(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), X(2, 0), X(4, 0), false);
 
 						//x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
 						//y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), 0.0, X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
 
 
-						//x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
-						//y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
+						//x = ArithmeticParser::parseEquation(proj->getXEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
+						//y = ArithmeticParser::parseEquation(proj->getYEquat(), lat_trans, lon_trans, R, proj->getA(), proj->getB(), X(4, 0), X(2, 0), proj->getLat1(), proj->getLat2(), false);
 					}
 
 					//2 attempt to avoid the singularity

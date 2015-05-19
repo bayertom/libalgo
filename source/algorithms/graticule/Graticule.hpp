@@ -51,7 +51,7 @@ void Graticule::computeGraticule ( const Projection <T> *proj, const TMinMax<T> 
 		if ( (fabs(latp - MAX_LAT) < MIN_FLOAT) && (fabs(lonp) < MIN_FLOAT) )
 			createLonIntervals ( lon_interval, lon0, lon_intervals );
 
-		//Transverse or oblique aspect
+		//Transverse or oblique aspects
 		else
 			createLonIntervals(lon_interval, lonp, lon_intervals);
 
@@ -182,7 +182,7 @@ void Graticule:: createLatIntervals ( const TMinMax <T> &lat_interval, const T l
         }
 
         //Second lat interval ( latp, 90 )
-        lat_interval_part.min_val = std::min ( latp, lat_interval.max_val ); lat_interval_part.max_val = std::min ( lat_interval.max_val, MAX_LAT );
+        lat_interval_part.min_val = std::max ( latp, lat_interval.min_val ); lat_interval_part.max_val = std::min ( lat_interval.max_val, MAX_LAT );
 
         //Test interval and add to the list
         if ( lat_interval_part.max_val > lat_interval_part.min_val )
@@ -232,7 +232,7 @@ void Graticule::createLonIntervals ( const TMinMax <T> &lon_interval, const T lo
         //Split given interval into sub intervals: lonp < 0
         else
         {
-                //First interval <-180, lonp + 180 >
+                //First interval <-180, lonp >
                 lon_interval_part.min_val = std::max ( MIN_LON, lon_interval.min_val ); lon_interval_part.max_val = std::min ( lonp, lon_interval.max_val );
 
                 //Test first interval and add to the list
@@ -241,7 +241,7 @@ void Graticule::createLonIntervals ( const TMinMax <T> &lon_interval, const T lo
                         lon_intervals.push_back ( lon_interval_part );
                 }
 
-                //First interval <lonp + 180, lonp >
+                //Second interval <lonp, lonp + 180>
                 lon_interval_part.min_val = std::max ( lonp, lon_interval.min_val ); lon_interval_part.max_val = std::min ( lonp + 180.0, lon_interval.max_val );
 
                 //Test second interval and add to the list
@@ -250,7 +250,7 @@ void Graticule::createLonIntervals ( const TMinMax <T> &lon_interval, const T lo
                         lon_intervals.push_back ( lon_interval_part );
                 }
 
-                //Third interval (lonp, 180>
+                //Third interval (lonp + 180, 180>
                 lon_interval_part.min_val = std::max ( lonp + 180.0, lon_interval.min_val ); lon_interval_part.max_val = std::min ( MAX_LON, lon_interval.max_val );
 
                 //Test third interval and add to the list

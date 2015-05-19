@@ -202,7 +202,7 @@ void Sample <T> ::printSampleRatios2 ( const int position, const typename TAnaly
         *output << std::setw ( 9 ) << std::setprecision ( 2 ) << constant_text;
 
 	*output << std::setw(10) << std::setprecision(1) << alpha;
-	*output << std::setw(13) << std::setprecision(1) << scale_homt;
+	*output << std::setw(13) << int(scale_homt);
 
 	char homothetic_transformation_ratio_text[255];
 	Format::modScientific(homothetic_transformation_ratio, homothetic_transformation_ratio_text);

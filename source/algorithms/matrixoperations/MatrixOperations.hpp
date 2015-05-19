@@ -2331,53 +2331,52 @@ namespace MatrixOperations
 
 	//Perform QR zero shift using givens transformation, Demel & Kahan,
 	//Accurate singular values of bidiagonal matrices, 1990, pp. 14
-	//template <typename T>
-	//void qr0Shift(Matrix <T> &D, Matrix <T> &E, Matrix <T> &U, Matrix <T> &V)
-	//{
-	/*
-	const unsigned int m = D.rows(), n1 = U.rows(), n2 = V.rows();
-	T cs = 1.0, oldcs = 1.0, r = 0.0, sn = 0.0, oldsn = 0.0;
-
-	for ( unsigned int i = 0; i < m - 1; i++ )
+	template <typename T>
+	void qr0Shift(Matrix <T> &D, Matrix <T> &E, Matrix <T> &U, Matrix <T> &V)
 	{
-	//Compute givens rotation
-	givens ( cs * D ( i, 0 ), E ( i, 0 ), cs, sn, r );
+	
+		const unsigned int m = D.rows(), n1 = U.rows(), n2 = V.rows();
+		T cs = 1.0, oldcs = 1.0, r = 0.0, sn = 0.0, oldsn = 0.0;
 
-	//Get submatrices
-	Matrix <T> V_S = V ( 0, n2 - 1, i, i );
-	Matrix <T> V_S1 = V ( 0, n2 - 1, i + 1, i + 1 );
+		for (unsigned int i = 0; i < m - 1; i++)
+		{
+			//Compute givens rotation
+			givens(cs * D(i, 0), E(i, 0), cs, sn, r);
 
-	//Update items of V matrix applying Givens rotations
-	updgivens ( cs, sn, V_S, V_S1 );
+			//Get submatrices
+			Matrix <T> V_S = V(0, n2 - 1, i, i);
+			Matrix <T> V_S1 = V(0, n2 - 1, i + 1, i + 1);
 
-	//Update U matrices
-	V.submat ( V_S, 0, i );
-	V.submat ( V_S1, 0, i + 1 );
+			//Update items of V matrix applying Givens rotations
+			updgivens(cs, sn, V_S, V_S1);
 
-	if ( i > 0 )
-	E ( i - 1, 0 ) = r * oldsn;
+			//Update U matrices
+			V.submat(V_S, 0, i);
+			V.submat(V_S1, 0, i + 1);
 
-	//Compute givens rotation
-	givens ( oldcs * r, D ( i + 1, 0 ) * sn, oldcs, oldsn, D ( i, 0 ) );
+			if (i > 0)
+				E(i - 1, 0) = r * oldsn;
 
-	//Get submatrices
-	Matrix <T> U_S = U ( 0, n1 - 1, i, i );
-	Matrix <T> U_S1 = U ( 0, n1 - 1, i + 1, i + 1 );
+			//Compute givens rotation
+			givens(oldcs * r, D(i + 1, 0) * sn, oldcs, oldsn, D(i, 0));
 
-	//Update items of V matrix applying Givens rotations
-	updgivens ( oldcs, oldsn, U_S, U_S1 );
+			//Get submatrices
+			Matrix <T> U_S = U(0, n1 - 1, i, i);
+			Matrix <T> U_S1 = U(0, n1 - 1, i + 1, i + 1);
 
-	//Update U matrices
-	U.submat ( U_S, 0, i );
-	U.submat ( U_S1, 0, i + 1 );
+			//Update items of V matrix applying Givens rotations
+			updgivens(oldcs, oldsn, U_S, U_S1);
+
+			//Update U matrices
+			U.submat(U_S, 0, i);
+			U.submat(U_S1, 0, i + 1);
+		}
+
+		//Actualize diagonal and superdiagonal
+		const T h = cs * D(m - 1, 0);
+		E(m - 2, 0) = h * oldsn;
+		D(m - 1, 0) = h * oldcs;
 	}
-
-	//Actualize diagonal and superdiagonal
-	const T h = cs * D ( m - 1, 0 );
-	E ( m - 2, 0 ) = h * oldsn;
-	D ( m - 1, 0 ) = h * oldcs;
-	*/
-	//}
 
 
 	//Compute Householder vector for column vector given start and end indices i, j

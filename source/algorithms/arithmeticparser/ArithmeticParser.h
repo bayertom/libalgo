@@ -1,6 +1,7 @@
-// Description: Arithmetic parser using postfix notation based on modified Shunting-yard algorithm
+// Description: Arithmetic parserm converting the infix notation to the postfix notation, based on modified shunting-yard algorithm
+//Unary minus represented by _
 
-// Copyright (c) 2010 - 2013
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -41,11 +42,11 @@ typedef enum
 {
         UnaryOperator = 0,
         BinaryOperator,
-} TPlusMinusOperatorType;
+} TSignOperatorType;
 
 
 //List of types of + - operators in postfix notation
-typedef std::vector <TPlusMinusOperatorType> TPlusMinusOperatorTypes;
+typedef std::vector <TSignOperatorType> TSignOperatorTypes;
 
 
 //Comparator for variables, constants and functions represented by strings
@@ -124,7 +125,7 @@ enum functions
         f_sqr,
         f_sqrt,
         f_abs,
-        f_sign
+        f_sign,
 };
 
 
@@ -133,22 +134,27 @@ class ArithmeticParser
 {
         public:
                 template <typename T>
-                static T parseEq ( const char * equation, const T x, const bool print_exception = true, std::ostream * output = &std::cout );
+		static T parseEquation(const char * equation, char ** equation_postfix, const T x, const bool print_exception = true, std::ostream * output = &std::cout);
 
                 template <typename T>
-                static T parseEq ( const char * equation, const T x, const T y, const bool print_exception = true, std::ostream * output = &std::cout );
+		static T parseEquation(const char * equation, char ** equation_postfix, const T x, const T y, const bool print_exception = true, std::ostream * output = &std::cout);
 
                 template <typename T>
-                static T parseEq ( const char * equation, const T lat, const T lon, const T R, const T a, const T b,  const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout );
+		static T parseEquation(const char * equation, char ** equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout);
+
+		template <typename T>
+		static T parseEquation(const char * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout);
+
+		static void infixToPostfix(const char * infix, char * postfix);
+
+
+		template <typename T>
+		static T evaluatePostfixEquation(const char * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T p);
+
 
         private:
 
                 static void init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list );
-
-                static void infixToPostfix ( const char * infix, char * postfix, TPlusMinusOperatorTypes & plus_minus_types );
-
-                template <typename T>
-		static T parseEquation(const char * equation, const TPlusMinusOperatorTypes & plus_minus_types, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T p);
 
                 static void findSequence ( const char ** equation, char * operator_text );
 

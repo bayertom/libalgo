@@ -51,7 +51,7 @@ class FAnalyzeProjJ2
                 const Projection <T> *proj;
                 const TProjectionAspect aspect;
 
-		bool &enable_additional_analysis;
+		bool &enable_additional_lon0_analysis;
                 const bool print_exceptions;
 		
 		unsigned int &jac_evaluation;
@@ -59,8 +59,8 @@ class FAnalyzeProjJ2
 
         public:
 
-		FAnalyzeProjJ2(const Container <Node3DCartesian <T> *> &nl_test_, const Container <Point3DGeographic <T> *> &pl_reference_, const Projection <T> *proj_, const TProjectionAspect aspect_, bool &enable_additional_analysis_, const bool print_exceptions_, unsigned int &jac_evaluation_)
-			: nl_test(nl_test_), pl_reference(pl_reference_), proj(proj_), aspect(aspect_), enable_additional_analysis(enable_additional_analysis_), print_exceptions(print_exceptions_), jac_evaluation(jac_evaluation_) {}
+		FAnalyzeProjJ2(const Container <Node3DCartesian <T> *> &nl_test_, const Container <Point3DGeographic <T> *> &pl_reference_, Projection <T> *proj_, const TProjectionAspect aspect_, bool &enable_additional_lon0_analysis_, const bool print_exceptions_, unsigned int &jac_evaluation_)
+			: nl_test(nl_test_), pl_reference(pl_reference_), proj(proj_), aspect(aspect_), enable_additional_lon0_analysis(enable_additional_lon0_analysis_), print_exceptions(print_exceptions_), jac_evaluation(jac_evaluation_) {}
 
 
                 void operator () ( const Matrix <T> &X, Matrix <T> &J )
@@ -106,53 +106,53 @@ class FAnalyzeProjJ2
                                         if ( aspect == NormalAspect )
                                         {
                                                 //Upper part of the matrix:  latp=90, lonp=0, lat0, lon0
-						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 4) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 4) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat, lon, proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
 
 
                                                 //Lower part of the matrix: lat0, lon0: R, latp=90, lonp=0, lat0, lon0
-						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 4) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 4) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
                                         }
 
                                         //Transverse aspect: lonp, lat0
                                         else  if ( aspect == TransverseAspect )
                                         {
                                                 //Upper part of the matrix: R, latp=0, lonp, lat0, lon0=0
-						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
 
                                                 //Lower part of the matrix: R, latp=0, lonp, lat0, lon0=0
-						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
                                         }
 
                                         //Oblique aspect: latp, lonp, lat0
                                         else
                                         {
                                                 //Upper part of the matrix: R, latp, lonp, lat0, lon0=0
-						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 1) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX2, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
-						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 1) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX2, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
                                                 //J_T ( i, 4 ) = NumDerivative::getDerivative ( FProjEquationDerivative6Var <T> ( proj->getXEquat(), pl_reference [i]->getLat(), pl_reference [i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir ), XT, VariableX5, NUM_DERIV_STEP, print_exceptions );
-						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
 						
                                                 //Lower part of the matrix: R, latp, lonp, lat0, lon0=0
-						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 1) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX2, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
-						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
-                                                //J_T ( i + m, 4 ) = NumDerivative::getDerivative ( FProjEquationDerivative6Var <T> ( proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference [i]->getLat(), pl_reference [i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir ), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions );
-						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 0) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX1, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 1) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX2, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 2) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX3, NUM_DERIV_STEP, print_exceptions);
+						J_T(i + m, 3) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX4, NUM_DERIV_STEP, print_exceptions);
+                                                //J_T ( i + m, 4 ) = NumDerivative::getDerivative ( FProjEquationDerivative6Var <T> (  pl_reference [i]->getLat(), pl_reference [i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir ), XT, FirstDerivative, VariableX5, NUM_DERIV_STEP, print_exceptions );
+						J_T(i + m, 5) = NumDerivative::getDerivative(FProjEquationDerivative6Var <T>(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  pl_reference[i]->getLat(), pl_reference[i]->getLon(), proj->getA(), proj->getB(), proj->getLat1(), proj->getLat2(), trans_lon_dir), XT, FirstDerivative, VariableX6, NUM_DERIV_STEP, print_exceptions);
                                         }
                                 }
 
@@ -213,14 +213,16 @@ class FAnalyzeProjJ2
 				//std::cout << sum2cols << " ";
 
 				//if (sum2cols < 1.0e-8)
-					enable_additional_analysis = true;
+					enable_additional_lon0_analysis = true;
 				//else
-					//enable_additional_analysis = false;
+					//enable_additional_lon0_analysis = false;
 			}
 
                         //Not enough points
                         if ( correct_derivatives < 3 )
                         {
+				X.print();
+				pl_reference.print();
                                 throw ErrorBadData ( "ErrorBadData: not enough correct partial derivatives, maybe error in equation. ", "Can not compute Jacobi matrix." );
                         }
 

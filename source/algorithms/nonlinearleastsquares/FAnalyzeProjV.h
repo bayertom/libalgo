@@ -76,7 +76,9 @@ class FAnalyzeProjV
 				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
 
 				//Set lon0
-                                if ( fabs ( X ( 4, 0 ) ) > MAX_LON ) X ( 4, 0 ) = fmod ( X ( 4, 0 ), 180 );
+				if (X(4, 0) < MIN_LON)  X(4, 0) = MAX_LON - fmod(X(4, 0), MIN_LON);
+				else if (X(4, 0) > MAX_LON)  X(4, 0) = MIN_LON - fmod(X(4, 0), MAX_LON);
+				//if (fabs(X(4, 0)) > MAX_LON)  X(4, 0) = fmod(X(4, 0), 90);
 
                                 //Set to interval
                                 //if ( X ( 3, 0 ) < lat0_min ) X ( 3, 0 ) = lat0_min;
@@ -91,8 +93,8 @@ class FAnalyzeProjV
                                 if ( X ( 0, 0 ) < 0.0 ) X ( 0, 0 ) = fabs ( X ( 0, 0 ) );
 
                                 //Subtract period
-				if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
-				else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
+				if (X(2, 0) < MIN_LON)  X(2, 0) = MAX_LON + fmod(X(2, 0), MIN_LON);
+				else if (X(2, 0) > MAX_LON)  X(2, 0) = MIN_LON + fmod(X(2, 0), MAX_LON);
 
 				//Set lat0 inside the interval
 				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
@@ -111,8 +113,8 @@ class FAnalyzeProjV
 				if (X(1, 0) < MIN_LAT)  X(1, 0) = MIN_LAT - fmod(X(1, 0), MIN_LAT);
 				else if (X(1, 0) > MAX_LAT)  X(1, 0) = MAX_LAT - fmod(X(1, 0), MAX_LAT);
 
-				if (X(2, 0) < MIN_LON)  X(2, 0) = MIN_LON - fmod(X(2, 0), MIN_LON);
-				else if (X(2, 0) > MAX_LON)  X(2, 0) = MAX_LON - fmod(X(2, 0), MAX_LON);
+				if (X(2, 0) < MIN_LON)  X(2, 0) = MAX_LON + fmod(X(2, 0), MIN_LON);
+				else if (X(2, 0) > MAX_LON)  X(2, 0) = MIN_LON + fmod(X(2, 0), MAX_LON);
 
 				//Set lat0 inside the interval
 				if (X(3, 0) < lat0_min || X(3, 0) > lat0_max) X(3, 0) = 0.5 * (lat0_min + lat0_max);
@@ -210,8 +212,8 @@ class FAnalyzeProjV
 				try
 				{
 					//Convert geographic point to oblique aspect
-					const T lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0));
-					const T lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0), trans_lon_dir);
+					T lat_trans = CartTransformation::latToLatTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0));
+					T lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, X(1, 0), X(2, 0), trans_lon_dir);
 
 					for (unsigned int j = 0; j < 3; j++)
 					{
@@ -219,11 +221,11 @@ class FAnalyzeProjV
 						{
 							//Compute new coordinates: add shifts
 
-							Y(i, 0) = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
-							Y(i + m, 0) = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(6, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+							Y(i, 0) = CartTransformation::latLonToX(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(5, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
+							Y(i + m, 0) = CartTransformation::latLonToY(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(6, 0), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false);
 
-							//Y(i, 0) = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(5, 0);
-							//Y(i + m, 0) = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(6, 0);
+							//Y(i, 0) = ArithmeticParser::parseEquation(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(5, 0);
+							//Y(i + m, 0) = ArithmeticParser::parseEquation(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), X(7, 0), X(3, 0), proj->getLat1(), proj->getLat2(), false) + X(6, 0);
 						}
 
 						//2 attempt to avoid the singularity

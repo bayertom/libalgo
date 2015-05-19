@@ -22,14 +22,119 @@
 #include "ProjectionToProj4.h"
 
 
-//List of projections supported by Proj4
-const char * proj4Names[] =
+//List of projections supported by detectproj (some of them have different ID or unsupported by Proj.4)
+const char * detectprojNames[] =
 {
-	"aea",					
+	"aea",
 	"aeqd",
 	"aitoff",
 	"apian",
-	"not_supported",	/*apiel, Apian elliptic*/	
+	"apiel",		/*Apian elliptic, not supported by Proj. 4 */	
+
+	"armad",		/*Armadillo (orthoapsidal), not supported by Proj. 4*/
+	"bacon",
+	"bonne",
+	"breus",		/*Breusign*, not supported by Proj. 4*/
+	"cea",
+
+	"clar",			/*clar, Clark far side perspective, not supported by Proj. 4*/
+	"collg",
+	"denoy",
+	"eck1",
+	"eck2",
+
+	"eck3",
+	"eck4",
+	"eck5",
+	"eck6",
+	"eqc",
+
+	"eqdc",
+	"eqdc2",		/*equidistant conic, pole = point*/
+	"eqdc3",		/*equidistant conic, two standard parallels lat1, lat2*/
+	"fahey",
+	"fouc",
+
+	"fouc_s",
+	"fourn",		/*Fournier, not supported by Proj. 4*/
+	"fourn2",		/*Fournier 2, not supported by Proj. 4*/
+	"fsper",		/*far side perspective, not supported by Proj. 4*/
+	"gall",
+
+	"gins8",
+	"gnom",
+	"hammer",
+	"hataea",
+	"hire",			/*La Hire far side perspective, not supported by Proj. 4*/
+
+	"jam",			/*James far side perspective, not supported by Proj. 4*/
+	"kav5",
+	"kav7",
+	"laea",
+	"larr",
+
+	"lask",
+
+	"lcc",
+	"krovak",
+	"leac",
+	"leac2",		/*conic equal area, pole = point*/
+	"mbt_s",
+
+	"mbtfpq",
+	"mbtfps",
+	"merc",
+	"moll",
+	"nel_h",
+
+	"nsper",
+	"nicol",
+	"ortel",
+	"orho",
+	"parab",
+
+	"pers",			/*perspective, not supported by Proj. 4*/
+	"poly",
+	"putp1",
+	"putp3",
+	"putp3p",
+
+	"putp4",
+	"putp4p",
+	"putp5",
+	"putp5p",
+	"qua_aut",
+
+	"sinu",
+	"sinu2",		/*modified sinusoidal projection, one standard parallel lat0*/
+	"solo",			/*Solovjev, not supported by Proj. 4*/
+	"stere",
+	"twi",			/*Twilight far side perspective, not supported by Proj. 4*/
+
+	"urm5",
+	"wag2",
+	"wag3",
+	"wag4",
+	"wag6",
+
+	"wag7",
+	"wer",			/*Werner defined as Bonne, lat0=90*/
+	"weren",
+	"wink1",
+	"wink2",
+
+	"wintri"
+};
+
+
+//List of corresponding projections in Proj4: analogous, different ID, or unsupported
+const char * proj4Names[] =
+{
+	"aea",
+	"aeqd",
+	"aitoff",
+	"apian",
+	"not_supported",	/*apiel, Apian elliptic*/
 
 	"not_supported",	/*armad, Armadillo (orthoapsidal)*/
 	"bacon",
@@ -50,8 +155,8 @@ const char * proj4Names[] =
 	"eqc",
 
 	"eqdc",
-	"eqdc",
-	"eqdc",
+	"eqdc",			/*eqdc, equidistant conic, pole = point*/
+	"eqdc",			/*eqdc, equidistant conic, two standard parallels lat1, lat2*/
 	"fahey",
 	"fouc",
 
@@ -73,10 +178,12 @@ const char * proj4Names[] =
 	"laea",
 	"larr",
 
+	"lask",
+
 	"lcc",
 	"krovak",
 	"leac",
-	"leac",
+	"leac",			/*leac, conic equal area, pole = point*/
 	"mbt_s",
 
 	"mbtfpq",
@@ -104,7 +211,7 @@ const char * proj4Names[] =
 	"qua_aut",
 
 	"sinu",
-	"sinu",
+	"sinu",			/*modified sinusoidal projection, one standard parallel lat0*/
 	"not_supported",	/*solo, Solovjev*/
 	"stere",
 	"not_supported",	/*twi, Twilight far side perspective*/
@@ -124,108 +231,6 @@ const char * proj4Names[] =
 	"wintri"
 };
 
-
-//List of projections, supported by detectproj
-const char * detectprojNames[] =
-{
-	"aea",
-	"aeqd",
-	"aitoff",
-	"apian",
-	"apiel",
-
-	"armad",
-	"bacon",
-	"bonne",
-	"breus",
-	"cea",
-
-	"clar",
-	"collg",
-	"denoy",
-	"eck1",
-	"eck2",
-
-	"eck3",
-	"eck4",
-	"eck5",
-	"eck6",
-	"eqc",
-
-	"eqdc",
-	"eqdc2",
-	"eqdc3",
-	"fahey",
-	"fouc",
-
-	"fouc_s",
-	"fourn",
-	"fourn2",
-	"fsper",
-	"gall",
-
-	"gins8",
-	"gnom",
-	"hammer",
-	"hataea",
-	"hire",
-
-	"jam",
-	"kav5",
-	"kav7",
-	"laea",
-	"larr",
-
-	"lcc",
-	"krovak",
-	"leac",
-	"leac2",
-	"mbt_s",
-
-	"mbtfpq",
-	"mbtfps",
-	"merc",
-	"moll",
-	"nel_h",
-
-	"nsper",
-	"nicol",
-	"ortel",
-	"orho",
-	"parab",
-
-	"pers",
-	"poly",
-	"putp1",
-	"putp3",
-	"putp3p",
-
-	"putp4",
-	"putp4p",
-	"putp5",
-	"putp5p",
-	"qua_aut",
-
-	"sinu",
-	"sinu2",
-	"solo",
-	"stere",
-	"twi",
-
-	"urm5",
-	"wag2",
-	"wag3",
-	"wag4",
-	"wag6",
-
-	"wag7",
-	"wer",
-	"weren",
-	"wink1",
-	"wink2",
-
-	"wintri"
-};
 
 
 void ProjectionToProj4::init( TProjNamesMap &proj_names_list )
@@ -286,6 +291,8 @@ void ProjectionToProj4::init( TProjNamesMap &proj_names_list )
 	proj_names_list[detectprojNames[p_kav7]] = proj4Names[p_kav7];
 	proj_names_list[detectprojNames[p_laea]] = proj4Names[p_laea];
 	proj_names_list[detectprojNames[p_larr]] = proj4Names[p_larr];
+
+	proj_names_list[detectprojNames[p_lask]] = proj4Names[p_lask];
 
 	proj_names_list[detectprojNames[p_lcc]] = proj4Names[p_lcc];
 	proj_names_list[detectprojNames[p_krovak]] = proj4Names[p_krovak];

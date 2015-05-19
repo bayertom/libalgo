@@ -1,6 +1,9 @@
 // Description: Pseudocylindrical projection, derived from Projection
+// Supported equations in the non-closed form
+// For evaluation, stored in the postfix notation
 
-// Copyright (c) 2010 - 2013
+
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -29,59 +32,71 @@
 template <typename T>
 class ProjectionPseudoCylindrical : virtual public Projection <T>
 {
-	protected:
+protected:
 
-		T lat0;
+	T lat0;
 
-		Point3DGeographic <T> cart_pole;
-		TTransformedLongtitudeDirection lon_dir;    
+	Point3DGeographic <T> cart_pole;
+	TTransformedLongtitudeDirection lon_dir;
 
-		//If a projection contains additional parameters, solved by Newton-Raphson method.
-		//function f(theta), and theta0 are stored
-		//New solution theta[i+1] = theta[i] - f(theta[i])/f'(theta[i]) 
-		char * ftheta_equat;				//Parameter function of the variable theta
-		char * theta0_equat;				//Initial value of parameter theta, theta = theta0
+	//If projection equations in the non-closed form contain additional parameters, they are solved by Newton-Raphson method.
+	//Functions f(theta), and theta0 are stored
+	//New solution theta[i+1] = theta[i] - f(theta[i])/f'(theta[i]) 
+	char * ftheta_equat;				//Parameter function of the variable theta
+	char * theta0_equat;				//Initial value of parameter theta, theta = theta0
+	char * ftheta_equat_postfix;			//Parameter function of the variable theta in the postfix notation
+	char * theta0_equat_postfix;			//Initial value of parameter theta, theta = theta0 in the postfix notation
 
-        public:
-		ProjectionPseudoCylindrical() : Projection<T>(), lat0(45), cart_pole(MAX_LAT, 0.0), lon_dir(NormalDirection2), ftheta_equat(NULL),  theta0_equat(NULL) {}
-		ProjectionPseudoCylindrical(const T R_, const T lat0_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const char * ftheta_equat_, const char * theta0_equat_, const T lon0_, const T dx_, const T dy_, const T c_, 
-			const char * x_equat_, const char * y_equat_, const char * projection_family_, const char * projection_name_); 
-		ProjectionPseudoCylindrical(const ProjectionPseudoCylindrical <T> &proj);
-		virtual ~ProjectionPseudoCylindrical();
 
-        public:
+public:
+	ProjectionPseudoCylindrical() : Projection<T>(), lat0(45), cart_pole(MAX_LAT, 0.0), lon_dir(NormalDirection2), ftheta_equat(NULL), theta0_equat(NULL), ftheta_equat_postfix(NULL), theta0_equat_postfix(NULL) {}
+	ProjectionPseudoCylindrical(const T R_, const T lat0_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const char * ftheta_equat_, const char * theta0_equat_, const char * ftheta_equat_postfix_, const char * theta0_equat_postfix_,
+		const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * x_equat_postfix_, const char * y_equat_postfix_,
+		const char * projection_family_, const char * projection_name_);
+	ProjectionPseudoCylindrical(const ProjectionPseudoCylindrical <T> &proj);
+	virtual ~ProjectionPseudoCylindrical();
 
-		virtual Point3DGeographic <T> getCartPole() const { return cart_pole; }
-                virtual T getLat0() const {return lat0;}
-                virtual T getLat1() const {return 0.0;}
-                virtual T getLat2() const {return 0.0;}
-                virtual T getA() const {return this->R;}
-                virtual T getB() const {return this->R;}
+public:
 
-                //virtual TMinMax <T> getLatPInterval () const {return TMinMax <T> ( MAX_LAT, MAX_LAT );}
-                //virtual TMinMax <T> getLonPInterval () const {return TMinMax <T> ( 0.0, 0.0 );}
-		virtual TMinMax <T> getLatPInterval() const { return TMinMax <T>(MIN_LAT, MAX_LAT); }
-		virtual TMinMax <T> getLonPInterval() const { return TMinMax <T>(MIN_LON, MAX_LON); }
-                virtual TMinMax <T> getLat0Interval () const {return TMinMax <T> ( 0.0, MAX_LAT0 );}
-                virtual TMinMax <T> getLatPIntervalH ( const TMinMax <T> &lat ) const {return getLatPInterval();}
-		virtual TMinMax <T> getLonPIntervalH(const TMinMax <T> &lon) const { return getLonPInterval(); }
-		virtual TTransformedLongtitudeDirection getLonDir() const { return lon_dir; }
-		virtual const char * getFThetaEquat() const { return ftheta_equat; }
-		virtual const char * getTheta0Equat() const { return theta0_equat; }
+	virtual Point3DGeographic <T> getCartPole() const { return cart_pole; }
+	virtual T getLat0() const { return lat0; }
+	virtual T getLat1() const { return 0.0; }
+	virtual T getLat2() const { return 0.0; }
+	virtual T getA() const { return this->R; }
+	virtual T getB() const { return this->R; }
 
-		virtual void setCartPole(const Point3DGeographic <T> & cart_pole_) { cart_pole = cart_pole_; }
-                virtual void setLat0 ( const T lat0_ ) {lat0 = lat0_;}
-                virtual void setLat1 ( const T lat1 ) {}
-                virtual void setLat2 ( const T lat2 ) {}
-                virtual void setA ( const T a ) {}
-                virtual void setB ( const T b ) {}
-		virtual void setLonDir(const TTransformedLongtitudeDirection lon_dir_) { lon_dir = lon_dir_; }
-		virtual void setFThetaEquat(const char * ftheta_equat_);
-		virtual void setTheta0Equat(const char * theta0_equat_);
+	//virtual TMinMax <T> getLatPInterval () const {return TMinMax <T> ( MAX_LAT, MAX_LAT );}
+	//virtual TMinMax <T> getLonPInterval () const {return TMinMax <T> ( 0.0, 0.0 );}
+	virtual TMinMax <T> getLatPInterval() const { return TMinMax <T>(MIN_LAT, MAX_LAT); }
+	virtual TMinMax <T> getLonPInterval() const { return TMinMax <T>(MIN_LON, MAX_LON); }
+	virtual TMinMax <T> getLat0Interval() const { return TMinMax <T>(0.0, MAX_LAT0); }
+	virtual TMinMax <T> getLatPIntervalH(const TMinMax <T> &lat) const { return getLatPInterval(); }
+	virtual TMinMax <T> getLonPIntervalH(const TMinMax <T> &lon) const { return getLonPInterval(); }
+	virtual TTransformedLongtitudeDirection getLonDir() const { return lon_dir; }
+	virtual const char * getFThetaEquat() const { return ftheta_equat; }
+	virtual const char * getTheta0Equat() const { return theta0_equat; }
+	virtual const char * getFThetaEquatPostfix() const { return ftheta_equat_postfix; }
+	virtual const char * getTheta0EquatPostfix() const { return theta0_equat_postfix; }
+	virtual char * getFThetaEquatPostfix() { return ftheta_equat_postfix; }
+	virtual char * getTheta0EquatPostfix() { return theta0_equat_postfix; }
 
-                virtual void getShortCut ( char * shortcut ) const { strcpy ( shortcut, "PsCyli" ); }
-                virtual ProjectionPseudoCylindrical <T> *clone() const {return new ProjectionPseudoCylindrical <T> ( *this );}
-                virtual void print ( std::ostream * file = &std::cout ) const {}
+	virtual void setCartPole(const Point3DGeographic <T> & cart_pole_) { cart_pole = cart_pole_; }
+	virtual void setLat0(const T lat0_) { lat0 = lat0_; }
+	virtual void setLat1(const T lat1) {}
+	virtual void setLat2(const T lat2) {}
+	virtual void setA(const T a) {}
+	virtual void setB(const T b) {}
+	virtual void setLonDir(const TTransformedLongtitudeDirection lon_dir_) { lon_dir = lon_dir_; }
+	virtual void setFThetaEquat(const char * ftheta_equat_);
+	virtual void setTheta0Equat(const char * theta0_equat_);
+	virtual void setFThetaEquatPostfix(const char * ftheta_equat_postfix_);
+	virtual void setTheta0EquatPostfix(const char * theta0_equat_postfix_);
+	virtual void FThetaEquatToPostfix();
+	virtual void Theta0EquatToPostfix();
+
+	virtual void getShortCut(char * shortcut) const { strcpy(shortcut, "PsCyli"); }
+	virtual ProjectionPseudoCylindrical <T> *clone() const { return new ProjectionPseudoCylindrical <T>(*this); }
+	virtual void print(std::ostream * file = &std::cout) const {}
 
 };
 

@@ -52,13 +52,13 @@ std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *pro
 			//Get its Proj.4 definition
 			std::string proj4_name = i_proj_names_list->second;
 
-			//Add commnand to the string
-			proj4_string += "proj";
-
 			//Is the projection supported by Proj.4
 			const std::string not_supported = "not_supported";
 			if (proj4_name.compare(not_supported) != 0)
 			{
+				//Add commnand to the string
+				proj4_string += "proj";
+
 				//Get projection properties
 				const T R = proj->getR();
 				const Point3DGeographic <T> pole = proj->getCartPole();

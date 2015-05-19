@@ -93,7 +93,8 @@ public:
 				if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
 
 				//Set lon0
-				if (fabs(X(i, 4)) > MAX_LON) X(i, 4) = fmod(X(i, 4), 180);
+				if (X(i, 4) < MIN_LON)  X(i, 4) = MAX_LON + fmod(X(i, 4), MIN_LON);
+				else if (X(i, 4) > MAX_LON)  X(i, 4) = MIN_LON + fmod(X(i, 4), MAX_LON);
 
 				//Subtract period
 				if (fabs(X(i, 6)) > MAX_LAT) X(i, 6) = fmod(X(i, 6), 180);
@@ -130,8 +131,8 @@ public:
 				if(X(i, 1) < MIN_LAT)  X(i, 1) = MIN_LAT - fmod(X(i, 1), MIN_LAT);
 				else if (X(i, 1) > MAX_LAT)  X(i, 1) = MAX_LAT - fmod(X(i, 1), MAX_LAT);
 
-				if (X(i, 2) < MIN_LON)  X(i, 2) = MIN_LON - fmod(X(i, 2), MIN_LON);
-				else if (X(i, 2) > MAX_LON)  X(i, 2) = MAX_LON - fmod(X(i, 2), MAX_LON);
+				if (X(i, 2) < MIN_LON)  X(i, 2) = MAX_LON + fmod(X(i, 2), MIN_LON);
+				else if (X(i, 2) > MAX_LON)  X(i, 2) = MIN_LON + fmod(X(i, 2), MAX_LON);
 
 				//Set lat0 inside the interval
 				//if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
@@ -189,11 +190,11 @@ public:
 						try
 						{
 							//Compute x, y coordinates
-							x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
-							y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+							x = CartTransformation::latLonToX(proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+							y = CartTransformation::latLonToY(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
 							
-							//x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
-							//y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+							//x = ArithmeticParser::parseEquation(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+							//y = ArithmeticParser::parseEquation(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
 						}
 
 						//2 attempt to avoid the singularity

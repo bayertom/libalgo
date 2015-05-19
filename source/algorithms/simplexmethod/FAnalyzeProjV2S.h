@@ -94,8 +94,9 @@ class FAnalyzeProjV2S
 					//Set lat0 inside the interval
 					//if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
 
-					if (X(i, 4) < MIN_LON) X(i, 4) = X(i, 4) + 360;
-					else if (X(i, 4) > MAX_LON) X(i, 4) = X(i, 4) - 360;
+					//Set lon0
+					if (X(i, 4) < MIN_LON) X(i, 4) = MAX_LON + fmod(X(i, 4), MIN_LON);
+					else if (X(i, 4) > MAX_LON) X(i, 4) = MIN_LON + fmod(X(i, 4), MAX_LON);
 
 					//Set lon0
 					//if (fabs(X(i, 4)) > MAX_LON) X(i, 4) = fmod(X(i, 4), 180);
@@ -109,8 +110,8 @@ class FAnalyzeProjV2S
 					if (X(i, 0) < 0.0) X(i, 0) = fabs(X(i, 0));
 
 					//Subtract period
-					if (X(i, 2) < MIN_LON)  X(i, 2) = MIN_LON - fmod(X(i, 2), MIN_LON);
-					else if (X(i, 2) > MAX_LON)  X(i, 2) = MAX_LON - fmod(X(i, 2), MAX_LON);
+					if (X(i, 2) < MIN_LON)  X(i, 2) = MAX_LON + fmod(X(i, 2), MIN_LON);
+					else if (X(i, 2) > MAX_LON)  X(i, 2) = MIN_LON + fmod(X(i, 2), MAX_LON);
 
 					//Set lat0 inside the interval
 					if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
@@ -129,8 +130,8 @@ class FAnalyzeProjV2S
 					if (X(i, 1) < MIN_LAT)  X(i, 1) = MIN_LAT - fmod(X(i, 1), MIN_LAT);
 					else if (X(i, 1) > MAX_LAT)  X(i, 1) = MAX_LAT - fmod(X(i, 1), MAX_LAT);
 
-					if (X(i, 2) < MIN_LON)  X(i, 2) = MIN_LON - fmod(X(i, 2), MIN_LON);
-					else if (X(i, 2) > MAX_LON)  X(i, 2) = MAX_LON - fmod(X(i, 2), MAX_LON);
+					if (X(i, 2) < MIN_LON)  X(i, 2) = MAX_LON + fmod(X(i, 2), MIN_LON);
+					else if (X(i, 2) > MAX_LON)  X(i, 2) = MIN_LON + fmod(X(i, 2), MAX_LON);
 
 					//Set lat0 inside the interval
 					if (X(i, 3) < lat0_min || X(i, 3) > lat0_max) X(i, 3) = 0.5 * (lat0_min + lat0_max);
@@ -185,12 +186,12 @@ class FAnalyzeProjV2S
 							try
 							{
 								//Compute x, y coordinates
-								x = CartTransformation::latLonToX(proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), X(i, 3), X(i, 5), false);
-								y = CartTransformation::latLonToY(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), X(i, 3), X(i, 5), false);
+								x = CartTransformation::latLonToX( proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), X(i, 3), X(i, 5), false);
+								y = CartTransformation::latLonToY(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), 0.0, X(i, 5), X(i, 3), X(i, 3), X(i, 5), false);
 
 								//Compute x, y coordinates
-								//x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
-								//y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+								//x = ArithmeticParser::parseEquation(proj->getXEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
+								//y = ArithmeticParser::parseEquation(proj->getYEquat(), lat_trans, lon_trans, X(i, 0), proj->getA(), proj->getB(), X(i, 5), X(i, 3), proj->getLat1(), proj->getLat2(), false);
 							}
 
 							//2 attempt to avoid the singularity
@@ -259,8 +260,8 @@ class FAnalyzeProjV2S
 				y_mass_reference = y_mass_reference / m;
 
 				//Outliers
-				//if ( analysis_parameters.remove_outliers ) //OK, common
-				if ((m1 == 1) && analysis_parameters.remove_outliers  && !compute_analysis)  //OK, EQDC, MERC
+				if ( analysis_parameters.remove_outliers ) //OK, common
+				//if ((m1 == 1) && analysis_parameters.remove_outliers  && !compute_analysis)  //OK, EQDC, MERC
 				//if ((m1 == 1) && analysis_parameters.remove_outliers) 
 				{
 					//Remove outliers

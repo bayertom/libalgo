@@ -300,6 +300,10 @@ class CartAnalysis
 		static void printResults2(const Container <Sample <T> > &sl, const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference,
 			const TAnalysisParameters <T> & analysis_parameters, std::ostream * output = &std::cout);
 
+		template <typename T>
+		static void printResults3(const Container <Sample <T> > &sl, const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference,
+			const TAnalysisParameters <T> & analysis_parameters, unsigned int index, std::ostream * output = &std::cout);
+
                 template <typename T>
                 static void sortSamplesByComputedRatios ( Container <Sample <T> > &sl, const typename TAnalysisParameters <T>::TAnalysisType & analysis_type );
 
@@ -318,6 +322,10 @@ class CartAnalysis
                 template <typename T>
                 static T solutionDiversity ( Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, const unsigned int n_items );
 
+		template <typename T>
+		static void batchTestAmountOfPoints(Container <Sample <T> > &sl, Container <Projection <T> *> &proj_list, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+			typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
+			unsigned int & total_created_or_thrown_samples, std::ostream * output = &std::cout);
 
         private:
 

@@ -1,6 +1,7 @@
-// Description: Arithmetic parser using postfix notation based on modified Shunting-yard algorithm
+// Description: Arithmetic parserm converting the infix notation to the postfix notation, based on modified shunting-yard algorithm
+//Unary minus represented by _
 
-// Copyright (c) 2010 - 2013
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -148,10 +149,14 @@ void ArithmeticParser::init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & c
 }
 
 
-void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlusMinusOperatorTypes & plus_minus_types_postfix )
+void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
 {
-        //Convert equation from infix notation to postfix notation
-        TPlusMinusOperatorType plus_minus_oper_next = UnaryOperator;
+        //Convert an equation from thr infix notation to the postfix notation
+	//Unary - is represented by !
+        TSignOperatorType plus_minus_oper_next = UnaryOperator;
+	TSignOperatorTypes sign_types_postfix;
+
+	//Stack with operators
         std::stack < std::string> operators;
 
         //List of variables, constants, functions: initialize
@@ -159,9 +164,11 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
         init ( vars_list, consts_list, functs_list );
 
         //Stack of binary or unary +- operators
-        std::stack <TPlusMinusOperatorType> plus_minus_types_temp;
+        std::stack <TSignOperatorType> sign_types_temp;
 
-        //int index = 0;
+	//Empty equation return
+	if (infix == NULL)
+		return;
 
         //Process all characters of the infix equation
         while ( *infix != '\0' )
@@ -246,8 +253,8 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                         strcpy ( c, operators.top().c_str() );
 
                                         //Type of the plus minus operator on the top of the stack
-                                        TPlusMinusOperatorType plus_minus;
-                                        plus_minus = ( !plus_minus_types_temp.empty() ? plus_minus_types_temp.top() : UnaryOperator );
+                                        TSignOperatorType plus_minus;
+                                        plus_minus = ( !sign_types_temp.empty() ? sign_types_temp.top() : UnaryOperator );
 
                                         //Add new operator to the postfix notation
                                         if ( *c != '(' ) //Do not add bracket
@@ -257,13 +264,13 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                                 *postfix = '\0';
 
                                                 //Add + - type operator to the output and remove from the stack
-                                                if ( ( *c == '+' ) || ( *c == '-' ) )
+						if ((*c == '+') || (*c == '-') || (*c == '_'))
                                                 {
                                                         //Add + - operator type to the output
-                                                        plus_minus_types_postfix.push_back ( plus_minus );
+                                                        sign_types_postfix.push_back ( plus_minus );
 
                                                         //Remove + - operator type on the top of the stack
-                                                        plus_minus_types_temp.pop();
+                                                        sign_types_temp.pop();
                                                 }
 
                                                 //Add new operator to the postfix notation
@@ -303,9 +310,9 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                 {
                                         //Operator on the top  of the stack
                                         const char * c = operators.top().c_str();
-
+					
                                         //Found operator with lower priority, stop
-                                        if ( ( *c == '^' ) || ( *c == '*' ) || ( *c == '/' ) || ( *c == '+' ) || ( *c == '-' ) || ( *c == '(' ) )
+					if ((*c == '^') || (*c == '*') || (*c == '/') || (*c == '+') || (*c == '-') || (*c == '(') || (*c == '_'))
                                         {
                                                 break;
                                         }
@@ -352,7 +359,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                         const char * c = operators.top().c_str();
 
                                         //Found operator with lower priority, stop
-                                        if ( ( *c == '*' ) || ( *c == '/' ) || ( *c == '+' ) || ( *c == '-' ) || ( *c == '(' ) )
+					if ((*c == '*') || (*c == '/') || (*c == '+') || (*c == '-') || (*c == '(') || (*c == '_'))
                                         {
                                                 break;
                                         }
@@ -399,7 +406,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                         const char * c = operators.top().c_str();
 
                                         //Found operator with lower priority, stop
-                                        if ( ( *c == '+' ) || ( *c == '-' ) || ( *c == '(' ) )
+					if ((*c == '+') || (*c == '-') || (*c == '(') || (*c == '_') )
                                         {
                                                 break;
                                         }
@@ -434,7 +441,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                 //***************************************************************************
 
                 //Add, subtract (Priority level 1)
-                else if ( ( *text == '+' ) || ( *text == '-' ) )
+		else if ((*text == '+') || (*text == '-') || (*text == '_'))
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -446,8 +453,8 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                         const char * c = operators.top().c_str();
 
                                         //Type of the plus minus operator on the top of the stack
-                                        TPlusMinusOperatorType plus_minus;
-                                        plus_minus = ( !plus_minus_types_temp.empty() ? plus_minus_types_temp.top() : UnaryOperator );
+                                        TSignOperatorType plus_minus;
+                                        plus_minus = ( !sign_types_temp.empty() ? sign_types_temp.top() : UnaryOperator );
 
                                         //Found operator with lower priority
                                         if ( *c == '(' )
@@ -467,13 +474,13 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                                 postfix += strlen ( c );
 
                                                 //Add plus minus type to the output and remove from the stack
-                                                if ( ( *c == '+' ) || ( *c == '-' ) )
+						if ((*c == '+') || (*c == '-') || (*c == '_'))
                                                 {
                                                         //Remove plus minus type of the operator from the top of the stack
-                                                        plus_minus_types_temp.pop();
+                                                        sign_types_temp.pop();
 
                                                         //Add plus minus the type to the output
-                                                        plus_minus_types_postfix.push_back ( plus_minus );
+                                                        sign_types_postfix.push_back ( plus_minus );
                                                 }
 
                                                 //Remove operator from the top of the stack
@@ -484,12 +491,18 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                                         if ( operators.empty() ) break;
                                 }
                         }
-
+			
                         //No operator with lowest priority found or stack empty
-                        operators.push ( std::string ( text ) );
+			//Unary -
+			if (plus_minus_oper_next == UnaryOperator )
+				operators.push("_");
+
+			//Binary -
+			else
+				operators.push ( std::string ( text ) );
 
                         //Set the next + - operator as unary or binary
-                        plus_minus_types_temp.push ( plus_minus_oper_next );
+                        sign_types_temp.push ( plus_minus_oper_next );
 
                         //Set next +- operator as binary
                         plus_minus_oper_next = BinaryOperator;
@@ -513,8 +526,8 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                 strcpy ( c, operators.top().c_str() );
 
                 //Type of the plus minus operator on the top of the stack
-                TPlusMinusOperatorType plus_minus;
-                plus_minus = ( !plus_minus_types_temp.empty() ? plus_minus_types_temp.top() : UnaryOperator );
+                TSignOperatorType plus_minus;
+                plus_minus = ( !sign_types_temp.empty() ? sign_types_temp.top() : UnaryOperator );
 
                 //Add new operator to the postfix notation
                 if ( *c != '(' )
@@ -528,13 +541,13 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix, TPlu
                         postfix += strlen ( c );
 
                         //Add plus minus type to the output and remove from the stack
-                        if ( ( *c == '+' ) || ( *c == '-' ) )
+			if ((*c == '+') || (*c == '-') || (*c == '_'))
                         {
                                 //Remove plus minus type of the operator from the top of the stack
-                                plus_minus_types_postfix.push_back ( plus_minus );
+                                sign_types_postfix.push_back ( plus_minus );
 
                                 //Remove type of the +- operator on the top of the stack
-                                plus_minus_types_temp.pop();
+                                sign_types_temp.pop();
                         }
                 }
 

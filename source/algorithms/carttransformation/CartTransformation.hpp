@@ -30,7 +30,6 @@
 #include "libalgo/source/structures/point/Point3DCartesianProjected.h"
 #include "libalgo/source/structures/projection/Projection.h"
 
-#include "libalgo/source/algorithms/arithmeticparser/ArithmeticParser.h"
 
 #include "libalgo/source/algorithms/numderivative/FProjEquationDerivative1Var.h"
 #include "libalgo/source/algorithms/numderivative/NumDerivative.h"
@@ -62,7 +61,8 @@ template <typename T>
 T CartTransformation::latLonToX(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception)
 {
         //Compute x coordinate of the point P[lat, lon] in specific projection
-	return latLonToCartesian( proj->getXEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(), proj->getC(),
+	//Projection equations in the postfix notation
+	return latLonToCartesian( proj->getXEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDx(), proj->getC(),
                            proj->getLat0(), proj->getLat1(), proj->getLat2(), print_exception ) ;
 }
 
@@ -71,24 +71,27 @@ template <typename T>
 T CartTransformation::latLonToY(const Point3DGeographic <T> *p, const Projection <T> *proj, const bool print_exception)
 {
 	//Compute y coordinate of the point P[lat, lon] in specific projection
-	return latLonToCartesian(proj->getYEquat(), proj->getFThetaEquat(), proj->getTheta0Equat(), p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDy(), proj->getC(),
+	//Projection equations in the postfix notation
+	return latLonToCartesian(proj->getYEquatPostfix(), proj->getFThetaEquatPostfix(), proj->getTheta0EquatPostfix(),  p->getLat(), p->getLon(), proj->getR(), proj->getA(), proj->getB(), proj->getDy(), proj->getC(),
 		proj->getLat0(), proj->getLat1(), proj->getLat2(), print_exception);
 }
 
 
 template <typename T>
-T CartTransformation::latLonToX(const char * equation_x, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
+T CartTransformation::latLonToX(char * equation_x_postfix, char *equation_ftheta_postfix, char *equation_theta0_postfix, const T lat, const T lon, const T R, const T a, const T b, const T dx, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
 {
 	//Compute x coordinate of the point P[lat, lon] in specific projection
-	return latLonToCartesian(equation_x, equation_ftheta, equation_theta0, lat, lon, R, a, b, dx, c, lat0, lat1, lat2, print_exception);
+	//Projection equations in the postfix notation
+	return latLonToCartesian(equation_x_postfix, equation_ftheta_postfix, equation_theta0_postfix, lat, lon, R, a, b, dx, c, lat0, lat1, lat2, print_exception);
 }
 
 
 template <typename T>
-T CartTransformation::latLonToY(const char * equation_y, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
+T CartTransformation::latLonToY(char * equation_y_postfix, char *equation_ftheta_postfix, char *equation_theta0_postfix, const T lat, const T lon, const T R, const T a, const T b, const T dy, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
 {
 	//Compute y coordinate of the point P[lat, lon] in specific projection
-	return latLonToCartesian(equation_y, equation_ftheta, equation_theta0, lat, lon, R, a, b, dy, c, lat0, lat1, lat2, print_exception);
+	//Projection equations in the postfix notation
+	return latLonToCartesian(equation_y_postfix, equation_ftheta_postfix, equation_theta0_postfix, lat, lon, R, a, b, dy, c, lat0, lat1, lat2, print_exception);
 }
 
 
@@ -207,13 +210,15 @@ T CartTransformation::lonToLonTrans ( const T lat, const T lon,  const T latp, c
 
 
 template <typename T>
-T CartTransformation::latLonToCartesian(const char * equation, const char *equation_ftheta, const char *equation_theta0, const T lat, const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
+T CartTransformation::latLonToCartesian(const char * equation_postfix, const char *equation_ftheta_postfix, const char *equation_theta0_postfix, const T lat, const T lon, const T R, const T a, const T b, const T shift, const T c, const T lat0, const T lat1, const T lat2, const bool print_exception)
 {
-	//Compute cartesian coordinate x / y of the point P[lat, lon] in specific projection, additional equations solved by Newton-RTaphson method are included
+	//Compute cartesian coordinate x / y of the point P[lat, lon] in specific projection, 
+	//Projection equations in the postfix notation
+	//Additional equations solved by Newton-Raphson method are included
 	T theta = lat;
 
 	//Apply Newton-Raphson method to evaluate p
-	if ((equation_ftheta != NULL) && (equation_theta0 != NULL))
+	if ((equation_ftheta_postfix != NULL) && (equation_theta0_postfix != NULL))
 	{
 		bool convergence = false;
 		unsigned int iterations = 0;
@@ -221,7 +226,7 @@ T CartTransformation::latLonToCartesian(const char * equation, const char *equat
 		const T max_diff = 1.0e-5;
 
 		//Determine p[0]
-		theta = ArithmeticParser::parseEq(equation_theta0, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
+		theta = ArithmeticParser::parseEquation(equation_theta0_postfix, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
 		
 		//Apply Newton-Raphson method
 		while ( (!convergence) && (iterations <= max_iterations))
@@ -230,8 +235,8 @@ T CartTransformation::latLonToCartesian(const char * equation, const char *equat
 			X(0, 0) = theta;
 
 			//Compute F(theta) and F'(theta)
-			const T ftheta = ArithmeticParser::parseEq(equation_ftheta, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
-			const T ftheta_der = NumDerivative::getDerivative(FProjEquationDerivative1Var <T>(equation_ftheta, lat, lon, R, a, b, 0, 0, c, lat0, lat1, lat2), X, FirstDerivative, VariableX1, 0.1 * NUM_DERIV_STEP, print_exception);
+			const T ftheta = ArithmeticParser::parseEquation(equation_ftheta_postfix, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception);
+			const T ftheta_der = NumDerivative::getDerivative(FProjEquationDerivative1Var <T>(equation_ftheta_postfix, lat, lon, R, a, b, 0, 0, c, lat0, lat1, lat2), X, FirstDerivative, VariableX1, 0.1 * NUM_DERIV_STEP, print_exception);
 		
 			//New value of theta
 			T theta_n = 0;
@@ -257,7 +262,7 @@ T CartTransformation::latLonToCartesian(const char * equation, const char *equat
 	}
 	
 	//Compute equations including determined theta, if necessary
-	const T coord = ArithmeticParser::parseEq(equation, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception) + shift;
+	const T coord = ArithmeticParser::parseEquation(equation_postfix, lat, lon, R, a, b, c, lat0, lat1, lat2, theta, print_exception) + shift;
 
 	return coord;
 }

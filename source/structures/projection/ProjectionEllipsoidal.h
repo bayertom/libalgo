@@ -1,6 +1,6 @@
 // Description: Ellipsoidal projection, derived from Projection
 
-// Copyright (c) 2010 - 2013
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -37,8 +37,9 @@ class ProjectionEllipsoidal : virtual public Projection <T>
 
         public:
                 ProjectionEllipsoidal() : Projection <T> (), a ( 1 ), b ( 1 ), lat0 ( 0 ) {}
-		ProjectionEllipsoidal(const T R_, const T a_, const T b_, const T lat0_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_family_, const char * projection_name_) :
-			Projection <T>(R_, lon0_, dx_, dy_, c(c_), x_equat_, y_equat_, projection_family_, projection_name_), a(a_), b(b_), lat0(lat0_) {}
+		ProjectionEllipsoidal(const T R_, const T a_, const T b_, const T lat0_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * x_equat_postfix_, const char * y_equat_postfix_, 
+			const char * projection_family_, const char * projection_name_) : Projection <T>(R_, lon0_, dx_, dy_, c(c_), x_equat_, y_equat_, x_equat_postfix_, 
+			y_equat_postfix_, projection_family_, projection_name_), a(a_), b(b_), lat0(lat0_) {}
                 virtual ~ProjectionEllipsoidal() {}
 
         public:
@@ -58,6 +59,10 @@ class ProjectionEllipsoidal : virtual public Projection <T>
                 virtual TTransformedLongtitudeDirection getLonDir () const { return NoDirection;}
 		virtual const char * getFThetaEquat() const { return NULL; }
 		virtual const char * getTheta0Equat() const { return NULL; }
+		virtual const char * getFThetaEquatPostfix() const { return NULL; }
+		virtual const char * getTheta0EquatPostfix() const { return NULL; }
+		virtual char * getFThetaEquatPostfix() { return NULL; }
+		virtual char * getTheta0EquatPostfix() { return NULL; }
 
                 virtual void setCartPole ( const Point3DGeographic <T> & pole )  {}
                 virtual void setLat0 ( const T lat0_ ) {lat0 = lat0_;}
@@ -68,6 +73,10 @@ class ProjectionEllipsoidal : virtual public Projection <T>
                 virtual void setLonDir ( const TTransformedLongtitudeDirection lon_dir_ ) {}
 		virtual void setFThetaEquat(const char * ftheta_equat_) {};
 		virtual void setTheta0Equat(const char * theta0_equat_) {};
+		virtual void setFThetaEquatPostfix(const char * ftheta_equat_postfix_) {};
+		virtual void setTheta0EquatPostfix(const char * theta0_equat_postfix_) {};
+		virtual void FThetaEquatToPostfix() {};
+		virtual void Theta0EquatToPostfix() {};
 
                 virtual void getShortCut ( char * shortcut ) const { strcpy ( shortcut, "Elli" ); }
                 virtual ProjectionEllipsoidal <T> *clone() const {return new ProjectionEllipsoidal <T> ( *this );}

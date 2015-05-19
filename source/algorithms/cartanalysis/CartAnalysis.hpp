@@ -663,6 +663,8 @@ void CartAnalysis::computeAnalysisForAllSamplesSim(Container <Sample <T> > &sl, 
 
 					const T map_scale2 = (analysis_parameters.analysis_method != NonLinearLeastSquaresRot2Method ? R_def / X(0, 0) : R_def / R_est);
 
+					//Matrix <T> WD = diag(W); WD.print(output);
+
 					//Compute match ratio
 					//TIndexList matched_points;
 					//T match_ratio = getMatchRatioTissotIndicatrix(nl_test, pl_reference, trans(X), W, *i_projections, matched_points, CollectOn, map_scale, 30.0);
@@ -1033,6 +1035,8 @@ void CartAnalysis::computeAnalysisForAllSamplesDE(Container <Sample <T> > &sl, C
 						//min_cost = 					}
 					}
 
+					//Matrix <T> WD = diag(W); WD.print(output);
+
 					const T map_scale2 = (analysis_parameters.analysis_method != NonLinearLeastSquaresRot2Method ? R_def / X(0, 0) : R_def / R_est);
 
 					//Compute match ratio
@@ -1284,7 +1288,7 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 
 			//Common for all apects
 			X0(2, 0) = lat0_init + 10;
-			X0(4, 0) = lat0_init + 20;
+			
 
 			X0MIN(2, 0) = lat0_min;     X0MAX(2, 0) = lat0_max;
 			
@@ -1292,12 +1296,14 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 			if (typeid(*(*i_projections)) == typeid(ProjectionConic<T>))
 			{
 				X0MIN(4, 0) = 0;    X0MAX(4, 0) = lat0_max;
+				X0(4, 0) = lat0_init + 20;
 			}
 			
 			//Otherwise: c is unspecified constant
 			else
 			{
 				X0MIN(4, 0) = 0.0;          X0MAX(4, 0) = 1.0e3;
+				X0(4, 0) = 1;
 			}
 			
 			//Proces available aspects
@@ -1365,7 +1371,7 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 						X0(1, 0) = lonp_init + 10;
 						X0(3, 0) = 0;
 
-						//X0(0, 0) = 55; X0(1, 0) = -120;
+						//X0(0, 0) = -67; X0(1, 0) = 120;
 						//X0(2, 0) = 50;
 
 						X0MIN(0, 0) = latp_min;	X0MAX(0, 0) = latp_max;
@@ -1375,7 +1381,7 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 
 					//Variables
 					unsigned int res_evaluation = 0, jac_evaluation = 0;
-					bool enable_additional_analysis = false;
+					bool enable_additional_lon0_analysis = false;
 					T x_mass_reference = 0.0, y_mass_reference = 0.0, min_cost = 0, alpha = 0, R_est = 1.0, scale = 1.0, q1 = 1, q2 = 1, k = 2.5;
 					TMEstimatorsWeightFunction me_function = HuberFunction;
 
@@ -1391,8 +1397,8 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 						X.submat(X0, 1, 0); XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
 						X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
 
-						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ2 <T>(nl_test, pl_reference, (*i_projections), aspect, enable_additional_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV2 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
-							analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, HuberFunction, k, IX, enable_additional_analysis, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, max_iter, max_diff, output);
+						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ2 <T>(nl_test, pl_reference, (*i_projections), aspect, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV2 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+							analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, HuberFunction, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, max_iter, max_diff, output);
 					}
 
 					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRotMethod)
@@ -1409,14 +1415,14 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 					{
 						XX = X0;
 
-						//min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
-						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 2*max_iter, 0.001 * max_diff, output);
+						//min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 2*max_iter, 0.001 * max_diff, output);
 
-						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
-							R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 3 * max_iter, 0.0001 * max_diff, output);
+						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+							R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps,1 * max_iter, 0.0001 * max_diff, output);
 							
-						//min_cost = NonLinearLeastSquares::GND(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
-						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, 0.001*eps, 2 * max_iter, 0.001*max_diff, output);
+						//min_cost = NonLinearLeastSquares::GND(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, 0.001*eps, 2 * max_iter, 0.001*max_diff, output);
 
 
 						X(0, 0) = R_est;  X.submat(XX, 1, 0);
@@ -1434,8 +1440,13 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 						XMIN(6, 0) = -1.0e03;	XMAX(6, 0) = 1.0e3;
 						XMIN(7, 0) = 0;		XMAX(7, 0) = 1.0e8;
 
-						//min_cost = 					
+			
+						min_cost = min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ <T>(nl_test, pl_reference, (*i_projections), aspect, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+							analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, max_iter, max_diff, output);
+
 					}
+
+					//Matrix <T> WD = diag(W); WD.print(output);
 
 					const T map_scale2 = (analysis_parameters.analysis_method != NonLinearLeastSquaresRot2Method ? R_def / X(0, 0) : R_def / R_est);
 
@@ -3441,9 +3452,27 @@ void CartAnalysis::printResults2(const Container <Sample <T> > &sl, const Contai
 			sl[i].printSampleRatios2(i + 1, analysis_parameters.analysis_type, n_test, output);
 		}
 
-		*output << std::endl;
-		*output << std::endl;
 
+		*output << std::endl;
+		*output << std::endl;
+	}
+
+}
+
+
+template <typename T>
+void CartAnalysis::printResults3(const Container <Sample <T> > &sl, const Container < Node3DCartesian <T> *> &nl_test, const Container <Point3DGeographic <T> *> &nl_reference,
+	const TAnalysisParameters <T> & analysis_parameters, unsigned int index, std::ostream * output)
+{
+
+	//Print selected item
+	const unsigned int n = sl.size(), n_test = nl_test.size();
+
+	//Some points were loaded
+	if ( ( n > 0 ) && ( index < n) )
+	{
+		//Values of the criterion for each projection
+		sl[index].printSampleRatios2(index + 1, analysis_parameters.analysis_type, n_test, output);
 	}
 
 }
@@ -3479,8 +3508,8 @@ T CartAnalysis::getMatchRatioTissotIndicatrix(const Container < Node3DCartesian 
 			lon_trans = CartTransformation::lonToLonTrans(nl_reference[i]->getLat(), lon_red, lat_trans, X(0, 1), X(0, 2), trans_lon_dir);
 
 			//Compute x, y coordinates
-			x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), proj->getC(), X(0, 3), proj->getLat1(), proj->getLat2(), false);
-			y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), proj->getC(), X(0, 3), proj->getLat1(), proj->getLat2(), false);
+			x = ArithmeticParser::parseEquation(proj->getXEquatPostfix(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), proj->getC(), X(0, 3), proj->getLat1(), proj->getLat2(), false);
+			y = ArithmeticParser::parseEquation(proj->getYEquatPostfix(), lat_trans, lon_trans, X(0, 0), proj->getA(), proj->getB(), proj->getC(), X(0, 3), proj->getLat1(), proj->getLat2(), false);
 
 			//Create oblique point
 			Point3DGeographic <T> point_oblique_temp(lat_trans, lon_trans);
@@ -7243,8 +7272,8 @@ void CartAnalysis::batchTestNLSPOutliers(Container <Node3DCartesian <T> *> &nl_t
 				lon_trans = CartTransformation::lonToLonTrans(pl_reference[i]->getLat(), lon_red, lat_trans, XX(0, 0), XX(1, 0), trans_lon_dir);
 
 				//Compute x, y coordinates
-				x = ArithmeticParser::parseEq(proj->getXEquat(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), XX(4, 0), XX(2, 0), proj->getLat1(), proj->getLat2(), false);
-				y = ArithmeticParser::parseEq(proj->getYEquat(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), XX(4, 0), XX(2, 0), proj->getLat1(), proj->getLat2(), false);
+				x = ArithmeticParser::parseEquation(proj->getXEquatPostfix(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), XX(4, 0), XX(2, 0), proj->getLat1(), proj->getLat2(), false);
+				y = ArithmeticParser::parseEquation(proj->getYEquatPostfix(), lat_trans, lon_trans, R_def, proj->getA(), proj->getB(), XX(4, 0), XX(2, 0), proj->getLat1(), proj->getLat2(), false);
 				}
 
 				catch (Error &error)
@@ -8978,9 +9007,256 @@ void CartAnalysis::batchTestNelderMeadOutliers(Container <Node3DCartesian <T> *>
 }
 
 
+template <typename T>
+void CartAnalysis::batchTestAmountOfPoints(Container <Sample <T> > &sl, Container <Projection <T> *> &proj_list, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+	typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
+	unsigned int & total_created_or_thrown_samples, std::ostream * output)
+{
+	//Batch test: dependencance on the amount of analyzed features, n = 5, 10, 15, 20, 25
+	const unsigned int n = nl_test.size();
+
+	Container <Node3DCartesian <T> *> nl_test_temp(nl_test), nl_test_temp2;
+	Container <Point3DGeographic <T> *> nl_reference_temp(pl_reference), nl_reference_temp2;
+
+	//Get nearest value
+	unsigned int n_points = n, iterations = 0;
+
+	while (n_points > 5)
+	{
+		//Find min_max box
+		const Node3DCartesian <T> *p_x_max = *std::max_element(nl_test_temp.begin(), nl_test_temp.end(), sortPointsByX());
+		const Node3DCartesian <T> *p_x_min = *std::min_element(nl_test_temp.begin(), nl_test_temp.end(), sortPointsByX());
+		const Node3DCartesian <T> *p_y_max = *std::max_element(nl_test_temp.begin(), nl_test_temp.end(), sortPointsByY());
+		const Node3DCartesian <T> *p_y_min = *std::min_element(nl_test_temp.begin(), nl_test_temp.end(), sortPointsByY());
+
+		//Create min-max box
+		const Node3DCartesian <T> *m1 = new Node3DCartesian <T>(p_x_min->getX(), p_y_min->getY());
+		const Node3DCartesian <T> *m2 = new Node3DCartesian <T>(p_x_max->getX(), p_y_min->getY());
+		const Node3DCartesian <T> *m3 = new Node3DCartesian <T>(p_x_max->getX(), p_y_max->getY());
+		const Node3DCartesian <T> *m4 = new Node3DCartesian <T>(p_x_min->getX(), p_y_max->getY());
+		
+		//Create lists of closest points
+		std::map<double, unsigned int> v1, v2, v3, v4;
+		std::map<double, unsigned int> ::iterator iv1, iv2, iv3, iv4;
+
+		for (unsigned int j = 0; j < n_points; j++ )
+		{
+			//Get point
+			const Node3DCartesian <T> *node = nl_test_temp[j];
+
+			//Measure its distance to min max box points
+			const T d1 = EuclDistance::getEuclDistance(node, m1);
+			const T d2 = EuclDistance::getEuclDistance(node, m2);
+			const T d3 = EuclDistance::getEuclDistance(node, m3);
+			const T d4 = EuclDistance::getEuclDistance(node, m4);
+
+			//Find closest vertex for a point
+			//Results stored in minimum1 and index1
+			T minimum1 = d1, minimum2 = d3;
+			std::map<double, unsigned int> *pv1 = &v1, *pv2 = &v3;
+			
+			//Closest to the second vertex
+			if (d2 < d1)
+			{
+				minimum1 = d2; pv1 = &v2;
+			}
+
+			//Closest to the fourth vertex
+			if (d4 < d3)
+			{
+				minimum2 = d4; pv2 = &v4;
+			}
+
+			//Compare both
+			if (minimum2 < minimum1)
+			{
+				minimum1 = minimum2;
+				pv1 = pv2;
+			}
+
+			//Add to the list
+			(*pv1)[minimum1] = j;
+		}
+		
+		//Set initial n = [30, 25, 20, 15, 10...]
+		if (iterations == 0)
+		{
+			for (unsigned int i = 30; i > 5; i -= 5)
+			{
+				if (n / i >= 1)
+				{
+					n_points = i;
+					break;
+				}
+			}
+		}
+
+		//Decrement amount of analyzed features
+		else n_points -= 5;
+
+		std::cout << "\n\n >>> Test, analyzed " << n_points << " points: \n\n";
+		*output << "\n\n >>> Test, analyzed " << n_points << " points: \n\n";
+
+		//Amount of points per vertex
+		const unsigned int npt = n_points / 4;
+
+		//Size of maps
+		const unsigned int nv1 = v1.size(), nv2 = v2.size(), nv3 = v3.size(), nv4 = v4.size();
+
+		//Correct amount of points closest to each mbr vertex 
+		unsigned int np1 = 0, np2 = 0, np3 = 0, np4 = 0;
+
+		//How many avaiable vertices are there
+		unsigned int n1 = std::min(nv1, npt), n2 = std::min(nv2, npt), n3 = std::min(nv3, npt), n4 = std::min(nv4, npt);
+		const unsigned int rem = n_points % 4 + n_points - n1 - n2 - n3 - n4;
+		
+		if (rem != 0)
+			n1 += rem;
+		
+		//Read from the first map
+		for (iv1 = v1.begin(); iv1 != v1.end() && np1 < n1; iv1++) 
+		{
+			//Get index of the point
+			const unsigned int index = iv1->second;
+
+			//Add copy of the point to the list
+			nl_test_temp2.push_back(nl_test_temp[index]->clone());
+			nl_reference_temp2.push_back(nl_reference_temp[index]->clone());
+
+			np1++;
+		}
+
+		//First map is shorter
+		unsigned int diff1 = (np1 < n1 ? n1 - np1 : 0);
+		n2 += diff1;
+
+		//Read from the second map
+		for (iv2 = v2.begin(); iv2 != v2.end() && np2 < n2; iv2++)
+		{
+			//Get index of the point
+			const unsigned int index = iv2->second;
+
+			//Add copy of the point to the list
+			nl_test_temp2.push_back(nl_test_temp[index]->clone());
+			nl_reference_temp2.push_back(nl_reference_temp[index]->clone());
+
+			np2++;
+		}
+
+		//Second map is shorter
+		unsigned int diff2 = (np2 < n2 ? n2 - np2 : 0);
+		n3 += diff2;
+
+		//Read from the third map
+		for (iv3 = v3.begin(); iv3 != v3.end() && np3 < n3; iv3++)
+		{
+			//Get index of the point
+			const unsigned int index = iv3->second;
+			
+			//Add copy of the point to the list
+			nl_test_temp2.push_back(nl_test_temp[index]->clone());
+			nl_reference_temp2.push_back(nl_reference_temp[index]->clone());
+
+			np3++;
+		}
+
+		//nl_reference_temp2.print(output);
+
+		//Third map is shorter
+		unsigned int diff3 = (np3 < n3 ? n3 - np3 : 0);
+		n4 += diff3;
+
+		//Read from the fourth map
+		for (iv4 = v4.begin(); iv4 != v4.end() && np4 < n4; iv4++)
+		{
+			//Get index of the point
+			const int index = iv4->second;
+
+			//Add copy of the point to the list
+			nl_test_temp2.push_back(nl_test_temp[index]->clone());
+			nl_reference_temp2.push_back(nl_reference_temp[index]->clone());
+
+			np4++;
+		}
+
+		//Convert amount of analyzed features to char
+		char points_text[5];
+		sprintf(points_text, "%d", n_points );
+
+		//Create file names
+		char output_file1[MAX_TEXT_LENGTH], output_file2[MAX_TEXT_LENGTH], *output_file3 = "results_amount1.log", *output_file4 = "results_amount2.log";
+		strcpy(output_file1, "test"); strcpy(output_file2, "reference");
+		strcat(output_file1, points_text); strcat(output_file2, points_text);
+		strcat(output_file1, ".txt"); strcat(output_file2, ".txt");
+
+		//Open files
+		std::filebuf fb1, fb2, fb3, fb4;
+		fb1.open(output_file1, std::ios::out); fb2.open(output_file2, std::ios::out);
+		fb3.open(output_file3, std::ios::app); fb4.open(output_file4, std::ios::app);
+		std::ostream os1(&fb1); std::ostream os2(&fb2);
+		std::ostream os3(&fb3); std::ostream os4(&fb4);
+		
+		//Write to files
+		nl_test_temp2.print(&os1);
+		nl_reference_temp2.print(&os2);
+		
+		//Close files
+		fb1.close();
+		fb2.close();
+
+		//Perform analysis
+		sl.clear();
+		computeAnalysisForAllSamplesMLS(sl, proj_list, nl_test_temp2, nl_reference_temp2, meridians, parallels, faces_test, analysis_parameters,
+			total_created_or_thrown_samples, output);
+
+		//CartAnalysis::computeAnalysisForAllSamplesDE(sl, proj_list, nl_test_temp2, nl_reference_temp2, meridians, parallels, faces_test, analysis_parameters,
+		//	total_created_or_thrown_samples, output);
+
+		//Sort computed results
+		output->flush();
+		std::cout << ">> Sorting all samples...";
+		CartAnalysis::sortSamplesByComputedRatios ( sl, analysis_parameters.analysis_type );
+		std::cout << " Completed."  << std::endl << std::endl;
+
+		//Print all results into output
+		std::cout << "Print results";
+	
+		CartAnalysis::printResults2(sl, nl_test_temp2, nl_reference_temp2, analysis_parameters, output);
+
+		//List of best candidates
+		CartAnalysis::printResults3(sl, nl_test_temp2, nl_reference_temp2, analysis_parameters, 0, &os3);
+		
+		//List of second best candidates
+		CartAnalysis::printResults3(sl, nl_test_temp2, nl_reference_temp2, analysis_parameters, 1, &os4);
+
+		//Close files
+		fb3.close();
+		fb4.close();
+
+		//Assign new list to the old one
+		nl_test_temp = nl_test_temp2;
+		nl_reference_temp = nl_reference_temp2;
+
+		//Clear lists
+		nl_test_temp2.clear();
+		nl_reference_temp2.clear();
+
+		//Delete min-max box
+		delete m1;
+		delete m2;
+		delete m3;
+		delete m4;
+
+		//Increment iterations
+		iterations++;
+	}
+}
+
 
 
 template <typename T>
+
+
 void CartAnalysis::batchTestG(Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference, Container <Node3DCartesianProjected <T> *> &nl_projected, Projection <T> *proj, const TProjectionAspect aspect, typename TMeridiansList <T> ::Type &meridians, typename TParallelsList <T> ::Type &parallels, const Container <Face <T> *> &faces_test,
 	unsigned short &iterations, const T alpha_mult, const T nu, const T eps, unsigned short max_iter, const T max_diff, T &x_mass_reference, T &y_mass_reference, const unsigned int n, Sample <T> best_sample, TAnalysisParameters <T> & analysis_parameters, Container <Sample <T> > &sl, unsigned int &total_created_and_analyzed_samples_projection, std::ostream * output)
 {

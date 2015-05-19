@@ -1,6 +1,7 @@
-// Description: Cartographic projection
+// Description: General cartographic projection with pure wirtual methods
+// Foe evaluations, its equations in the postfix notation are stored
 
-// Copyright (c) 2010 - 2013
+// Copyright (c) 2010 - 2015
 // Tomas Bayer
 // Charles University in Prague, Faculty of Science
 // bayertom@natur.cuni.cz
@@ -54,8 +55,8 @@ class ProjectionMiscellaneous;
 
 
 template <typename T>
-Projection <T> ::Projection ( const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_ )
-        : R ( R_ ), lon0 ( lon0_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ )
+Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * x_equat_postfix_, const char * y_equat_postfix_)
+	: R(R_), lon0(lon0_), dx(dx_), dy(dy_), c(c_)
 {
 	projection_family = NULL;
 	projection_name = NULL;
@@ -82,12 +83,35 @@ Projection <T> ::Projection ( const T R_, const T lon0_, const T dx_, const T dy
                
                 y_equat = NULL;
         }
+
+	if (x_equat_postfix_ != NULL)
+	{
+		x_equat_postfix = new char[strlen(x_equat_postfix_) + 1];
+		strcpy(x_equat_postfix, x_equat_postfix_);
+	}
+
+	else
+	{
+		x_equat_postfix = NULL;
+	}
+
+	if (y_equat_postfix_ != NULL)
+	{
+		y_equat_postfix = new char[strlen(y_equat_postfix_) + 1];
+		strcpy(y_equat_postfix, y_equat_postfix_);
+	}
+
+	else
+	{
+
+		y_equat_postfix = NULL;
+	}
 }
 
 
 template <typename T>
-Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * projection_family_ , const char * projection_name_)
-        : R ( R_ ), lon0 ( lon0_ ), dx ( dx_ ), dy ( dy_ ), c ( c_ )
+Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * x_equat_postfix_, const char * y_equat_postfix_, const char * projection_family_, const char * projection_name_)
+	: R(R_), lon0(lon0_), dx(dx_), dy(dy_), c(c_)
 {
 	if (x_equat_ != NULL)
 	{
@@ -109,6 +133,28 @@ Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_,
 	else
 	{
 		y_equat = NULL;
+	}
+
+	if (x_equat_postfix_ != NULL)
+	{
+		x_equat_postfix = new char[strlen(x_equat_postfix_) + 1];
+		strcpy(x_equat_postfix, x_equat_postfix_);
+	}
+
+	else
+	{
+		x_equat_postfix = NULL;
+	}
+
+	if (y_equat_postfix_ != NULL)
+	{
+		y_equat_postfix = new char[strlen(y_equat_postfix_) + 1];
+		strcpy(y_equat_postfix, y_equat_postfix_);
+	}
+
+	else
+	{
+		y_equat_postfix = NULL;
 	}
 
 	if (projection_family_ != NULL)
@@ -136,7 +182,7 @@ Projection <T> ::Projection(const T R_, const T lon0_, const T dx_, const T dy_,
 
 
 template <typename T>
-Projection <T> ::Projection ( const Projection <T> &proj ) : R ( proj.R ), lon0 ( proj.lon0 ), dx ( proj.dx ), dy ( proj.dy ), c ( proj.c )
+Projection <T> ::Projection(const Projection <T> &proj) : R(proj.R), lon0(proj.lon0), dx(proj.dx), dy(proj.dy), c(proj.c)
 {
 
 	if (proj.x_equat != NULL)
@@ -159,6 +205,28 @@ Projection <T> ::Projection ( const Projection <T> &proj ) : R ( proj.R ), lon0 
 	else
 	{
 		y_equat = NULL;
+	}
+
+	if (proj.x_equat_postfix != NULL)
+	{
+		x_equat_postfix = new char[strlen(proj.x_equat_postfix) + 1];
+		strcpy(x_equat_postfix, proj.x_equat_postfix);
+	}
+
+	else
+	{
+		x_equat_postfix = NULL;
+	}
+
+	if (proj.y_equat_postfix != NULL)
+	{
+		y_equat_postfix = new char[strlen(proj.y_equat_postfix) + 1];
+		strcpy(y_equat_postfix, proj.y_equat_postfix);
+	}
+
+	else
+	{
+		y_equat_postfix = NULL;
 	}
 
 	if (proj.projection_family != NULL)
@@ -212,6 +280,28 @@ Projection <T> ::Projection(const Projection <T> *proj) : R(proj->R), lon0(proj-
 		y_equat = NULL;
 	}
 
+	if (proj->x_equat_postfix != NULL)
+	{
+		x_equat_postfix = new char[strlen(proj->x_equat_postfix) + 1];
+		strcpy(x_equat_postfix, proj->x_equat_postfix);
+	}
+
+	else
+	{
+		x_equat_postfix = NULL;
+	}
+
+	if (proj->y_equat_postfix != NULL)
+	{
+		y_equat_postfix = new char[strlen(proj->y_equat_postfix) + 1];
+		strcpy(y_equat_postfix, proj->y_equat_postfix);
+	}
+
+	else
+	{
+		y_equat_postfix = NULL;
+	}
+
 	if (proj->projection_family != NULL)
 	{
 		projection_family = new char[strlen(proj->projection_family) + 1];
@@ -251,6 +341,18 @@ Projection <T>:: ~Projection()
                 y_equat = NULL;
         }
 
+	if (x_equat_postfix != NULL)
+	{
+		delete[] x_equat_postfix;
+		x_equat_postfix = NULL;
+	}
+
+	if (y_equat_postfix != NULL)
+	{
+		delete[] y_equat_postfix;
+		y_equat_postfix = NULL;
+	}
+
 	if (projection_family != NULL)
 	{
 		delete[] projection_family;
@@ -263,7 +365,6 @@ Projection <T>:: ~Projection()
                 projection_name = NULL;
         }
 }
-
 
 
 template <typename T>
@@ -297,6 +398,39 @@ void Projection <T> :: setYEquat ( const char * y_equat_ )
         }
 }
 
+
+template <typename T>
+void Projection <T> ::setXEquatPostfix(const char * x_equat_postfix_)
+{
+	if (x_equat_postfix_ != NULL)
+	{
+		x_equat_postfix_ = new char[strlen(x_equat_postfix_) + 1];
+		strcpy(x_equat_postfix, x_equat_postfix_);
+	}
+
+	else
+	{
+		x_equat_postfix = NULL;
+	}
+}
+
+
+template <typename T>
+void Projection <T> ::setYEquatPostfix(const char * y_equat_postfix_)
+{
+	if (y_equat_postfix_ != NULL)
+	{
+		y_equat_postfix = new char[strlen(y_equat_postfix_) + 1];
+		strcpy(y_equat_postfix, y_equat_postfix_);
+	}
+
+	else
+	{
+		y_equat_postfix = NULL;
+	}
+}
+
+
 template <typename T>
 void Projection <T> ::setProjectionFamily(const char * projection_family_)
 {
@@ -326,6 +460,73 @@ void Projection <T> ::setProjectionName ( const char * projection_name_ )
         {
                 projection_name = NULL;
         }
+}
+
+
+template <typename T>
+void Projection <T> ::XEquatToPostfix()
+{
+	//Convert the infix notation to the postfix notation
+	char x_equat_postfix_[MAX_TEXT_LENGTH];
+
+	try
+	{
+		if (x_equat_postfix != NULL)
+			delete x_equat_postfix;
+
+		//Parse X equation
+		ArithmeticParser::infixToPostfix(x_equat, x_equat_postfix_);
+		x_equat_postfix = new char[strlen(x_equat_postfix_) + 1];
+		strcpy(x_equat_postfix, x_equat_postfix_);
+	}
+
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Throw exception
+		throw;
+	}
+
+	//Throw exception
+	catch (Error & error)
+	{
+		//Throw exception
+		throw error;
+	}
+}
+
+
+template <typename T>
+void Projection <T> ::YEquatToPostfix()
+{
+	//Convert the infix notation to the postfix notation
+	char y_equat_postfix_[MAX_TEXT_LENGTH];
+
+	try
+	{
+		//Convert the infix notation to the postfix notation
+		if (y_equat_postfix != NULL)
+			delete y_equat_postfix;
+
+		//Parse Y equation
+		ArithmeticParser::infixToPostfix(y_equat, y_equat_postfix_);
+		y_equat_postfix = new char[strlen(y_equat_postfix_) + 1];
+		strcpy(y_equat_postfix, y_equat_postfix_);
+	}
+
+	//Throw exception
+	catch (ErrorMath <T> & error)
+	{
+		//Throw exception
+		throw;
+	}
+
+	//Throw exception
+	catch (Error & error)
+	{
+		//Throw exception
+		throw error;
+	}
 }
 
 
