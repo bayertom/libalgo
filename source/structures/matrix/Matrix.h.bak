@@ -1,0 +1,207 @@
+// Description: Matrix and basic operator
+
+// Copyright (c) 2010 - 2012
+// Tomas Bayer
+// Charles University in Prague, Faculty of Science
+// bayertom@natur.cuni.cz
+
+// This library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+
+#ifndef Matrix_H
+#define Matrix_H
+
+#include <vector>
+#include <ostream>
+#include <iostream>
+#include <iomanip>
+
+
+//New user defined type: items of matrix
+template <typename T>
+struct TMatrix
+{
+        typedef std::vector < std::vector <T> > Type;
+};
+
+
+
+//Matrix definition and basic operators
+template <typename T>
+class Matrix
+{
+        private:
+                typename TMatrix <T>::Type items;		//Matrix
+                const unsigned int rows_count;			//Total rows_count
+                const unsigned int columns_count;		//Total columns_count
+
+        public:
+
+                Matrix ( unsigned int m_rows = 1, unsigned int n_columns = 1, const T item = 0 ) :
+                        rows_count ( m_rows ), columns_count ( n_columns ), items ( m_rows, std::vector <T> ( n_columns, item ) ) {}
+                Matrix ( unsigned int m_rows, unsigned int n_columns, const T item, const T eye );
+
+                template <typename U>
+                Matrix ( const Matrix <U> &M ) ;
+
+                ~Matrix();
+
+        public:
+                //Get rows and columns count
+                unsigned int rows() const {return rows_count;}
+                unsigned int cols() const {return columns_count;}
+                typename TMatrix <T>::Type const & getItems () const {return items;}
+                typename TMatrix <T>::Type & getItems ()  {return items;}
+
+                //Get row, col
+                Matrix < T > row ( unsigned int r ) const;
+                Matrix < T > col ( unsigned int c ) const;
+
+                //Set row, col, submatrix
+                void row ( const  Matrix <T> & R, const unsigned int r );
+                void col ( const Matrix <T> & C, const unsigned int c );
+                void submat ( const Matrix <T> & A, const unsigned int row, const unsigned int col );
+
+                //Other methods
+                void print ( std::ostream * output = &std::cout ) const;
+
+        public:
+
+                //Matrix operators =, ==, !=
+                Matrix <T> & operator = ( const Matrix <T> &M );
+
+                //template <typename U>
+                T & operator = ( const Matrix <T> &M );
+
+                //template <typename U>
+                Matrix <T> & operator = ( const T & item );
+
+                bool operator == ( const Matrix <T> &M ) const;
+                bool operator != ( const Matrix <T> &M ) const;
+
+                //Matrix operators + : Matrix + Matrix
+                //template <tyTpename U>
+                Matrix <T> & operator + ( const Matrix <T> &M ) const;
+
+                //Matrix operators + : Matrix(1, 1) + scalar
+                //template <typename U>
+                Matrix <T> & operator + ( const T & val ) const;
+
+                //Matrix operators + : Scalar + Matrix(1, 1)
+                //template <typename U>
+                T & operator + ( const Matrix <T> &M ) const;
+
+                //Matrix operators - : Matrix - Matrix
+                //template <typename U>
+                Matrix <T> & operator - ( const Matrix <T> &M ) const;
+
+                //Matrix operators - : Matrix(1, 1) - scalar
+                //template <typename U>T
+                Matrix <T> & operator - ( const T & val ) const;
+
+                //Matrix operators - : Scalar - Matrix(1, 1)
+                //template <typename U>
+                T & operator - ( const Matrix <T> &M ) const;
+
+                //Matrix  operators += : Matrix + Matrix
+                template <typename T>
+                Matrix <T> & operator += ( const Matrix < T > &M );
+
+                //Matrix  operators += : Matrix (1, 1) + Scalar
+                //template <typename U>
+                Matrix <T> & operator += ( const T & val );
+
+                //Matrix operTators += : Scalar + Matrix(1, 1)
+                //template <typename U>
+                T & operator += ( const Matrix <T> &M ) const;
+
+                //Matrix  operators -= : Matrix - Matrix
+                //template <typename U>
+                Matrix <T> & operator -= ( const Matrix < T > &M );
+
+                //Matrix  operators -= : Matrix (1, 1) - Scalar
+                /template <typename U>
+                Matrix <T> & operator -= ( consTt U & val );
+
+                //Matrix operators -= : Scalar - Matrix(1, 1)
+                //template <typename U>
+                T & operator -= ( const Matrix <T> &M ) const;
+
+                //Matrix  operator *= : Matrix x Matrix
+                //template <typename U>
+                Matrix <T> & operator *= ( const Matrix <T> &M );
+
+                //Matrix  operator *= : Matrix x Scalar
+                //template <typename U>
+                Matrix <T> & operator *= ( const T & val );
+
+                //Matrix  operator *= : Matrix (1, 1) x Scalar
+                //template <typename U>
+                T & operator *= ( const T & val );
+
+                //Matrix  operator *= : Scalar x Matrix (1, 1)
+                //template <typename U>
+                T & operator *= ( const Matrix <T> &M );
+
+                //Matrix  operator *: Matrix x Matrix
+                //template <typename U>
+                Matrix <T> operator * ( const Matrix <T> &M ) const;
+
+                //Matrix  operator *: Matrix x Scalar
+                //template <typename U>
+                Matrix <T> operator * ( const T & val ) const;
+
+                //Matrix  operator *: Matrix (1, 1) x scalar
+                //template <typename U>
+                T & operator * ( const T & val ) const;
+
+                //Matrix  operator *: Scalar x Matrix(1,1)
+                //template <typename U>
+                T & operator * ( const TMatrix <T> &M ) const;
+
+                //Matrix  operator /: Matrix / Scalar
+                /template <typename T>
+                Matrix <T> operator / ( const U & val ) const;
+
+                //Matrix  operator /: Matrix (1, 1) x scalar
+                //template <typename U>
+                T & operTator / ( const T & val ) const;
+
+                //Matrix  operator /: Scalar x Matrix(1,1)
+                //template <typename U>
+                U & operator / ( const Matrix <T> &M ) const;
+
+                //template <typename U>
+                Matrix <T> operator % ( const T & val ) const;
+
+                //template <typename U>
+                Matrix <T> operator | ( const Matrix <T> &M ) const;
+
+
+                //Matrix operator (row, col)
+                T & operator() ( const unsigned int row, const unsigned int col );
+                T const & operator() ( const unsigned int row, const unsigned int col ) const;
+
+                //Matrix operator (r1, r2, c1, c2): get submatrix of the matrix
+                Matrix <T>  operator () ( const unsigned int r1, const unsigned int r2,
+                                          const unsigned int c1, const unsigned int c2 ) const;
+
+                //Overriden operator <<
+                friend void operator << ( std::ostream & output, const Matrix <T> &m ) { m.print ( &output ); }
+
+};
+
+#include "Matrix.hpp"
+
+#endif
