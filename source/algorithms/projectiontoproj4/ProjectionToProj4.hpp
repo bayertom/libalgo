@@ -111,8 +111,8 @@ std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *pro
 					proj4_string += " +lat_ts=" + to_string(lat0);
 				}
 
-				//Pseudocylindrical projection use lat_1
-				else if (typeid(*(proj)) == typeid(ProjectionPseudoCylindrical<T>))
+				//Pseudoconic projection use lat_1
+				else if (typeid(*(proj)) == typeid(ProjectionPseudoConic<T>))
 				{
 					proj4_string += " +lat_1=" + to_string(lat0);
 				}
