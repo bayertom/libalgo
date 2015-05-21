@@ -1,1 +1,0 @@
-#include "removeSimplexHalfEdge.h"

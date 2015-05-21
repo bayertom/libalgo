@@ -1,1 +1,0 @@
-#include "ProjectionAzimuthal.h"
