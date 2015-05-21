@@ -30,7 +30,7 @@ template <typename T>
 std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *proj)
 {
 	//Convert projection definition to Proj.4 string
-	//Return empty string, if projection is not supported by Proj.4
+	//Return empty string, if the projection is not supported by Proj.4
 	std::string proj4_string = ""; 
 	TProjNamesMap proj_names_list;
 
@@ -122,8 +122,6 @@ std::string ProjectionToProj4::ProjectionToProj4String(const Projection <T> *pro
 				{
 					proj4_string += " +lat_0=90";
 				}
-
-				
 
 				//Other projections use current lat_0
 				else
