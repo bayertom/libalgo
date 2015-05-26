@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CFLAGS = --pedantic -Wall -std=c99 -Oi2
+AM_CFLAGS = --pedantic -Wall -std=c99 -O3
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES = libalgo.la
@@ -89,11 +89,8 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/algorithms/bisector/Bisector.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/NonLinearLeastSquares.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV3.cpp \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV3R.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ2.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjC.cpp \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjB3R.cpp \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ3R.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ4.cpp \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ.cpp \
@@ -108,13 +105,11 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/algorithms/transformation/Transformation2D.cpp \
     ./libalgo/source/algorithms/matrixoperations/MatrixOperations.cpp \
     ./libalgo/source/algorithms/leastsquaresfitting/LeastSquaresFitting.cpp \
-    ./libalgo/source/algorithms/translate/Translate.cpp \
     ./libalgo/source/algorithms/turningfunction/TurningFunction.cpp \
     ./libalgo/source/algorithms/swappingcriteria/SwappingCriteria.cpp \
     ./libalgo/source/algorithms/facearea/FaceArea.cpp \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative2Var.cpp \
     ./libalgo/source/algorithms/numderivative/NumDerivative.cpp \
-    ./libalgo/source/algorithms/numderivative/FProjEquationDerivative6VarR.cpp \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative5Var.cpp \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative1Var.cpp \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative6Var.cpp \
@@ -164,27 +159,16 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/structures/point/Point3DCartesianProjected.cpp \
     ./libalgo/source/structures/point/Node3DCartesian.cpp \
     ./libalgo/source/structures/projection/ProjectionPseudoConic.cpp \
-    ./libalgo/source/structures/projection/ProjectionConicLimits.cpp \
     ./libalgo/source/structures/projection/ProjectionPseudoAzimuthal.cpp \
-    ./libalgo/source/structures/projection/ProjectionPolyConicLimits.cpp \
-    ./libalgo/source/structures/projection/ProjectionPseudoConicLimits.cpp \
     ./libalgo/source/structures/projection/ProjectionAzimuthal.cpp \
     ./libalgo/source/structures/projection/ProjectionPseudoCylindrical.cpp \
-    ./libalgo/source/structures/projection/ProjectionAzimuthalLimits.cpp \
-    ./libalgo/source/structures/projection/ProjectionLimits.cpp \
     ./libalgo/source/structures/projection/Projection.cpp \
-    ./libalgo/source/structures/projection/Limits.cpp \
     ./libalgo/source/structures/projection/ProjectionMiscellaneous.cpp \
     ./libalgo/source/structures/projection/ProjectionCylindrical.cpp \
     ./libalgo/source/structures/projection/Sample.cpp \
-    ./libalgo/source/structures/projection/ProjectionEllipsoidalLimits.cpp \
-    ./libalgo/source/structures/projection/ProjectionCylindricalLimits.cpp \
     ./libalgo/source/structures/projection/ProjectionPolyConic.cpp \
     ./libalgo/source/structures/projection/ProjectionConic.cpp \
-    ./libalgo/source/structures/projection/ProjectionPseudoCylindricalLimits.cpp \
-    ./libalgo/source/structures/projection/ProjectionPseudoAzimuthalLimits.cpp \
     ./libalgo/source/structures/projection/ProjectionEllipsoidal.cpp \
-    ./libalgo/source/structures/projection/ProjectionMiscellaneousLimits.cpp \
     ./libalgo/source/structures/line/Parallel.cpp \
     ./libalgo/source/structures/line/HalfEdge.cpp \
     ./libalgo/source/structures/line/Edge.cpp \
@@ -205,9 +189,9 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/structures/face/VoronoiCell.cpp \
     ./libalgo/source/structures/face/Face.cpp \
     ./libalgo/source/io/File.cpp \
+    ./libalgo/source/io/GeoJSONExport.cpp \
     ./libalgo/source/io/Format.cpp \
-    ./libalgo/source/io/DXFExport.cpp \
-    ./libalgo/source/io/GeoJSONExport.cpp 
+    ./libalgo/source/io/DXFExport.cpp
 
 nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTARRatio.h \
     ./libalgo/source/comparators/sortSamplesByVoronoiCellTangentFunctionRatio.h \
@@ -294,11 +278,8 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/algorithms/bisector/Bisector.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ3.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ.h \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ3R.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV4.h \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjV3R.h \
-    ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjB3R.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ4.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjJ2.h \
     ./libalgo/source/algorithms/nonlinearleastsquares/FAnalyzeProjC.h \
@@ -313,14 +294,12 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/algorithms/transformation/HelmertTransformation2D.h \
     ./libalgo/source/algorithms/matrixoperations/MatrixOperations.h \
     ./libalgo/source/algorithms/leastsquaresfitting/LeastSquaresFitting.h \
-    ./libalgo/source/algorithms/translate/Translate.h \
     ./libalgo/source/algorithms/turningfunction/TurningFunction.h \
     ./libalgo/source/algorithms/swappingcriteria/SwappingCriteria.h \
     ./libalgo/source/algorithms/facearea/FaceArea.h \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative6Var.h \
     ./libalgo/source/algorithms/numderivative/NumDerivative.h \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative1Var.h \
-    ./libalgo/source/algorithms/numderivative/FProjEquationDerivative6VarR.h \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative5Var.h \
     ./libalgo/source/algorithms/numderivative/FProjEquationDerivative2Var.h \
     ./libalgo/source/algorithms/pointellipseposition/PointEllipsePosition.h \
@@ -369,29 +348,18 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/point/Point3DCartesianProjected.h \
     ./libalgo/source/structures/point/Node3DCartesianProjected.h \
     ./libalgo/source/structures/point/Node3DCartesian.h \
-    ./libalgo/source/structures/projection/ProjectionPseudoAzimuthalLimits.h \
-    ./libalgo/source/structures/projection/ProjectionAzimuthalLimits.h \
     ./libalgo/source/structures/projection/Sample.h \
-    ./libalgo/source/structures/projection/Limits.h \
     ./libalgo/source/structures/projection/ProjectionPolyConic.h \
     ./libalgo/source/structures/projection/ProjectionEllipsoidal.h \
     ./libalgo/source/structures/projection/ProjectionPseudoCylindrical.h \
     ./libalgo/source/structures/projection/ProjectionMiscellaneous.h \
     ./libalgo/source/structures/projection/ProjectionPseudoConic.h \
     ./libalgo/source/structures/projection/ProjectionConic.h \
-    ./libalgo/source/structures/projection/ProjectionCylindricalLimits.h \
     ./libalgo/source/structures/projection/ProjectionPseudoAzimuthal.h \
-    ./libalgo/source/structures/projection/ProjectionPseudoCylindricalLimits.h \
-    ./libalgo/source/structures/projection/ProjectionPolyConicLimits.h \
     ./libalgo/source/structures/projection/Projection.h \
     ./libalgo/source/structures/projection/Projection_bak.h \
-    ./libalgo/source/structures/projection/ProjectionConicLimits.h \
-    ./libalgo/source/structures/projection/ProjectionLimits.h \
-    ./libalgo/source/structures/projection/ProjectionPseudoConicLimits.h \
     ./libalgo/source/structures/projection/ProjectionAzimuthal.h \
     ./libalgo/source/structures/projection/ProjectionCylindrical.h \
-    ./libalgo/source/structures/projection/ProjectionEllipsoidalLimits.h \
-    ./libalgo/source/structures/projection/ProjectionMiscellaneousLimits.h \
     ./libalgo/source/structures/line/PolyLine.h \
     ./libalgo/source/structures/line/Edge.h \
     ./libalgo/source/structures/line/HalfEdge.h \
@@ -413,9 +381,9 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/face/VoronoiCell.h \
     ./libalgo/source/structures/face/Face.h \
     ./libalgo/source/io/DXFExport.h \
-    ./libalgo/source/io/GeoJSONExport.h \
     ./libalgo/source/io/File.h \
     ./libalgo/source/io/Format.h \
+    ./libalgo/source/io/GeoJSONExport.h \
     ./libalgo/source/algorithms/linelineangle/LineLineAngle.hpp \
     ./libalgo/source/algorithms/bisection/Bisection.hpp \
     ./libalgo/source/algorithms/shapecontext/ShapeContext.hpp \
@@ -434,7 +402,6 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/algorithms/transformation/HomotheticTransformation2D.hpp \
     ./libalgo/source/algorithms/matrixoperations/MatrixOperations.hpp \
     ./libalgo/source/algorithms/leastsquaresfitting/LeastSquaresFitting.hpp \
-    ./libalgo/source/algorithms/translate/Translate.hpp \
     ./libalgo/source/algorithms/turningfunction/TurningFunction.hpp \
     ./libalgo/source/algorithms/swappingcriteria/SwappingCriteria.hpp \
     ./libalgo/source/algorithms/facearea/FaceArea.hpp \
@@ -480,7 +447,6 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/projection/Projection.hpp \
     ./libalgo/source/structures/projection/ProjectionPseudoCylindrical.hpp \
     ./libalgo/source/structures/projection/Sample.hpp \
-    ./libalgo/source/structures/projection/ProjectionLimits.hpp \
     ./libalgo/source/structures/line/HalfEdge.hpp \
     ./libalgo/source/structures/line/Parallel.hpp \
     ./libalgo/source/structures/line/Meridian.hpp \
@@ -495,5 +461,5 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/structures/face/Face.hpp \
     ./libalgo/source/structures/face/VoronoiCell.hpp \
     ./libalgo/source/io/DXFExport.hpp \
-    ./libalgo/source/io/GeoJSONExport.hpp \
-    ./libalgo/source/io/Format.hpp 
+    ./libalgo/source/io/Format.hpp \
+    ./libalgo/source/io/GeoJSONExport.hpp
