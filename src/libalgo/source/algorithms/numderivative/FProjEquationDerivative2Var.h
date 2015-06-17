@@ -38,9 +38,9 @@ class FProjEquationDerivative2Var
 
         private:
                 //Map projection parameters
-		const char * equation_postfix;
-		const char * ftheta_equat_postfix;
-		const char * theta0_equat_postfix;
+		const TPostfixNotationDel * equation_postfix;
+		const TPostfixNotationDel * ftheta_equat_postfix;
+		const TPostfixNotationDel  *theta0_equat_postfix;
                 const T R;
                 const T a;
                 const T b;
@@ -54,7 +54,7 @@ class FProjEquationDerivative2Var
 
         public:
 
-		FProjEquationDerivative2Var(const char * equation_postfix_, const char * ftheta_equat_postfix_, const char * theta0_equat_postfix_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_) :
+		FProjEquationDerivative2Var(const TPostfixNotationDel * equation_postfix_, const TPostfixNotationDel * ftheta_equat_postfix_, const TPostfixNotationDel * theta0_equat_postfix_, const T R_, const T a_, const T b_, const T dx_, const T dy_, const T c_, const T lat0_, const T lat1_, const T lat2_, const T lon0_) :
 			equation_postfix(equation_postfix_), ftheta_equat_postfix(ftheta_equat_postfix_), theta0_equat_postfix(theta0_equat_postfix_), R(R_), a(a_), b(b_), dx(dx_), dy(dy_), c(c_), lat0(lat0_), lat1(lat1_), lat2(lat2_), lon0(lon0_) {}
 
                 T operator () ( const Matrix <T> &arg )

@@ -197,6 +197,19 @@ typedef enum
 } TAnalysisMethod;
 
 
+// Parameters of the projection usedin the incremental algorithm
+template <typename T>
+struct TSampleProjection
+{
+	T weight;
+	Projection <T> * projection;
+	TProjectionAspect aspect;
+	Matrix <T> X, XMIN, XMAX;
+
+	TSampleProjection( const unsigned int n) : weight(0.0), projection(NULL), aspect (NormalAspect), X(n, 1), XMIN(n, 1), XMAX(n, 1) {}
+};
+
+
 //Parametrs of the analysis get from the command line
 template <typename T>
 struct TAnalysisParameters
@@ -276,6 +289,11 @@ class CartAnalysis
                 static void computeAnalysisForAllSamplesMLS ( Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
                                 typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
                                 unsigned int & total_created_or_thrown_samples, std::ostream * output = &std::cout );
+
+		//template <typename T>
+		//static void analyzeProjectionIncr(Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+		//	typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
+		//	unsigned int & total_created_or_thrown_samples, std::ostream * output = &std::cout);
 
                 template <typename T>
                 static bool checkSample ( const typename TMeridiansList <T> ::Type & meridians, const typename TParallelsList <T> ::Type & parallels, const Container <Node3DCartesian <T> *> &nl_test,

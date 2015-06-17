@@ -44,7 +44,7 @@ class ProjectionCylindrical : virtual public Projection <T>
         public:
 
 		ProjectionCylindrical() : Projection <T>(), cart_pole(MAX_LAT, 0.0), lon_dir(NormalDirection), lat0(45.0), lat1(45.0), lat2(45.0) {}
-		ProjectionCylindrical(const T R_, const T lat0_, const T lat1_, const T lat2_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const char * x_equat_postfix_, const char * y_equat_postfix_, 
+		ProjectionCylindrical(const T R_, const T lat0_, const T lat1_, const T lat2_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, const TPostfixNotationDel &x_equat_postfix_, const TPostfixNotationDel &y_equat_postfix_, 
 			const char * projection_family_, const char * projection_name_) : Projection <T>(R_, lon0_, dx_, dy_, c_, x_equat_, y_equat_, x_equat_postfix_, y_equat_postfix_, projection_family_, projection_name_), lat0(lat0_), lat1(lat1_), lat2(lat2_), cart_pole(latp_, lonp_), lon_dir(lon_dir_)
 		{
 		}
@@ -82,10 +82,10 @@ class ProjectionCylindrical : virtual public Projection <T>
 		virtual const char * getTheta0EquatTheta() const { return NULL; }
 		virtual char * getFThetaEquatTheta() { return NULL; }
 		virtual char * getTheta0EquatTheta() { return NULL; }            
-                virtual const char * getFThetaEquatPostfix() const { return NULL; }
-		virtual const char * getTheta0EquatPostfix() const { return NULL; }
-		virtual char * getFThetaEquatPostfix() { return NULL; }
-		virtual char * getTheta0EquatPostfix() { return NULL; }
+                virtual const TPostfixNotationDel * getFThetaEquatPostfix() const { return NULL; } 
+		virtual const TPostfixNotationDel * getTheta0EquatPostfix() const { return NULL; } 
+		virtual TPostfixNotationDel * getFThetaEquatPostfix() { return NULL; }
+		virtual TPostfixNotationDel * getTheta0EquatPostfix() { return NULL; }
                 
                 virtual void setCartPole ( const Point3DGeographic <T> & cart_pole_ )  { cart_pole = cart_pole_;}
                 virtual void setLat0 ( const T lat0_ ) {lat0 = lat0_;}
@@ -96,8 +96,8 @@ class ProjectionCylindrical : virtual public Projection <T>
                 virtual void setLonDir ( const TTransformedLongtitudeDirection lon_dir_ ) { lon_dir = lon_dir_; }
 		virtual void setFThetaEquat(const char * ftheta_equat_) {};
 		virtual void setTheta0Equat(const char * theta0_equat_) {};
-		virtual void setFThetaEquatPostfix(const char * ftheta_equat_postfix_) {};
-		virtual void setTheta0EquatPostfix(const char * theta0_equat_postfix_) {};
+		virtual void setFThetaEquatPostfix(const TPostfixNotationDel & ftheta_equat_postfix_) {};
+		virtual void setTheta0EquatPostfix(const TPostfixNotationDel & theta0_equat_postfix_) {};
 		virtual void FThetaEquatToPostfix() {};
 		virtual void Theta0EquatToPostfix() {};
 

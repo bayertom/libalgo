@@ -31,6 +31,8 @@
 
 #include "libalgo/source/const/Const.h"
 
+#include "libalgo/source/algorithms/chartonum/CharToNum.h"
+
 #include "libalgo/source/exceptions/ErrorMathInvalidArgument.h"
 #include "libalgo/source/exceptions/ErrorMathOverflow.h"
 #include "libalgo/source/exceptions/ErrorMathZeroDevision.h"
@@ -198,7 +200,7 @@ T ArithmeticParser::parseEquation(const char * equation, char ** equation_postfi
 
 
 template <typename T>
-T ArithmeticParser::parseEquation(const char * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output)
+T ArithmeticParser::parseEquation(const TPostfixNotationDel * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception, std::ostream * output)
 {
 	//Parse equation from the infix notation to the postfix notation
 	T res = 0;
@@ -240,35 +242,34 @@ T ArithmeticParser::parseEquation(const char * equation_postfix, const T lat, co
 
 
 template <typename T>
-T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta)
+T ArithmeticParser::evaluatePostfixEquation(const TPostfixNotationDel * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta)
 {
 	//Evaluate expression in the postfix notation
+	unsigned int index = 0, n = equation_postfix->size();
 	T result = 0.0;
 
+	//Implement stack as vector (faster than deque)
+	std::stack <T, std::vector<T> > operands;
+
 	//Process postfix notation
-	std::stack <T> operands;
-
-	while (*equation_postfix != '\0')
+	while ( index < n )
 	{
-		//NUMBER
-		if (isdigit(*equation_postfix))
-		{
-			char number_text[32];
+		//Get actual token
+		const char *function_text = (*equation_postfix)[index++].c_str();
 
+		//Number
+		if (isdigit(function_text[0]))
+		{
 			//Find number and convert to T
-			findSequence(&equation_postfix, number_text);
-			T number = atof(number_text);
+			T number = CharToNum::atof2<double>(function_text);
 
 			//Add into stack
 			operands.push(number);
 		}
 
 		//Function or variable
-		else if (isalpha(*equation_postfix))
+		else if (isalpha(function_text[0]))
 		{
-			char function_text[32];
-			findSequence(&equation_postfix, function_text);
-
 			//Functions **************************************************************************************************************
 
 			//SIN(x)
@@ -801,7 +802,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 		//OPERATORS **************************************************************************************************************
 
 		//Operators ^ * / + - _ (sorted according the priority)
-		else if ((*equation_postfix == '^') || (*equation_postfix == '*') || (*equation_postfix == '/') || (*equation_postfix == '+') || (*equation_postfix == '-') || (*equation_postfix == '_'))
+		else if ((strcmp(function_text, opers[o_power]) == 0) || (strcmp(function_text, opers[o_multiply]) == 0) || (strcmp(function_text, opers[o_divide]) == 0) || (strcmp(function_text, opers[o_plus]) == 0) || 
+			 (strcmp(function_text, opers[o_minus]) == 0) || (strcmp(function_text, opers[o_unary_minus]) == 0) )
 		{
 			//Empty stack ?
 			if (operands.empty()) throw ErrorParse("ErrorParse: ", "Invalid second argument for operation +, -, *, /.");
@@ -815,7 +817,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 			//Process the second operand only if there is a binary operator
 			T op1 = 0.0;
 
-			if ((*equation_postfix == '*') || (*equation_postfix == '/') || (*equation_postfix == '^') || (*equation_postfix == '+') || (*equation_postfix == '-'))
+			if ((strcmp(function_text, opers[o_multiply]) == 0) || (strcmp(function_text, opers[o_divide]) == 0) || (strcmp(function_text, opers[o_power]) == 0) || (strcmp(function_text, opers[o_plus]) == 0) ||
+			    (strcmp(function_text, opers[o_minus]) == 0))
 			{
 				//Pop the first operand
 				op1 = operands.top();
@@ -824,8 +827,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 				operands.pop();
 			}
 
-			//Compute result (Power)
-			if (*equation_postfix == '^')
+			//Compute result (Power ^)
+			if (strcmp(function_text, opers[o_power]) == 0)
 			{
 				//Convergate to zero
 				if (op2 < -MAX_FLOAT_EXPONENT)  result = 0;
@@ -838,8 +841,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 				result = pow(op1, op2);
 			}
 
-			//Compute result (Multiply)
-			else if (*equation_postfix == '*')
+			//Compute result (Multiply *)
+			else if (strcmp(function_text, opers[o_multiply]) == 0)
 			{
 				//Exception
 				if (op2 > MAX_FLOAT || op1 > MAX_FLOAT)
@@ -850,8 +853,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 				result = op1 * op2;
 			}
 
-			//Compute result (Divide)
-			else if (*equation_postfix == '/')
+			//Compute result (Divide /)
+			else if (strcmp(function_text, opers[o_divide]) == 0)
 			{
 				//Exception
 				if (fabs(op2) < MIN_FLOAT)
@@ -862,8 +865,8 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 				result = op1 / op2;
 			}
 
-			//Compute result (Add)
-			else if (*equation_postfix == '+')
+			//Compute result (Add +)
+			else if (strcmp(function_text, opers[o_plus]) == 0)
 			{
 				//Exception
 				if (fabs(op2) + fabs(op1) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation_postfix ", "x + y, result > MAX", op2);
@@ -872,7 +875,7 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 			}
 
 			//Compute result (Unary or binary -)
-			else if (*equation_postfix == '-' || *equation_postfix == '_')
+			else if ((strcmp(function_text, opers[o_minus]) == 0) || (strcmp(function_text, opers[o_unary_minus]) == 0))
 			{
 				//Exception
 				if (fabs(op2) > MAX_FLOAT) throw ErrorMathOverflow <T>("ErrorMathOverflow: can not parse equation ", "x - y, number > MAX", op2);
@@ -884,15 +887,6 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 
 			//Add result to the stack
 			operands.push(result);
-
-			//Jump to next char
-			equation_postfix++;
-		}
-
-		//Space, TAB
-		else if ((*equation_postfix == ' ') || (*equation_postfix == '\t'))
-		{
-			equation_postfix++;
 		}
 
 		//Illegal character
@@ -935,7 +929,6 @@ T ArithmeticParser::evaluatePostfixEquation(const char * equation_postfix, const
 	{
 		throw ErrorParse("ErrorParse: can not parse equation_postfix, ", " no equation_postfix.");
 	}
-
 }
 
 

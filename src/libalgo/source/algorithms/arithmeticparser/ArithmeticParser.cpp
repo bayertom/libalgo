@@ -89,7 +89,19 @@ const char * functs [] =
 };
 
 
-void ArithmeticParser::init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list )
+//List of operators
+const char * opers[] =
+{
+	"+",
+	"-",
+	"*",
+	"/",
+	"^",
+	"_"
+};
+
+
+void ArithmeticParser::init(TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list, TVarConsFunctMap & opers_list)
 {
         //Add variables, constants, functions to the map to enable the search
 
@@ -146,6 +158,14 @@ void ArithmeticParser::init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & c
         functs_list[functs[f_sqrt]] = f_sqrt;
         functs_list[functs[f_abs]] = f_abs;
         functs_list[functs[f_sign]] = f_sign;
+
+	//Operators
+	opers_list[opers[o_plus]] = o_plus;
+	opers_list[opers[o_minus]] = o_minus;
+	opers_list[opers[o_multiply]] = o_multiply;
+	opers_list[opers[o_divide]] = o_divide;
+	opers_list[opers[o_power]] = o_power;
+	opers_list[opers[o_unary_minus]] = o_unary_minus;
 }
 
 
@@ -160,15 +180,17 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
         std::stack < std::string> operators;
 
         //List of variables, constants, functions: initialize
-        TVarConsFunctMap vars_list, consts_list, functs_list;
-        init ( vars_list, consts_list, functs_list );
+        TVarConsFunctMap vars_list, consts_list, functs_list, opers_list;
+        init ( vars_list, consts_list, functs_list, opers_list );
 
         //Stack of binary or unary +- operators
         std::stack <TSignOperatorType> sign_types_temp;
 
 	//Empty equation return
 	if (infix == NULL)
+	{
 		return;
+	}
 
         //Process all characters of the infix equation
         while ( *infix != '\0' )
@@ -622,6 +644,30 @@ void ArithmeticParser::findSequence ( const char ** equation, char * operator_te
 
         //Correctly end char with \0
         *operator_text = '\0';
+}
+
+
+TPostfixNotationDel ArithmeticParser::delimitPostfixNotation(char *equation_postfix)
+{
+	//Delimit postfix notation from char
+	char *equation_delimit;
+	TPostfixNotationDel equation_postfix_del;
+
+	//Delimiters space, tabs
+	equation_delimit = strtok(equation_postfix, " \t");
+
+	while (equation_delimit)
+	{
+		//Convert to string
+		std::string postfix_del_string(equation_delimit);
+			
+		//Add to the list
+		equation_postfix_del.push_back(postfix_del_string);
+		
+		equation_delimit = strtok(NULL, " \t");
+	}
+
+	return equation_postfix_del;
 }
 
 

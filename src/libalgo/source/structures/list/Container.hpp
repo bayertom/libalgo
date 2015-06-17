@@ -762,7 +762,7 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                                         }
                                 }
 
-				//Test Fp equation
+				//Test Ftheta equation
 				else if (strcmp(terminator, "<ftheta>") * strcmp(terminator, "<Ftheta>") == 0)
 				{
 					//F(p) has already been defined
@@ -782,7 +782,7 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
 					}
 				}
 
-				//Test Fp equation
+				//Test Theta0 equation
 				else if (strcmp(terminator, "<theta0>") * strcmp(terminator, "<Theta0>") == 0)
 				{
 					//theta0 has already been defined
@@ -1075,7 +1075,6 @@ void Container <Projection <T> *, destructable> ::load ( const char * file, cons
                         if ( set_projection_type && set_name && set_x_equation && set_y_equation && set_lat_pole && set_lon_pole && set_lat0 &&
                                         set_lat1 && set_lat2 && set_lon0 && set_lon_dir && set_dx && set_dy && set_r && set_a && set_b )
                         {
-
 				//Convert the infix notation to the postfix notation
 				proj->XEquatToPostfix();
 				proj->YEquatToPostfix();

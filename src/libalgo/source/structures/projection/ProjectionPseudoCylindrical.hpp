@@ -26,9 +26,9 @@
 
 template <typename T>
 ProjectionPseudoCylindrical <T> ::ProjectionPseudoCylindrical(const T R_, const T lat0_, const T latp_, const T lonp_, const TTransformedLongtitudeDirection lon_dir_, const char * ftheta_equat_,
-	const char * theta0_equat_, const char * ftheta_equat_postfix_, const char * theta0_equat_postfix_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, 
-	const char * x_equat_postfix_, const char * y_equat_postfix_, const char * projection_family_, const char * projection_name_ ) : Projection <T>(R_, lon0_, dx_, dy_, c_, x_equat_, y_equat_, x_equat_postfix_, 
-	y_equat_postfix_, projection_family_, projection_name_), lat0(lat0_), cart_pole(latp_, lonp_), lon_dir(lon_dir_)
+	const char * theta0_equat_, const TPostfixNotationDel * ftheta_equat_postfix_, const TPostfixNotationDel * theta0_equat_postfix_, const T lon0_, const T dx_, const T dy_, const T c_, const char * x_equat_, const char * y_equat_, 
+	const TPostfixNotationDel &x_equat_postfix_, const TPostfixNotationDel &y_equat_postfix_, const char * projection_family_, const char * projection_name_ ) : Projection <T>(R_, lon0_, dx_, dy_, c_, x_equat_, y_equat_, x_equat_postfix_, 
+	y_equat_postfix_, projection_family_, projection_name_), lat0(lat0_), cart_pole(latp_, lonp_), lon_dir(lon_dir_), ftheta_equat_postfix(ftheta_equat_postfix_), theta0_equat_postfix(theta0_equat_postfix_)
 {
 
 	if (ftheta_equat != NULL)
@@ -54,34 +54,12 @@ ProjectionPseudoCylindrical <T> ::ProjectionPseudoCylindrical(const T R_, const 
 		theta0_equat = NULL;
 	}
 
-	if (ftheta_equat_postfix != NULL)
-	{
-		ftheta_equat_postfix = new char[strlen(ftheta_equat_postfix_) + 1];
-		strcpy(ftheta_equat_postfix, ftheta_equat_postfix_);
-	}
-
-	else
-	{
-		ftheta_equat_postfix = NULL;
-	}
-
-	if (theta0_equat_postfix_ != NULL)
-	{
-		theta0_equat_postfix_ = new char[strlen(theta0_equat_postfix_) + 1];
-		strcpy(theta0_equat_postfix, theta0_equat_postfix_);
-	}
-
-	else
-	{
-
-		theta0_equat_postfix = NULL;
-	}
 }
 
 
 
 template <typename T>
-ProjectionPseudoCylindrical <T> ::ProjectionPseudoCylindrical(const ProjectionPseudoCylindrical <T> &proj) : Projection <T>(proj), lat0(proj.lat0), cart_pole(proj.cart_pole), lon_dir(proj.lon_dir)
+ProjectionPseudoCylindrical <T> ::ProjectionPseudoCylindrical(const ProjectionPseudoCylindrical <T> &proj) : Projection <T>(proj), lat0(proj.lat0), cart_pole(proj.cart_pole), lon_dir(proj.lon_dir), ftheta_equat_postfix(proj.ftheta_equat_postfix), theta0_equat_postfix(proj.theta0_equat_postfix)
 {
 	if (proj.ftheta_equat != NULL)
 	{
@@ -105,27 +83,6 @@ ProjectionPseudoCylindrical <T> ::ProjectionPseudoCylindrical(const ProjectionPs
 		theta0_equat = NULL;
 	}
 
-	if (proj.ftheta_equat_postfix != NULL)
-	{
-		ftheta_equat_postfix = new char[strlen(proj.ftheta_equat_postfix) + 1];
-		strcpy(ftheta_equat_postfix, proj.ftheta_equat_postfix);
-	}
-
-	else
-	{
-		ftheta_equat_postfix = NULL;
-	}
-
-	if (proj.theta0_equat_postfix != NULL)
-	{
-		theta0_equat_postfix = new char[strlen(proj.theta0_equat_postfix) + 1];
-		strcpy(theta0_equat_postfix, proj.theta0_equat_postfix);
-	}
-
-	else
-	{
-		theta0_equat_postfix = NULL;
-	}
 }
 
 
@@ -143,18 +100,6 @@ ProjectionPseudoCylindrical <T>:: ~ProjectionPseudoCylindrical()
 	{
 		delete[] theta0_equat;
 		theta0_equat = NULL;
-	}
-
-	if (ftheta_equat_postfix != NULL)
-	{
-		delete[] ftheta_equat_postfix;
-		ftheta_equat_postfix = NULL;
-	}
-
-	if (theta0_equat_postfix != NULL)
-	{
-		delete[] theta0_equat_postfix;
-		theta0_equat_postfix = NULL;
 	}
 }
 
@@ -192,38 +137,6 @@ void ProjectionPseudoCylindrical <T> ::setTheta0Equat(const char * theta0_equat_
 
 
 template <typename T>
-void ProjectionPseudoCylindrical <T> ::setFThetaEquatPostfix(const char * ftheta_equat_postfix_)
-{
-	if (ftheta_equat_postfix_ != NULL)
-	{
-		ftheta_equat_postfix = new char[strlen(ftheta_equat_postfix_) + 1];
-		strcpy(ftheta_equat_postfix, ftheta_equat_postfix_);
-	}
-
-	else
-	{
-		ftheta_equat_postfix = NULL;
-	}
-}
-
-
-template <typename T>
-void ProjectionPseudoCylindrical <T> ::setTheta0EquatPostfix(const char * theta0_equat_postfix_)
-{
-	if (theta0_equat_postfix_ != NULL)
-	{
-		theta0_equat_postfix = new char[strlen(theta0_equat_postfix_) + 1];
-		strcpy(theta0_equat_postfix, theta0_equat_postfix_);
-	}
-
-	else
-	{
-		theta0_equat_postfix = NULL;
-	}
-}
-
-
-template <typename T>
 void ProjectionPseudoCylindrical <T> ::FThetaEquatToPostfix()
 {
 	//Convert the infix notation to the postfix notation
@@ -231,13 +144,16 @@ void ProjectionPseudoCylindrical <T> ::FThetaEquatToPostfix()
 
 	try
 	{
-		if (ftheta_equat_postfix != NULL)
-			delete ftheta_equat_postfix;
+		//Parse ftheta equation
+		if (ftheta_equat != NULL)
+		{
+			//Infix to postfix
+			char ftheta_equat_postfix_[MAX_TEXT_LENGTH];
+			ArithmeticParser::infixToPostfix(ftheta_equat, ftheta_equat_postfix_);
 
-		//Parse X equation
-		ArithmeticParser::infixToPostfix(ftheta_equat, ftheta_equat_postfix_);
-		ftheta_equat_postfix = new char[strlen(ftheta_equat_postfix_) + 1];
-		strcpy(ftheta_equat_postfix, ftheta_equat_postfix_);
+			//Delimit postfix notation
+			ftheta_equat_postfix = ArithmeticParser::delimitPostfixNotation(ftheta_equat_postfix_);
+		}
 	}
 
 	//Throw exception
@@ -264,14 +180,16 @@ void ProjectionPseudoCylindrical <T> ::Theta0EquatToPostfix()
 
 	try
 	{
-		//Convert the infix notation to the postfix notation
-		if (theta0_equat_postfix != NULL)
-			delete theta0_equat_postfix;
 
-		//Parse Y equation
-		ArithmeticParser::infixToPostfix(theta0_equat, theta0_equat_postfix_);
-		theta0_equat_postfix = new char[strlen(theta0_equat_postfix_) + 1];
-		strcpy(theta0_equat_postfix, theta0_equat_postfix_);
+		if (theta0_equat != NULL)
+		{
+			//Infix to postfix
+			char theta0_equat_postfix_[MAX_TEXT_LENGTH];
+			ArithmeticParser::infixToPostfix(theta0_equat, theta0_equat_postfix_);
+
+			//Delimit postfix notation
+			theta0_equat_postfix = ArithmeticParser::delimitPostfixNotation(theta0_equat_postfix_);
+		}
 	}
 
 	//Throw exception

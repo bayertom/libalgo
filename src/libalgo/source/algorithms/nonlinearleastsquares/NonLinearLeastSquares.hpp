@@ -527,7 +527,7 @@ T NonLinearLeastSquares::BFGSH(FunctionJ function_j, FunctionV function_v, Funct
         //Compute final values in V
         function_v ( X, Y, V, W );
 
-        //std::cout << "iter:" << iterations << '\n';
+        std::cout << "iter:" << iterations << '\n';
         //X.print();
         //X.print(output);
 

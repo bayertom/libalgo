@@ -1515,6 +1515,427 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 	}
 }
 
+/*
+template <typename T>
+void CartAnalysis::analyzeProjectionIncr(Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+	typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
+	unsigned int & total_created_or_thrown_samples, std::ostream * output)
+{
+	//Incremental algorithm for the map projection analysis
+	//Find mimum using the Minimum Least Squares
+	const unsigned int m = nl_test.size();
+
+	//Total successfully computed analysis for one cartographic projection
+	unsigned int total_created_and_analyzed_samples_projection = 0;
+
+	//Find extreme values
+	const TMinMax <T> lon_interval((*std::min_element(pl_reference.begin(), pl_reference.end(), sortPointsByLon()))->getLon(),
+		(*std::max_element(pl_reference.begin(), pl_reference.end(), sortPointsByLon()))->getLon());
+	const TMinMax <T> lat_interval((*std::min_element(pl_reference.begin(), pl_reference.end(), sortPointsByLat()))->getLat(),
+		(*std::max_element(pl_reference.begin(), pl_reference.end(), sortPointsByLat()))->getLat());
+
+	//Create list of samples
+	std::list <TSampleProjection<T> > analyzed_projections;
+
+	//Create initial solution: process all cartographic projections from the list one by one
+	for (typename TItemsList <Projection <T> *> ::Type::const_iterator i_projections = pl.begin(); i_projections != pl.end(); ++i_projections)
+	{
+		//Get limits of the cartographic pole latitude and longitude: some projections are defined only in normal position
+		total_created_and_analyzed_samples_projection = 0;
+
+		//Get defined radius
+		T R_def = (*i_projections)->getR(), R_est = R_def;
+
+		//Print actual projection name to the log
+		std::cout << (*i_projections)->getProjectionName() << ": ";
+		*output << (*i_projections)->getProjectionName() << ": ";
+
+		//Get both latp and lonp intervals: lonp intervals are set to the moved central meridian (further must be reduced)
+		TMinMax <T> latp_interval_heur = (*i_projections)->getLatPIntervalH(lat_interval);
+		TMinMax <T> lonp_interval_heur = (*i_projections)->getLonPIntervalH(lon_interval);
+		TMinMax <T> lat0_interval = (*i_projections)->getLat0Interval();
+
+		const T latp_min = (*i_projections)->getLatPInterval().min_val;
+		const T latp_max = (*i_projections)->getLatPInterval().max_val;
+		const T lonp_min = (*i_projections)->getLonPInterval().min_val;
+		const T lonp_max = (*i_projections)->getLonPInterval().max_val;
+		const T lat0_min = lat0_interval.min_val;
+		const T lat0_max = lat0_interval.max_val;
+
+		//Create sample
+		Sample <T> best_sample;
+
+		//Create matrix of determined variables
+		unsigned short n_par = 6;
+		if (analysis_parameters.analysis_method == NonLinearLeastSquaresRotMethod)
+			n_par = 7;
+		else if (analysis_parameters.analysis_method == NonLinearLeastSquaresShiftsMethod)
+			n_par = 8;
+
+		Matrix <unsigned int> IX = ones(2 * m, 1, 1.0);
+		Matrix <T> X(n_par, 1), XMIN(n_par, 1), XMAX(n_par, 1), Y(2 * m, 1);
+
+		//Set iteration parameters
+		const T eps = 1.0e-10, max_diff = 1.0e-10, k = 2.5, ks = 0.01;
+		T alpha_mult = 0.0001, nu = 0.0001;
+		unsigned short iterations = 0;
+		const unsigned int max_iter = 200;
+		const T nu1 = 0.25, nu2 = 0.75, nu3 = 0.0001, gamma1 = 0.5, gamma2 = 2.0, lambda_min = 1.0e-6, lambda_max = 1.0e6;
+
+		try
+		{
+			unsigned int total_samples_test = 0;
+			Sample <T> sample_test;
+			TAnalysisParameters <T> analysis_parameters_test(false);
+			analysis_parameters_test.analysis_type.a_helt = true;
+
+			//Store projection properties before analysis
+			const T R = (*i_projections)->getR();
+			const Point3DGeographic <T> cart_pole = (*i_projections)->getCartPole();
+			const T lat0 = (*i_projections)->getLat0();
+			const T lat1 = (*i_projections)->getLat1();
+			const T lat2 = (*i_projections)->getLat2();
+			const T lon0 = (*i_projections)->getLon0();
+			const T dx = (*i_projections)->getDx();
+			const T dy = (*i_projections)->getDy();
+			const T c = (*i_projections)->getC();
+			//const T alpha = ( *i_projections )->getAlpha();
+
+			//Assign created samples amount
+			const unsigned int total_created_and_analyzed_samples_projection_before = total_created_and_analyzed_samples_projection;
+
+			//Compute mean of longitude to initialize lon0
+			T lon_mean = 0;
+
+			for (unsigned int i = 0; i < m; i++) lon_mean += pl_reference[i]->getLon();
+			lon_mean /= m;
+
+			//Conditions
+			const bool normal_aspect_enabled = (analysis_parameters.analyze_normal_aspect) && ((*i_projections)->getCartPole().getLat() == MAX_LAT);
+			const bool transverse_aspect_enabled = (analysis_parameters.analyze_transverse_aspect) && ((*i_projections)->getCartPole().getLat() == 0.0 || (*i_projections)->getCartPole().getLat() == MAX_LAT) &&
+				((*i_projections)->getLatPInterval().min_val != (*i_projections)->getLatPInterval().max_val);
+			const bool oblique_aspect_enabled = (analysis_parameters.analyze_oblique_aspect) && ((*i_projections)->getCartPole().getLat() != 0.0 || (*i_projections)->getCartPole().getLat() == MAX_LAT) &&
+				((*i_projections)->getLatPInterval().min_val != (*i_projections)->getLatPInterval().max_val);
+
+			//Compute lat0
+			T lat0_init = 0.5 * (lat0_interval.min_val + lat0_interval.max_val);
+
+			//Initialize matrices
+			Matrix <T> X0(5, 1), X0MIN(5, 1), X0MAX(5, 1), XX(5, 1);
+
+			//Common for all apects
+			X0(2, 0) = lat0_init + 10;
+
+			X0MIN(2, 0) = lat0_min;     X0MAX(2, 0) = lat0_max;
+
+			//Conic projections: c = lat2
+			if (typeid(*(*i_projections)) == typeid(ProjectionConic<T>))
+			{
+				X0MIN(4, 0) = 0;    X0MAX(4, 0) = lat0_max;
+				X0(4, 0) = lat0_init + 20;
+			}
+
+			//Otherwise: c is unspecified constant
+			else
+			{
+				X0MIN(4, 0) = 0.0;          X0MAX(4, 0) = 1.0e3;
+				X0(4, 0) = 1;
+			}
+
+			//Proces available aspects
+			TProjectionAspect aspect = NormalAspect;
+			for (unsigned int i = 0; i < 3; i++)
+			{
+				//At least one test is set
+				if ((i == 0) && (normal_aspect_enabled) || (i == 1) && (transverse_aspect_enabled) || (i == 2) && (oblique_aspect_enabled))
+				{
+					//Change analyzed aspect
+					if (i == 1) aspect = TransverseAspect;
+					else if (i == 2) aspect = ObliqueAspect;
+
+					//Get current limits
+					const T latp_init = 0.5 * (latp_interval_heur.min_val + latp_interval_heur.max_val);
+					const T lonp_init = 0.5 * (lonp_interval_heur.min_val + lonp_interval_heur.max_val);
+
+					//Create new meta-pole
+					const Point3DGeographic <T> cart_pole_0(latp_init, lonp_init);
+
+					//Set new position of the meta-pole for the transverse and oblique aspect
+					if (i != 0)
+						(*i_projections)->setCartPole(cart_pole_0);
+
+					//Use the cartometric analysis to set the initial value of the Earth radius: use the similarity transformation
+					CartAnalysis::computeAnalysisForOneSample(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections, analysis_parameters_test, sample_test, false, total_samples_test, output);
+
+					//Get initialize Earth radius using the similarity transformation
+					T R0 = (*i_projections)->getR() / sample_test.getScaleHelT();
+
+					//Restore meta-pole position
+					if (i != 0)
+						(*i_projections)->setCartPole(cart_pole);
+
+					//Normal aspect
+					if ((i == 0) && (normal_aspect_enabled))
+					{
+						//Initial solution for M7S method
+						X0(0, 0) = MAX_LAT;
+						X0(1, 0) = 0;
+						X0(3, 0) = 10.0;
+
+						//Set intervals for M7S method
+						X0MIN(0, 0) = 90;           X0MAX(0, 0) = 90;
+						X0MIN(1, 0) = 0;            X0MAX(1, 0) = 0;
+						X0MIN(3, 0) = -MAX_LON;     X0MAX(3, 0) = MAX_LON;
+					}
+
+					else if ((i == 1) && (transverse_aspect_enabled))
+					{
+						//Initial solution for M7S method
+						X0(0, 0) = 0;
+						X0(1, 0) = lonp_init + 10;
+						X0(3, 0) = 0;
+
+						//Set intervals for M7S method
+						X0MIN(0, 0) = 0;            X0MAX(0, 0) = 0;
+						X0MIN(1, 0) = lonp_min;     X0MAX(1, 0) = lonp_max;
+						X0MIN(3, 0) = 0;	    X0MAX(3, 0) = 0;
+					}
+
+					else if ((i == 2) && (oblique_aspect_enabled))
+					{
+						X0(0, 0) = latp_init + 20;
+						X0(1, 0) = lonp_init + 10;
+						X0(3, 0) = 0;
+
+						//X0(0, 0) = -67; X0(1, 0) = 120;
+						//X0(2, 0) = 50;
+
+						X0MIN(0, 0) = latp_min;	X0MAX(0, 0) = latp_max;
+						X0MIN(1, 0) = lonp_min;	X0MAX(1, 0) = lonp_max;
+						X0MIN(3, 0) = 0;	X0MAX(3, 0) = 0;
+					}
+
+
+					//Create initial vector
+					if (analysis_parameters.analysis_method == NonLinearLeastSquaresMethod)
+					{
+						X.submat(X0, 1, 0); XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+						X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRotMethod)
+					{
+						X.submat(X0, 1, 0); XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+						X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
+						X(6, 0) = 30;  XMIN(6, 0) = -MAX_LON; XMAX(6, 0) = MAX_LON;
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRot2Method)
+					{
+						X(0, 0) = R_est;  X.submat(XX, 1, 0);
+						XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresShiftsMethod)
+					{
+						X.submat(X0(0, 3, 0, 0), 1, 0);  XMIN.submat(X0MIN(0, 3, 0, 0), 1, 0); XMAX.submat(X0MAX(0, 3, 0, 0), 1, 0);
+						X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
+					}
+
+					//Add to the stack
+					TSampleProjection <T> sample_proj(n_par);
+
+					sample_proj.weight = 0;
+					sample_proj.projection = *i_projections;
+					sample_proj.aspect = aspect;
+					sample_proj.X = X;
+					sample_proj.XMIN = XMIN;
+					sample_proj.XMAX = XMAX;
+
+					//Add to the list
+					analyzed_projections.push_back(sample_proj);
+				}
+			}
+
+		}
+
+		//Throw exception, analysis have not been computed
+		catch (Error & error)
+		{
+			if (analysis_parameters.print_exceptions)
+				error.printException();
+		}
+
+	}
+		//Create data structures for the incremental algorithm
+		Container <Node3DCartesian <T> *> nl_test_incr;
+		Container <Point3DGeographic <T> *> pl_reference_incr;
+
+		//Create sample
+		Sample <T> best_sample;
+
+		//Add first 5 points to the lists
+
+		//Run incremental algorithm
+		T average_weight = 0;
+		for (unsigned int i = 0; i < m; i++)
+		{
+			unsigned int l = i;
+			for (; (l< i + 5) && (l < m); l++)
+			{
+				nl_test_incr.push_back(nl_test[l]);
+				pl_reference_incr.push_back(pl_reference[l]);
+			}
+
+			i = l;
+
+			std::cout <<" ******** Points " << i << " \n";
+			
+			//Add point to the lists
+			nl_test_incr.push_back(nl_test[i]);
+			pl_reference_incr.push_back(pl_reference[i]);
+
+			//Process lists of samples
+			std::list <TSampleProjection<T> > ::iterator i_analyzed_projections = analyzed_projections.begin();
+
+			//Create matrix of determined variables
+			unsigned short n_par = 6;
+			if (analysis_parameters.analysis_method == NonLinearLeastSquaresRotMethod)
+				n_par = 7;
+			else if (analysis_parameters.analysis_method == NonLinearLeastSquaresShiftsMethod)
+				n_par = 8;
+
+			Matrix <unsigned int> IX = ones(2 * m, 1, 1.0);
+			Matrix <T> X(n_par, 1), XMIN(n_par, 1), XMAX(n_par, 1), Y(2 * m, 1);
+
+			//Set iteration parameters
+			const T eps = 1.0e-10, max_diff = 1.0e-10, k = 2.5, ks = 0.01;
+			T alpha_mult = 0.0001, nu = 0.0001;
+			unsigned short iterations = 0;
+			const unsigned int max_iter = 200;
+			const T nu1 = 0.25, nu2 = 0.75, nu3 = 0.0001, gamma1 = 0.5, gamma2 = 2.0, lambda_min = 1.0e-6, lambda_max = 1.0e6;
+
+			//Process all analyzed projections
+			T average_weight_new = 0;
+			for (unsigned int j = 0; i_analyzed_projections != analyzed_projections.end(); ++i_analyzed_projections)
+			{
+				std::cout << (*i_analyzed_projections).projection->getProjectionName();
+
+				//Get actual sample and its properties
+				T weight = (*i_analyzed_projections).weight;
+				std::cout << " " << weight << " / " << average_weight;
+
+				//Process sample
+				if (weight <= average_weight)
+				{
+					Projection <T> *proj = (*i_analyzed_projections).projection;
+					TProjectionAspect aspect = (*i_analyzed_projections).aspect;
+					Matrix <T> X = (*i_analyzed_projections).X;
+					Matrix <T> XMIN = (*i_analyzed_projections).XMIN;
+					Matrix <T> XMAX = (*i_analyzed_projections).XMAX;
+
+					//Variables
+					unsigned int res_evaluation = 0, jac_evaluation = 0;
+					bool enable_additional_lon0_analysis = false;
+					T x_mass_reference = 0.0, y_mass_reference = 0.0, min_cost = 0, alpha = 0, R_est = 1.0, scale = 1.0, q1 = 1, q2 = 1, k = 2.5;
+					TMEstimatorsWeightFunction me_function = HuberFunction;
+
+					//Matrices
+					Matrix <T> W(2 * m, 2 * m, 0.0, 1), V(2 * m, 1);
+					Matrix <unsigned int> IX(2 * m, 1);
+
+					Container <Node3DCartesianProjected <T> *> nl_projected;
+
+					//Set initial solution and intervals depending ion the selected method
+					if (analysis_parameters.analysis_method == NonLinearLeastSquaresMethod)
+					{
+						//X.submat(X0, 1, 0); XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+						//X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
+
+						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ2 <T>(nl_test_incr, pl_reference_incr, proj, aspect, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV2 <T>(nl_test, pl_reference, meridians, parallels, faces_test, proj,
+							analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, HuberFunction, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, 0.05*max_iter, max_diff, output);
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRotMethod)
+					{
+						//X.submat(X0, 1, 0); XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+						//X(0, 0) = R0; XMIN(0, 0) = ks * X(0, 0); XMAX(0, 0) = 1.0 / ks * X(0, 0);
+						//X(6, 0) = 30;  XMIN(6, 0) = -MAX_LON; XMAX(6, 0) = MAX_LON;
+
+						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ3 <T>(nl_test_incr, pl_reference_incr, nl_projected, proj, aspect, x_mass_reference, y_mass_reference, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV3 <T>(nl_test, pl_reference, nl_projected, meridians, parallels, faces_test, proj,
+							x_mass_reference, y_mass_reference, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, 10, max_diff, output);
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRot2Method)
+					{
+						
+						XX = X0;
+
+						//min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 2*max_iter, 0.001 * max_diff, output);
+
+						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test_incr, pl_reference_incr, proj, aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
+						R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 1 * max_iter, 0.0001 * max_diff, output);
+
+						X(0, 0) = R_est;  X.submat(XX, 1, 0);
+						XMIN.submat(X0MIN, 1, 0); XMAX.submat(X0MAX, 1, 0);
+
+						scale = sqrt(q1 * q1 + q2 * q2); alpha = atan2(q2, q1) * 180 / M_PI;
+						
+					}
+
+					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresShiftsMethod)
+					{
+						min_cost = min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ <T>(nl_test_incr, pl_reference_incr, proj, aspect, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV <T>(nl_test, pl_reference, meridians, parallels, faces_test, proj,
+							analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, max_iter, max_diff, output);
+					}
+
+					if (min_cost < 100)
+					{
+						//Update sample
+						(*i_analyzed_projections).weight = min_cost;
+						(*i_analyzed_projections).X = X;
+						//X.print();
+
+						std::cout << " / " << min_cost << '\n';
+
+						//Compute new average weight
+						if (j > 0) average_weight_new = (average_weight_new * j + min_cost) / (j + 1);
+
+						//Increment j
+						j++;
+					}
+
+					//Remove sample
+					else
+					{
+						i_analyzed_projections = analyzed_projections.erase(i_analyzed_projections);
+						++i_analyzed_projections;
+					}
+				}
+
+				//Remove sample from the list
+				else
+				{
+					std::cout << "*********** Deleted \n";
+					i_analyzed_projections = analyzed_projections.erase(i_analyzed_projections);
+					++i_analyzed_projections;
+				}
+			}
+
+
+			//Assign new average cost
+			average_weight = average_weight_new;
+		}
+
+		//Assign the amount of created samples
+		total_created_or_thrown_samples += total_created_and_analyzed_samples_projection;
+	
+
+	//Create priority queue, add all analyzed samples
+}
+*/
+
 
 template <typename T>
 void CartAnalysis::createOptimalLatPLonPPositions(const Container <Point3DGeographic <T> *> &pl_reference, Projection <T> *proj, const TMinMax <T> &latp_interval_heur, const TMinMax <T> &lonp_interval_heur, const TAnalysisParameters <T> & analysis_parameters,
@@ -1946,7 +2367,7 @@ T CartAnalysis::computeAnalysisForOneSample(Container <Node3DCartesian <T> *> &n
 
 			//Create new point
 			Node3DCartesianProjected <T> *n_projected = new Node3DCartesianProjected <T>(x, y, 0.0, 0.0, 0.0, 0.0, 0.0, TTissotIndicatrix <T>(), 0.0);
-
+			
 			//Uncertainty regions: compute Tissot Indicatrix parameters only for perspective samples ( will be faster ) for homothetic and helmert transformations
 			if ((analysis_parameters.analysis_type.a_homt || analysis_parameters.analysis_type.a_helt) && (analysis_parameters.match_method == MatchTissotIndicatrix))
 			{
@@ -1968,7 +2389,7 @@ T CartAnalysis::computeAnalysisForOneSample(Container <Node3DCartesian <T> *> &n
 				//Set Tissot Indicatrix parameters for the point
 				n_projected->setTiss(tiss);
 			}
-
+			
 			//Create new cartographic point
 			nl_projected.push_back(n_projected);
 		}

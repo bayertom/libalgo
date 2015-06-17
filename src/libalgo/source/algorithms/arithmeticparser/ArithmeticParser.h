@@ -35,6 +35,7 @@
 extern const char * vars[];
 extern const char * consts[];
 extern const char * functs[];
+extern const char * opers[];
 
 
 //Type of the +- operator (Binary or unary)
@@ -129,6 +130,22 @@ enum functions
 };
 
 
+//Operators in arithmetic expression
+enum operators
+{
+	o_plus = 0,
+	o_minus,
+	o_multiply,
+	o_divide,
+	o_power,
+	o_unary_minus
+};
+
+
+//Delimited postfix notation
+typedef std::vector <std::string> TPostfixNotationDel;
+
+
 //Arithmetic parser converting equation from infix to postfix notation based on modified Shunting-yard algorithm
 class ArithmeticParser
 {
@@ -143,20 +160,23 @@ class ArithmeticParser
 		static T parseEquation(const char * equation, char ** equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout);
 
 		template <typename T>
-		static T parseEquation(const char * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout);
+		static T parseEquation(const TPostfixNotationDel * equation_postfix, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta, const bool print_exception = true, std::ostream * output = &std::cout);
 
 		static void infixToPostfix(const char * infix, char * postfix);
 
-
 		template <typename T>
-		static T evaluatePostfixEquation(const char * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T p);
+		static T evaluatePostfixEquation(const TPostfixNotationDel * equation_postfix, const T x, const T y, const T lat, const T lon, const T R, const T a, const T b, const T c, const T lat0, const T lat1, const T lat2, const T theta);
 
+		static TPostfixNotationDel delimitPostfixNotation(char *equation_postfix);
 
         private:
 
-                static void init ( TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list );
+		static void init(TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list, TVarConsFunctMap & opers_list );
 
                 static void findSequence ( const char ** equation, char * operator_text );
+		
+
+		
 
 };
 
