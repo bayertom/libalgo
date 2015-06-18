@@ -203,55 +203,55 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 }
 
 		//Get valid sequence of chars: number, variable, operator, bracket, function
-		char text[32];
-		findSequence(&infix, text);
+		char token[32];
+		findToken(&infix, token);
 
                 //Number
-                if ( isdigit ( ( unsigned char ) *text ) )
+                if ( isdigit ( ( unsigned char ) *token ) )
                 {
                         //Add space
                         *postfix++ = ' ';
                         *postfix = '\0';
 
                         //Add to the postfix notation
-                        strcat ( postfix, text );
+                        strcat ( postfix, token );
 
-                        //Move pointer about length of the text
-                        postfix += strlen ( text );
+                        //Move pointer about length of the token
+                        postfix += strlen ( token );
 
                         //Set next operator +- as binary
                         plus_minus_oper_next = BinaryOperator;
                 }
 
                 //Variable or const
-                else if ( vars_list.find ( std::string ( text ) ) != vars_list.end() || consts_list.find ( std::string ( text ) ) != consts_list.end() )
+                else if ( vars_list.find ( std::string ( token ) ) != vars_list.end() || consts_list.find ( std::string ( token ) ) != consts_list.end() )
                 {
                         //Add space
                         *postfix++ = ' ';
                         *postfix = '\0';
 
                         //Add to the postfix notation
-                        strcat ( postfix, text );
+                        strcat ( postfix, token );
 
-                        //Move pointer about length of the text
-                        postfix += strlen ( text );
+                        //Move pointer about length of the token
+                        postfix += strlen ( token );
 
                         //Set next operator +- as binary
                         plus_minus_oper_next = BinaryOperator;
                 }
 
                 //Left bracket
-                else if ( *text == '(' )
+                else if ( *token == '(' )
                 {
                         //Add to the stack
-                        operators.push ( std::string ( text ) );
+                        operators.push ( std::string ( token ) );
 
                         //Set next operator +- as unary
                         plus_minus_oper_next = UnaryOperator;
                 }
 
                 //Right bracket
-                else if ( *text == ')' )
+                else if ( *token == ')' )
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -319,7 +319,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 //***************************************************************************
 
                 //Functions (Priority Level 4)
-                else if ( functs_list.find ( std::string ( text ) ) != functs_list.end() )
+                else if ( functs_list.find ( std::string ( token ) ) != functs_list.end() )
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -356,8 +356,8 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                                 }
                         }
 
-                        //Add text to the stack
-                        operators.push ( text );
+                        //Add token to the stack
+                        operators.push ( token );
 
                         //Set next +- operator as binary
                         plus_minus_oper_next = BinaryOperator;
@@ -366,7 +366,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 //***************************************************************************
 
                 //Power (Priority level 3)
-                else if ( *text == '^' )
+                else if ( *token == '^' )
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -404,7 +404,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                         }
 
                         //No operator with lowest priority found or empty stack
-                        operators.push ( std::string ( text ) );
+                        operators.push ( std::string ( token ) );
 
                         //Set next operator + - as binary
                         plus_minus_oper_next = BinaryOperator;
@@ -413,7 +413,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 //***************************************************************************
 
                 //Multiple, divide (Priority level 2)
-                else if ( ( *text == '*' ) || ( *text == '/' ) )
+                else if ( ( *token == '*' ) || ( *token == '/' ) )
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -451,7 +451,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                         }
 
                         //No operator with lowest priority found or empty stack
-                        operators.push ( std::string ( text ) );
+                        operators.push ( std::string ( token ) );
 
                         //Set next +- operator as binary
                         plus_minus_oper_next = BinaryOperator;
@@ -460,7 +460,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 //***************************************************************************
 
                 //Add, subtract (Priority level 1)
-		else if ((*text == '+') || (*text == '-') || (*text == '_'))
+		else if ((*token == '+') || (*token == '-') || (*token == '_'))
                 {
                         //If the stack not empty
                         if ( !operators.empty() )
@@ -518,7 +518,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
 
 			//Binary -
 			else
-				operators.push ( std::string ( text ) );
+				operators.push ( std::string ( token ) );
 
                         //Set the next + - operator as unary or binary
                         sign_types_temp.push ( plus_minus_oper_next );
@@ -531,7 +531,7 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
                 else
                 {
                         //Unknown variable or function
-                        throw ErrorParse ( "ErrorParse: can not parse equation, unknown function or variable. ", text );
+                        throw ErrorParse ( "ErrorParse: can not parse equation, unknown function or variable. ", token );
                 }
         }
 
@@ -589,11 +589,11 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
 
 
 
-void ArithmeticParser::findSequence ( const char ** equation, char * operator_text )
+void ArithmeticParser::findToken ( const char ** equation, char * token )
 {
         //Find first possible valid sequence of characters in the infix notation
         //	0 = space .................. NA (non-algebraic)
-        //	1 = text ................... A (algebraic)
+        //	1 = text/number.............. A (algebraic)
         //	2 = decimal separator ...... NA
         //	3 = arithmetic operator .... NA
 	//      4 = bracket .................NA
@@ -607,7 +607,7 @@ void ArithmeticParser::findSequence ( const char ** equation, char * operator_te
                 //Detect changes: [1->0], [1->2], [1->3], [1->4], [2->1], [3->1], [4->1]
                 if ( ( bool ) isalnum ( ( unsigned char ) ** equation ) != ( bool ) isalnum ( ( unsigned char ) c ) )
                 {
-			*operator_text++ = c;
+			*token++ = c;
 
 			//Detect changes: [1->2], [2->1], if nor c neither c++ is not the decimal separator, stop (the only accepted combination)
 			if ((c != '.') && (c != ',') && (**equation != '.') && (**equation != ','))
@@ -623,21 +623,21 @@ void ArithmeticParser::findSequence ( const char ** equation, char * operator_te
                         // Detect changes [3->0], [4->0], [3->4], [4->3], [4->4], [3->3]
                         if ( ( c == '+' ) || ( c == '-' ) || ( c == '*' ) || ( c == '/' ) || ( c == '^' ) || ( c == '(' ) || ( c == ')' ) )
                         {
-                                *operator_text++ = c;
+                                *token++ = c;
                                 break;
                         }
 
                         //Detect changes [1->1]
                         else 
                         {
-                                *operator_text++ = c;
+                                *token++ = c;
                         }
                 }
 
         } while ( **equation != '\0' );
 
         //Correctly end char with \0
-        *operator_text = '\0';
+        *token = '\0';
 }
 
 

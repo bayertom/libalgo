@@ -173,11 +173,8 @@ class ArithmeticParser
 
 		static void init(TVarConsFunctMap & vars_list, TVarConsFunctMap & consts_list, TVarConsFunctMap & functs_list, TVarConsFunctMap & opers_list );
 
-                static void findSequence ( const char ** equation, char * operator_text );
+                static void findToken ( const char ** equation, char * operator_text );
 		
-
-		
-
 };
 
 

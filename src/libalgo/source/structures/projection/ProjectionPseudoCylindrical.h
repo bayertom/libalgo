@@ -44,8 +44,8 @@ protected:
 	//New solution theta[i+1] = theta[i] - f(theta[i])/f'(theta[i]) 
 	char * ftheta_equat;				//Parameter function of the variable theta
 	char * theta0_equat;				//Initial value of parameter theta, theta = theta0
-	TPostfixNotationDel ftheta_equat_postfix;			//Parameter function of the variable theta in the postfix notation
-	TPostfixNotationDel theta0_equat_postfix;			//Initial value of parameter theta, theta = theta0 in the postfix notation
+	TPostfixNotationDel ftheta_equat_postfix;	//Parameter function of the variable theta in the postfix notation
+	TPostfixNotationDel theta0_equat_postfix;	//Initial value of parameter theta, theta = theta0 in the postfix notation
 
 
 public:
