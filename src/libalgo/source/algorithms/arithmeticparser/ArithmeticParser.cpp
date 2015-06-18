@@ -592,8 +592,8 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
 void ArithmeticParser::findSequence ( const char ** equation, char * operator_text )
 {
         //Find first possible valid sequence of characters in the infix notation
-        //	0 = space .................. NA
-        //	1 = text ................... A
+        //	0 = space .................. NA (non-algebraic)
+        //	1 = text ................... A (algebraic)
         //	2 = decimal separator ...... NA
         //	3 = arithmetic operator .... NA
 	//      4 = bracket .................NA
