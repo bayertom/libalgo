@@ -176,15 +176,15 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
         TSignOperatorType plus_minus_oper_next = UnaryOperator;
 	TSignOperatorTypes sign_types_postfix;
 
-	//Stack with operators
-        std::stack < std::string> operators;
+	//Stack with operators, implemented as vector
+        std::stack < std::string, std::vector<std::string> > operators;
 
         //List of variables, constants, functions: initialize
         TVarConsFunctMap vars_list, consts_list, functs_list, opers_list;
         init ( vars_list, consts_list, functs_list, opers_list );
 
-        //Stack of binary or unary +- operators
-        std::stack <TSignOperatorType> sign_types_temp;
+        //Stack of binary or unary +- operators, implemented as vector
+	std::stack <TSignOperatorType, std::vector <TSignOperatorType> > sign_types_temp;
 
 	//Empty equation return
 	if (infix == NULL)
