@@ -932,5 +932,4 @@ T ArithmeticParser::evaluatePostfixEquation(const TPostfixNotationDel * equation
 }
 
 
-
 #endif

@@ -195,22 +195,19 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
         //Process all characters of the infix equation
         while ( *infix != '\0' )
         {
-                //std::cout << index++ << '\n';
-
-                //Get text
-                char text[32];
-
-                //Get Sequence
-                findSequence ( &infix, text );
-
-                //Space, tab or last character
-                if ( ( *text == '\t' ) || ( *text == ' ' ) || ( *text == '\0' ) )
+                //Space, tab, new line: jump over
+		if ((*infix == '\t') || (*infix == ' ') || (*infix == '\n'))
                 {
-                        continue;
+			infix++;
+			continue;
                 }
 
+		//Get valid sequence of chars: number, variable, operator, bracket, function
+		char text[32];
+		findSequence(&infix, text);
+
                 //Number
-                else if ( isdigit ( ( unsigned char ) *text ) )
+                if ( isdigit ( ( unsigned char ) *text ) )
                 {
                         //Add space
                         *postfix++ = ' ';
@@ -591,56 +588,53 @@ void ArithmeticParser::infixToPostfix ( const char * infix, char * postfix)
 }
 
 
+
 void ArithmeticParser::findSequence ( const char ** equation, char * operator_text )
 {
-        //Create first possible valid sequence of characters in the postfix notation
-        //	0 = space .................. A
-        //	1 = text ................... B
-        //	2 = decimal separator ...... A
-        //	3 = arithmetic operator .... A
+        //Find first possible valid sequence of characters in the infix notation
+        //	0 = space .................. NA
+        //	1 = text ................... A
+        //	2 = decimal separator ...... NA
+        //	3 = arithmetic operator .... NA
+	//      4 = bracket .................NA
         do
         {
                 //Actual char and increment equation char
                 const int c = * ( * equation ) ++;
 
                 //Compare actual char end next char
-                //Alphanumeric and non-alphanumeric chars or vice versa
-                //Detect changes: [0->1], [1->0], [1->2], [1->3], [2->1], [3->1]
+                //Alphanumeric char followed by non-alphanumeric char or vice versa (digit / letter and something)
+                //Detect changes: [1->0], [1->2], [1->3], [1->4], [2->1], [3->1], [4->1]
                 if ( ( bool ) isalnum ( ( unsigned char ) ** equation ) != ( bool ) isalnum ( ( unsigned char ) c ) )
                 {
-                        //Detect changes: [0->1], [1->2], [1->3], [2->1], [3->1]
-                        if ( !isspace ( c ) )
-                        {
-                                *operator_text++ = c;
+			*operator_text++ = c;
 
-                                //Detect changes: [0->1], [1->3], [3->1], stops for decimal separator
-                                if ( ( c != '.' ) && ( c != ',' ) && ( **equation != '.' ) && ( **equation != ',' ) )
-                                {
-                                        break;
-                                }
-                        }
+			//Detect changes: [1->2], [2->1], if nor c neither c++ is not the decimal separator, stop (the only accepted combination)
+			if ((c != '.') && (c != ',') && (**equation != '.') && (**equation != ','))
+			{
+				break;
+			}
                 }
 
-                //Both alphanumeric chars or both non-alphanumeric chars
-                //Detect changes: [0->0], [0->2x], [0->3], [1->1], [2->0], [2->2x], [2->3x], [3->0], [3->2x], [3->3x]
+                //Two alphanumeric chars or two non-alphanumeric chars
+                //Detect changes: [1->1], [3->0], [4-> 0], [3->4], [4->3], [3->3], [4->4]
                 else
                 {
-                        // Detect changes [0->3], [2->3x] [3,3x]
+                        // Detect changes [3->0], [4->0], [3->4], [4->3], [4->4], [3->3]
                         if ( ( c == '+' ) || ( c == '-' ) || ( c == '*' ) || ( c == '/' ) || ( c == '^' ) || ( c == '(' ) || ( c == ')' ) )
                         {
                                 *operator_text++ = c;
                                 break;
                         }
 
-                        //Detect changes [0->2x], [1->1], [2->2x], [3->0], [3->2x]
-                        else if ( !isspace ( c ) )
+                        //Detect changes [1->1]
+                        else 
                         {
                                 *operator_text++ = c;
                         }
                 }
 
-        }
-        while ( **equation != '\0' );
+        } while ( **equation != '\0' );
 
         //Correctly end char with \0
         *operator_text = '\0';
@@ -653,8 +647,8 @@ TPostfixNotationDel ArithmeticParser::delimitPostfixNotation(char *equation_post
 	char *equation_delimit;
 	TPostfixNotationDel equation_postfix_del;
 
-	//Delimiters space, tabs
-	equation_delimit = strtok(equation_postfix, " \t");
+	//Delimiters: space, tab, new line
+	equation_delimit = strtok(equation_postfix, " \t\n");
 
 	while (equation_delimit)
 	{
@@ -664,11 +658,8 @@ TPostfixNotationDel ArithmeticParser::delimitPostfixNotation(char *equation_post
 		//Add to the list
 		equation_postfix_del.push_back(postfix_del_string);
 		
-		equation_delimit = strtok(NULL, " \t");
+		equation_delimit = strtok(NULL, " \t\n");
 	}
 
 	return equation_postfix_del;
 }
-
-
-
