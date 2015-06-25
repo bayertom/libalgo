@@ -153,6 +153,7 @@ libalgo_la_SOURCES = ./libalgo/source/comparators/getFirstElementInPair.cpp \
     ./libalgo/source/algorithms/vectorvectororientation/VectorVectorOrientation.cpp \
     ./libalgo/source/algorithms/angle3points/Angle3Points.cpp \
     ./libalgo/source/algorithms/eucldistance/EuclDistance.cpp \
+    ./libalgo/source/algorithms/chartonum/CharToNum.cpp \
     ./libalgo/source/structures/point/Point3DGeographic.cpp \
     ./libalgo/source/structures/point/Node3DCartesianProjected.cpp \
     ./libalgo/source/structures/point/Point3DCartesian.cpp \
@@ -342,6 +343,7 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/algorithms/vectorvectororientation/VectorVectorOrientation.h \
     ./libalgo/source/algorithms/angle3points/Angle3Points.h \
     ./libalgo/source/algorithms/eucldistance/EuclDistance.h \
+    ./libalgo/source/algorithms/chartonum/CharToNum.h \
     ./libalgo/source/const/Const.h \
     ./libalgo/source/structures/point/Point3DCartesian.h \
     ./libalgo/source/structures/point/Point3DGeographic.h \
@@ -439,6 +441,7 @@ nobase_include_HEADERS = ./libalgo/source/comparators/sortSamplesByVoronoiCellTA
     ./libalgo/source/algorithms/convexquadrilateral/ConvexQuadrilateral.hpp \
     ./libalgo/source/algorithms/vectorvectororientation/VectorVectorOrientation.hpp \
     ./libalgo/source/algorithms/angle3points/Angle3Points.hpp \
+    ./libalgo/source/algorithms/chartonum/CharToNum.hpp \
     ./libalgo/source/structures/point/Point3DCartesianProjected.hpp \
     ./libalgo/source/structures/point/Point3DGeographic.hpp \
     ./libalgo/source/structures/point/Node3DCartesianProjected.hpp \
