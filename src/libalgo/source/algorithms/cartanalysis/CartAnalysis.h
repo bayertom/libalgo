@@ -286,7 +286,7 @@ class CartAnalysis
                                 unsigned int & total_created_or_thrown_samples, std::ostream * output = &std::cout );
 
                 template <typename T>
-                static void computeAnalysisForAllSamplesMLS ( Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+                static void computeAnalysisForAllSamplesNLS ( Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
                                 typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
                                 unsigned int & total_created_or_thrown_samples, std::ostream * output = &std::cout );
 

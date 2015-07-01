@@ -1106,7 +1106,7 @@ void CartAnalysis::computeAnalysisForAllSamplesDE(Container <Sample <T> > &sl, C
 
 
 template <typename T>
-void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
+void CartAnalysis::computeAnalysisForAllSamplesNLS(Container <Sample <T> > &sl, Container <Projection <T> *> &pl, Container <Node3DCartesian <T> *> &nl_test, Container <Point3DGeographic <T> *> &pl_reference,
 	typename TMeridiansList <T> ::Type meridians, typename TParallelsList <T> ::Type parallels, const Container <Face <T> *> &faces_test, TAnalysisParameters <T> & analysis_parameters,
 	unsigned int & total_created_or_thrown_samples, std::ostream * output)
 {
@@ -1369,14 +1369,16 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 					{
 						X0(0, 0) = latp_init + 20;
 						X0(1, 0) = lonp_init + 10;
-						X0(3, 0) = 0;
-
-						//X0(0, 0) = -67; X0(1, 0) = 120;
-						//X0(2, 0) = 50;
-
+						X0(3, 0) = 10;
+						/*
+						X0(0, 0) = 90; X0(1, 0) = 17.6;  //Erich3
+						X0(2, 0) = 51.2;
+						R0 = 2453;
+						*/
 						X0MIN(0, 0) = latp_min;	X0MAX(0, 0) = latp_max;
 						X0MIN(1, 0) = lonp_min;	X0MAX(1, 0) = lonp_max;
-						X0MIN(3, 0) = 0;	X0MAX(3, 0) = 0;
+						X0MIN(3, 0) = 0;	X0MAX(3, 0) = 0; 
+						X0MIN(3, 0) = - MAX_LON;	X0MAX(3, 0) = MAX_LON;
 					}
 
 					//Variables
@@ -1408,7 +1410,7 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 						X(6, 0) = 30;  XMIN(6, 0) = -MAX_LON; XMAX(6, 0) = MAX_LON;
 
 						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ3 <T>(nl_test, pl_reference, nl_projected, (*i_projections), aspect, x_mass_reference, y_mass_reference, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV3 <T>(nl_test, pl_reference, nl_projected, meridians, parallels, faces_test, *i_projections,
-							x_mass_reference, y_mass_reference, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, 10, max_diff, output);
+							x_mass_reference, y_mass_reference, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, output), FAnalyzeProjC <double>(), W, X, Y, V, XMIN, XMAX, iterations, alpha_mult, nu, eps, max_iter, max_diff, output);
 					}
 
 					else if (analysis_parameters.analysis_method == NonLinearLeastSquaresRot2Method)
@@ -1419,7 +1421,7 @@ void CartAnalysis::computeAnalysisForAllSamplesMLS(Container <Sample <T> > &sl, 
 						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps, 2*max_iter, 0.001 * max_diff, output);
 
 						min_cost = NonLinearLeastSquares::BFGSH(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
-							R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps,1 * max_iter, 0.0001 * max_diff, output);
+							R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, nu, 0.001 * eps,  max_iter, 0.0001 * max_diff, output);
 							
 						//min_cost = NonLinearLeastSquares::GND(FAnalyzeProjJ4 <T>(nl_test, pl_reference, (*i_projections), aspect, R_est, q1, q2, enable_additional_lon0_analysis, analysis_parameters.print_exceptions, jac_evaluation), FAnalyzeProjV4 <T>(nl_test, pl_reference, meridians, parallels, faces_test, *i_projections,
 						//	R_est, q1, q2, analysis_parameters, aspect, best_sample, total_created_and_analyzed_samples_projection, res_evaluation, me_function, k, IX, enable_additional_lon0_analysis, output), FAnalyzeProjC <double>(), W, XX, Y, V, X0MIN, X0MAX, iterations, alpha_mult, 0.001*eps, 2 * max_iter, 0.001*max_diff, output);
@@ -9627,7 +9629,7 @@ void CartAnalysis::batchTestAmountOfPoints(Container <Sample <T> > &sl, Containe
 
 		//Perform analysis
 		sl.clear();
-		computeAnalysisForAllSamplesMLS(sl, proj_list, nl_test_temp2, nl_reference_temp2, meridians, parallels, faces_test, analysis_parameters,
+		computeAnalysisForAllSamplesNLS(sl, proj_list, nl_test_temp2, nl_reference_temp2, meridians, parallels, faces_test, analysis_parameters,
 			total_created_or_thrown_samples, output);
 
 		//CartAnalysis::computeAnalysisForAllSamplesDE(sl, proj_list, nl_test_temp2, nl_reference_temp2, meridians, parallels, faces_test, analysis_parameters,
