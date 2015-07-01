@@ -145,7 +145,9 @@ public:
 			//if (fabs(X(1, 0) - MAX_LAT) < 1.0)  X(2, 0) = 0.0;
 
 			//Set lon0
-			X(4, 0) = 0;
+			//X(4, 0) = 0;
+			if (X(4, 0) < MIN_LON)  X(4, 0) = MAX_LON + fmod(X(4, 0), MIN_LON);
+			else if (X(4, 0) > MAX_LON)  X(4, 0) = MIN_LON + fmod(X(4, 0), MAX_LON);
 
 			//Set lonp to zero, if latp = 90
 			if (fabs(X(1, 0) - MAX_LAT) < 5.0)
@@ -171,7 +173,7 @@ public:
 		proj->setDy(0.0);
 		proj->setC(X(5, 0));
 
-		//Additional determination of lon0
+		//Additional determination of lon0 using the differential evolution
 		T min_cost = 0, min_cost_lon0 = 0;
 		Matrix <T> XL(1, 1);
 
@@ -201,8 +203,7 @@ public:
 
 		//Compute residuals
 		evaluateResiduals(X, Y, V, W, nl_test, pl_reference, meridians, parallels, faces_test, proj, analysis_parameters, aspect, sample_res, created_samples, res_evaluation, me_function, k, I, output);
-
-		min_cost = norm(trans(V)*W*V);
+		min_cost = norm(trans(V) * W * V);
 
 		//Compare NLSP and DE solutions, minimum is flat
 		if ((enable_additional_lon0_analysis) && (aspect == NormalAspect) && (fabs(min_cost - min_cost_lon0) > 1.0e-5) && (compute_analysis))

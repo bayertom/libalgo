@@ -141,10 +141,9 @@ public:
 			}
 
 			//Set lon0
-			X(3, 0) = 0;
-
-			if (X(4, 0) < MIN_LAT)  X(4, 0) = MIN_LAT - fmod(X(4, 0), MIN_LAT);
-			else if (X(4, 0) > MAX_LAT)  X(4, 0) = MAX_LAT - fmod(X(4, 0), MAX_LAT);
+			//X(3, 0) = 0;
+			if (X(3, 0) < MIN_LON)  X(3, 0) = MAX_LON + fmod(X(3, 0), MIN_LON);
+			else if (X(3, 0) > MAX_LON)  X(3, 0) = MIN_LON + fmod(X(3, 0), MAX_LON);
 		}
 
 		// Set properties of the projection
@@ -159,14 +158,14 @@ public:
 		proj->setDy(0.0);
 		proj->setC(X(4, 0));
 
-		//Evaluate bisection, if the coordinate function is the linear function of lon (cylindtrical projections)
+		//Additional determination of lon0 using the differential evolution
 		T min_cost = 0, min_cost_lon0 = 0;
 		Matrix <T> XL(1, 1);
 
 		if ( (enable_additional_lon0_analysis) && (aspect == NormalAspect) && (compute_analysis) )
 		{
 			//Create matrices
-			const unsigned int population = 8 * n, max_gen = 5;
+			const unsigned int population = 3 * n, max_gen = 5;
 			unsigned int res_evaluations_lon0 = 0,  iterations_lon0 = 0;
 			const T CR = 0.8, eps = 0.1;
 			T res_aver = 0, res_max = 0;
@@ -370,7 +369,11 @@ public:
 		//Transformation ratios
 		q1 = sum_xy_1 / sum_xx_yy;
 		q2 = sum_xy_2 / sum_xx_yy;
-
+		/*
+		q1 = 2448;
+		q2 = -147;
+		q2 = 0;
+		*/
 		//Rotation
 		const T alpha = atan2(q2, q1) * 180.0 / M_PI;
 
